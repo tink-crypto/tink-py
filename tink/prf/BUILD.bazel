@@ -1,0 +1,89 @@
+load("@rules_python//python:defs.bzl", "py_library")
+load("@tink_py_pip_deps//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//:__subpackages__"])
+
+licenses(["notice"])
+
+py_library(
+    name = "prf",
+    srcs = ["__init__.py"],
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":_prf_key_manager",
+        ":_prf_key_templates",
+        ":_prf_set",
+    ],
+)
+
+py_library(
+    name = "_prf_set",
+    srcs = ["_prf_set.py"],
+    srcs_version = "PY3",
+)
+
+py_library(
+    name = "_prf_key_manager",
+    srcs = ["_prf_key_manager.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_prf_set",
+        ":_prf_set_wrapper",
+        "//tink/cc/pybind:tink_bindings",
+        "//tink/core",
+    ],
+)
+
+py_test(
+    name = "_prf_key_manager_test",
+    srcs = ["_prf_key_manager_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":prf",
+        requirement("absl-py"),
+        "//tink:tink_python",
+        "//tink/core",
+        "//proto:common_py_pb2",
+        "//proto:hkdf_prf_py_pb2",
+        "//proto:hmac_prf_py_pb2",
+        "//proto:tink_py_pb2",
+    ],
+)
+
+py_library(
+    name = "_prf_set_wrapper",
+    srcs = ["_prf_set_wrapper.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_prf_set",
+        requirement("absl-py"),
+        "//tink/core",
+    ],
+)
+
+py_test(
+    name = "_prf_set_wrapper_test",
+    srcs = ["_prf_set_wrapper_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_prf_set_wrapper",
+        ":prf",
+        requirement("absl-py"),
+        "//tink:tink_python",
+        "//tink/testing:keyset_builder",
+    ],
+)
+
+py_library(
+    name = "_prf_key_templates",
+    srcs = ["_prf_key_templates.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//proto:aes_cmac_prf_py_pb2",
+        "//proto:common_py_pb2",
+        "//proto:hkdf_prf_py_pb2",
+        "//proto:hmac_prf_py_pb2",
+        "//proto:tink_py_pb2",
+    ],
+)

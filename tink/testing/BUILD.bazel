@@ -1,0 +1,101 @@
+load("@rules_python//python:defs.bzl", "py_library")
+load("@tink_py_pip_deps//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+py_library(
+    name = "helper",
+    srcs = ["helper.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//tink/aead",
+        "//tink/core",
+        "//tink/daead",
+        "//tink/hybrid",
+        "//tink/mac",
+        "//tink/prf",
+        "//proto:tink_py_pb2",
+        "//tink/signature",
+    ],
+)
+
+py_test(
+    name = "helper_test",
+    srcs = ["helper_test.py"],
+    # This is used to check Tink Python testdata path.
+    data = ["//testdata:credentials"],
+    srcs_version = "PY3",
+    deps = [
+        ":helper",
+        requirement("absl-py"),
+        "//tink/core",
+    ],
+)
+
+py_library(
+    name = "bytes_io",
+    srcs = ["bytes_io.py"],
+    srcs_version = "PY3",
+)
+
+py_test(
+    name = "bytes_io_test",
+    srcs = ["bytes_io_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":bytes_io",
+        requirement("absl-py"),
+    ],
+)
+
+py_library(
+    name = "keyset_builder",
+    testonly = 1,
+    srcs = [
+        "keyset_builder.py",
+    ],
+    deps = [
+        "//proto:tink_py_pb2",
+        "@tink_py//tink:cleartext_keyset_handle",
+        "@tink_py//tink:tink_python",
+    ],
+)
+
+py_test(
+    name = "keyset_builder_test",
+    srcs = ["keyset_builder_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":keyset_builder",
+        requirement("absl-py"),
+        "//proto:tink_py_pb2",
+        "@tink_py//tink:tink_python",
+        "@tink_py//tink/aead",
+        "@tink_py//tink/hybrid",
+    ],
+)
+
+py_library(
+    name = "fake_kms",
+    testonly = 1,
+    srcs = ["fake_kms.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//tink/cc/pybind:tink_bindings",
+    ],
+)
+
+py_test(
+    name = "fake_kms_test",
+    srcs = ["fake_kms_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":fake_kms",
+        requirement("absl-py"),
+        "//tink:tink_python",
+        "//tink/aead",
+    ],
+)

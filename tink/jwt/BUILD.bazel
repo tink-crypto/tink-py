@@ -1,0 +1,362 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@tink_py_pip_deps//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//:__subpackages__"])
+
+licenses(["notice"])
+
+py_library(
+    name = "jwt",
+    srcs = ["__init__.py"],
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":_jwk_set_converter",
+        ":_jwt_error",
+        ":_jwt_hmac_key_manager",
+        ":_jwt_key_templates",
+        ":_jwt_mac",
+        ":_jwt_mac_wrapper",
+        ":_jwt_public_key_sign",
+        ":_jwt_public_key_verify",
+        ":_jwt_signature_key_manager",
+        ":_jwt_signature_wrappers",
+        ":_jwt_validator",
+        ":_raw_jwt",
+        ":_verified_jwt",
+    ],
+)
+
+py_library(
+    name = "_raw_jwt",
+    srcs = ["_raw_jwt.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_json_util",
+        ":_jwt_error",
+    ],
+)
+
+py_test(
+    name = "_raw_jwt_test",
+    srcs = ["_raw_jwt_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":jwt",
+        requirement("absl-py"),
+    ],
+)
+
+py_library(
+    name = "_verified_jwt",
+    srcs = ["_verified_jwt.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_raw_jwt",
+        "//tink/core",
+    ],
+)
+
+py_test(
+    name = "_verified_jwt_test",
+    srcs = ["_verified_jwt_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":jwt",
+        requirement("absl-py"),
+    ],
+)
+
+py_library(
+    name = "_jwt_validator",
+    srcs = ["_jwt_validator.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_jwt_error",
+        ":_raw_jwt",
+    ],
+)
+
+py_test(
+    name = "_jwt_validator_test",
+    srcs = ["_jwt_validator_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_jwt_validator",
+        ":jwt",
+        requirement("absl-py"),
+    ],
+)
+
+py_library(
+    name = "_jwt_key_templates",
+    srcs = ["_jwt_key_templates.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//tink:tink_python",
+        "//tink/internal:big_integer_util",
+        "//proto:jwt_ecdsa_py_pb2",
+        "//proto:jwt_hmac_py_pb2",
+        "//proto:jwt_rsa_ssa_pkcs1_py_pb2",
+        "//proto:jwt_rsa_ssa_pss_py_pb2",
+        "//proto:tink_py_pb2",
+    ],
+)
+
+py_test(
+    name = "_jwt_key_templates_test",
+    srcs = ["_jwt_key_templates_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":jwt",
+        requirement("absl-py"),
+    ],
+)
+
+py_library(
+    name = "_jwt_error",
+    srcs = ["_jwt_error.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//tink/core",
+    ],
+)
+
+py_library(
+    name = "_json_util",
+    srcs = ["_json_util.py"],
+    srcs_version = "PY3",
+    deps = [":_jwt_error"],
+)
+
+py_test(
+    name = "_json_util_test",
+    srcs = ["_json_util_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":_json_util",
+        ":_jwt_error",
+        requirement("absl-py"),
+    ],
+)
+
+py_library(
+    name = "_jwt_format",
+    srcs = ["_jwt_format.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_json_util",
+        ":_jwt_error",
+        ":_raw_jwt",
+        "//proto:tink_py_pb2",
+    ],
+)
+
+py_test(
+    name = "_jwt_format_test",
+    srcs = ["_jwt_format_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":_json_util",
+        ":_jwt_error",
+        ":_jwt_format",
+        ":_raw_jwt",
+        "//proto:tink_py_pb2",
+        requirement("absl-py"),
+    ],
+)
+
+py_library(
+    name = "_jwt_mac",
+    srcs = ["_jwt_mac.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_jwt_validator",
+        ":_raw_jwt",
+        ":_verified_jwt",
+    ],
+)
+
+py_library(
+    name = "_jwt_public_key_sign",
+    srcs = ["_jwt_public_key_sign.py"],
+    srcs_version = "PY3",
+    deps = [":_raw_jwt"],
+)
+
+py_library(
+    name = "_jwt_public_key_verify",
+    srcs = ["_jwt_public_key_verify.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_jwt_validator",
+        ":_verified_jwt",
+    ],
+)
+
+py_library(
+    name = "_jwt_hmac_key_manager",
+    srcs = ["_jwt_hmac_key_manager.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_json_util",
+        ":_jwt_error",
+        ":_jwt_format",
+        ":_jwt_mac",
+        ":_jwt_validator",
+        ":_raw_jwt",
+        ":_verified_jwt",
+        "//tink/cc/pybind:tink_bindings",
+        "//tink/core",
+        "//proto:common_py_pb2",
+        "//proto:jwt_hmac_py_pb2",
+        "//proto:tink_py_pb2",
+    ],
+)
+
+py_test(
+    name = "_jwt_hmac_key_manager_test",
+    srcs = ["_jwt_hmac_key_manager_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":_jwt_format",
+        ":_jwt_hmac_key_manager",
+        ":_jwt_mac",
+        ":jwt",
+        requirement("absl-py"),
+        "//tink:tink_python",
+        "//proto:jwt_hmac_py_pb2",
+    ],
+)
+
+py_library(
+    name = "_jwt_mac_wrapper",
+    srcs = ["_jwt_mac_wrapper.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_jwt_error",
+        ":_jwt_format",
+        ":_jwt_mac",
+        ":_jwt_validator",
+        ":_raw_jwt",
+        ":_verified_jwt",
+        "//tink/core",
+        "//proto:tink_py_pb2",
+    ],
+)
+
+py_test(
+    name = "_jwt_mac_wrapper_test",
+    srcs = ["_jwt_mac_wrapper_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":_json_util",
+        ":_jwt_format",
+        ":jwt",
+        "//proto:jwt_hmac_py_pb2",
+        "//proto:tink_py_pb2",
+        requirement("absl-py"),
+        "//tink:cleartext_keyset_handle",
+        "//tink:tink_python",
+        "//tink/testing:keyset_builder",
+    ],
+)
+
+py_library(
+    name = "_jwt_signature_key_manager",
+    srcs = ["_jwt_signature_key_manager.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_json_util",
+        ":_jwt_error",
+        ":_jwt_format",
+        ":_jwt_public_key_sign",
+        ":_jwt_public_key_verify",
+        ":_jwt_validator",
+        ":_raw_jwt",
+        ":_verified_jwt",
+        "//tink/cc/pybind:tink_bindings",
+        "//tink/core",
+        "//proto:jwt_ecdsa_py_pb2",
+        "//proto:tink_py_pb2",
+    ],
+)
+
+py_test(
+    name = "_jwt_signature_key_manager_test",
+    srcs = ["_jwt_signature_key_manager_test.py"],
+    deps = [
+        ":_jwt_format",
+        ":_jwt_signature_key_manager",
+        ":_jwt_signature_wrappers",
+        ":jwt",
+        "//proto:jwt_ecdsa_py_pb2",
+        "//proto:tink_py_pb2",
+        requirement("absl-py"),
+        "//tink:tink_python",
+    ],
+)
+
+py_library(
+    name = "_jwt_signature_wrappers",
+    srcs = ["_jwt_signature_wrappers.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_jwt_error",
+        ":_jwt_format",
+        ":_jwt_public_key_sign",
+        ":_jwt_public_key_verify",
+        ":_jwt_validator",
+        ":_raw_jwt",
+        ":_verified_jwt",
+        "//tink/core",
+        "//proto:tink_py_pb2",
+    ],
+)
+
+py_test(
+    name = "_jwt_signature_wrappers_test",
+    srcs = ["_jwt_signature_wrappers_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":_json_util",
+        ":_jwt_format",
+        ":jwt",
+        "//proto:jwt_ecdsa_py_pb2",
+        "//proto:jwt_rsa_ssa_pkcs1_py_pb2",
+        "//proto:jwt_rsa_ssa_pss_py_pb2",
+        "//proto:tink_py_pb2",
+        requirement("absl-py"),
+        "//tink:cleartext_keyset_handle",
+        "//tink:tink_python",
+        "//tink/testing:keyset_builder",
+    ],
+)
+
+py_library(
+    name = "_jwk_set_converter",
+    srcs = ["_jwk_set_converter.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//tink:cleartext_keyset_handle",
+        "//tink:tink_python",
+        "//proto:jwt_ecdsa_py_pb2",
+        "//proto:jwt_rsa_ssa_pkcs1_py_pb2",
+        "//proto:jwt_rsa_ssa_pss_py_pb2",
+        "//proto:tink_py_pb2",
+    ],
+)
+
+py_test(
+    name = "_jwk_set_converter_test",
+    srcs = ["_jwk_set_converter_test.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+    deps = [
+        ":jwt",
+        requirement("absl-py"),
+        "//tink:cleartext_keyset_handle",
+        "//tink:tink_python",
+    ],
+)

@@ -1,0 +1,49 @@
+load("@rules_python//python:defs.bzl", "py_test")
+load("@tink_py_pip_deps//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//:__subpackages__"])
+
+py_library(
+    name = "awskms",
+    srcs = ["__init__.py"],
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":_aws_kms_client",
+    ],
+)
+
+py_library(
+    name = "_aws_kms_client",
+    srcs = ["_aws_kms_client.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//tink/aead",
+        "//tink/cc/pybind:tink_bindings",
+        "//tink/core",
+    ],
+)
+
+py_test(
+    name = "_aws_kms_client_test",
+    srcs = ["_aws_kms_client_test.py"],
+    data = ["//testdata:credentials"],
+    srcs_version = "PY3",
+    deps = [
+        ":awskms",
+        "//tink/testing:helper",
+        requirement("absl-py"),
+    ],
+)
+
+py_test(
+    name = "_aws_kms_aead_test",
+    srcs = ["_aws_kms_aead_test.py"],
+    data = ["//testdata:credentials"],
+    srcs_version = "PY3",
+    deps = [
+        ":awskms",
+        "//tink/testing:helper",
+        requirement("absl-py"),
+    ],
+)

@@ -1,0 +1,67 @@
+#!/bin/bash
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+
+# The user may specify TINK_BASE_DIR for setting the base folder where the
+# script should look for the dependencies of tink-py.
+
+set -euo pipefail
+
+# If we are running on Kokoro cd into the repository.
+if [[ -n "${KOKORO_ROOT:-}" ]]; then
+  cd "${KOKORO_ARTIFACTS_DIR}/git/tink_py"
+  use_bazel.sh "$(cat .bazelversion)"
+fi
+
+# Note: When running on the Kokoro CI, we expect these two folders to exist:
+#
+#  ${KOKORO_ARTIFACTS_DIR}/git/tink_cc
+#  ${KOKORO_ARTIFACTS_DIR}/git/tink_cc_awskms
+#  ${KOKORO_ARTIFACTS_DIR}/git/tink_cc_gcpkms
+#  ${KOKORO_ARTIFACTS_DIR}/git/tink_py
+#
+# If this is not the case, we are using this script locally for a manual one-off
+# test (running it from the root of a local copy of the tink-py repository), and
+# so we are going to checkout the dependencies of tink-py from GitHub).
+if [[ (-z "${TINK_BASE_DIR:-}" && -z "${KOKORO_ROOT:-}") \
+      || -n "${KOKORO_ROOT:-}" ]]; then
+  TINK_BASE_DIR="$(pwd)/.."
+  if [[ ! -d "${TINK_BASE_DIR}/tink_cc" ]]; then
+    git clone https://github.com/tink-crypto/tink-cc.git \
+      "${TINK_BASE_DIR}/tink_cc"
+  fi
+  if [[ ! -d "${TINK_BASE_DIR}/tink_cc_awskms" ]]; then
+    git clone https://github.com/tink-crypto/tink-cc-awskms.git \
+      "${TINK_BASE_DIR}/tink_cc_awskms"
+  fi
+  if [[ ! -d "${TINK_BASE_DIR}/tink_cc_gcpkms" ]]; then
+    git clone https://github.com/tink-crypto/tink-cc-gcpkms.git \
+      "${TINK_BASE_DIR}/tink_cc_gcpkms"
+  fi
+fi
+
+echo "Using Tink from ${TINK_BASE_DIR}/tink_cc"
+echo "Using Tink from ${TINK_BASE_DIR}/tink_cc_awskms"
+echo "Using Tink from ${TINK_BASE_DIR}/tink_cc_gcpkms"
+
+# Sourcing required to update callers environment.
+source ./kokoro/testutils/install_python3.sh
+
+cp "WORKSPACE" "WORKSPACE.bak"
+./kokoro/testutils/replace_http_archive_with_local_repository.py \
+  -f "WORKSPACE" \
+  -t "${TINK_BASE_DIR}"
+./kokoro/testutils/run_bazel_tests.sh .
+mv "WORKSPACE.bak" "WORKSPACE"
