@@ -34,11 +34,10 @@ fi
 #  ${KOKORO_ARTIFACTS_DIR}/git/tink_py
 #
 # If this is not the case, we are using this script locally for a manual one-off
-# test (running it from the root of a local copy of the tink-py repository).
-# If the dependencies are not found we are going to get them from GitHub.
-
+# test running it from the root of a local copy of the tink-py repository.
 : "${TINK_BASE_DIR:=$(pwd)/..}"
 
+# If dependencies of tink-py aren't in TINK_BASE_DIR we fetch them from GitHub.
 if [[ ! -d "${TINK_BASE_DIR}/tink_cc" ]]; then
   git clone https://github.com/tink-crypto/tink-cc.git \
     "${TINK_BASE_DIR}/tink_cc"
@@ -60,6 +59,8 @@ source ./kokoro/testutils/install_python3.sh
 source ./kokoro/testutils/install_protoc.sh
 source ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
 
+# testing/helper.py will look for testdata in TINK_SRC_PATH/testdata.
+export TINK_SRC_PATH="$(pwd)"
 # Run Python tests directly so the package is used.
 # We exclude tests in tink/cc/pybind: they are implementation details and may
 # depend on a testonly shared object.
@@ -67,4 +68,5 @@ find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
   | xargs -0 -n1 python3
 
 # Generate release of the pip package and test it
-./tools/distribution/create_release.sh
+# TODO(b/233570181): Add support for creating releases.
+# ./tools/distribution/create_release.sh

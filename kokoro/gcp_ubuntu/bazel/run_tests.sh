@@ -33,23 +33,23 @@ fi
 #  ${KOKORO_ARTIFACTS_DIR}/git/tink_py
 #
 # If this is not the case, we are using this script locally for a manual one-off
-# test (running it from the root of a local copy of the tink-py repository), and
-# so we are going to checkout the dependencies of tink-py from GitHub).
-if [[ (-z "${TINK_BASE_DIR:-}" && -z "${KOKORO_ROOT:-}") \
-      || -n "${KOKORO_ROOT:-}" ]]; then
-  TINK_BASE_DIR="$(pwd)/.."
-  if [[ ! -d "${TINK_BASE_DIR}/tink_cc" ]]; then
-    git clone https://github.com/tink-crypto/tink-cc.git \
-      "${TINK_BASE_DIR}/tink_cc"
-  fi
-  if [[ ! -d "${TINK_BASE_DIR}/tink_cc_awskms" ]]; then
-    git clone https://github.com/tink-crypto/tink-cc-awskms.git \
-      "${TINK_BASE_DIR}/tink_cc_awskms"
-  fi
-  if [[ ! -d "${TINK_BASE_DIR}/tink_cc_gcpkms" ]]; then
-    git clone https://github.com/tink-crypto/tink-cc-gcpkms.git \
-      "${TINK_BASE_DIR}/tink_cc_gcpkms"
-  fi
+# test running it from the root of a local copy of the tink-py repository.
+: "${TINK_BASE_DIR:=$(pwd)/..}"
+
+# If dependencies of tink-py aren't in TINK_BASE_DIR we fetch them from GitHub.
+if [[ ! -d "${TINK_BASE_DIR}/tink_cc" ]]; then
+  git clone https://github.com/tink-crypto/tink-cc.git \
+    "${TINK_BASE_DIR}/tink_cc"
+fi
+
+if [[ ! -d "${TINK_BASE_DIR}/tink_cc_awskms" ]]; then
+  git clone https://github.com/tink-crypto/tink-cc-awskms.git \
+    "${TINK_BASE_DIR}/tink_cc_awskms"
+fi
+
+if [[ ! -d "${TINK_BASE_DIR}/tink_cc_gcpkms" ]]; then
+  git clone https://github.com/tink-crypto/tink-cc-gcpkms.git \
+    "${TINK_BASE_DIR}/tink_cc_gcpkms"
 fi
 
 echo "Using Tink from ${TINK_BASE_DIR}/tink_cc"
@@ -58,6 +58,7 @@ echo "Using Tink from ${TINK_BASE_DIR}/tink_cc_gcpkms"
 
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_python3.sh
+./kokoro/testutils/copy_credentials.sh "testdata"
 
 cp "WORKSPACE" "WORKSPACE.bak"
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \

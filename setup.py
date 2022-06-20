@@ -14,12 +14,15 @@
 # ==============================================================================
 """Setup for the tink-py package with pip."""
 from distutils import spawn
+
 import glob
 import os
 import posixpath
 import shutil
 import subprocess
 import textwrap
+
+from typing import List
 
 import setuptools
 from setuptools.command import build_ext
@@ -78,7 +81,7 @@ def _generate_proto(protoc: str, source: str) -> None:
   subprocess.run(args=protoc_args, check=True)
 
 
-def _parse_requirements(requirements_filename: str) -> list[str]:
+def _parse_requirements(requirements_filename: str) -> List[str]:
   """Parses requirements from the given file."""
   with open(os.path.join(_PROJECT_BASE_DIR, requirements_filename)) as f:
     return [
@@ -136,7 +139,7 @@ def _patch_workspace(workspace_content: str) -> str:
 
 
 def _patch_http_archive_with_tagged_version(workspace_content: str,
-                                            tagged_versions: list[str]) -> str:
+                                            tagged_versions: List[str]) -> str:
   """Replaces the archive from master/main to versioned."""
   if len(tagged_versions) != 3:
     raise ValueError(
