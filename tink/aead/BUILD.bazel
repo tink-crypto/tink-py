@@ -45,13 +45,13 @@ py_test(
         requirement("absl-py"),
         "//tink:tink_python",
         "//tink/core",
-        "//proto:aes_ctr_hmac_aead_py_pb2",
-        "//proto:aes_eax_py_pb2",
-        "//proto:aes_gcm_py_pb2",
-        "//proto:aes_gcm_siv_py_pb2",
-        "//proto:common_py_pb2",
-        "//proto:tink_py_pb2",
-        "//proto:xchacha20_poly1305_py_pb2",
+        "//tink/proto:aes_ctr_hmac_aead_py_pb2",
+        "//tink/proto:aes_eax_py_pb2",
+        "//tink/proto:aes_gcm_py_pb2",
+        "//tink/proto:aes_gcm_siv_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:tink_py_pb2",
+        "//tink/proto:xchacha20_poly1305_py_pb2",
     ],
 )
 
@@ -74,7 +74,7 @@ py_test(
         ":aead",
         requirement("absl-py"),
         "//tink:tink_python",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
         "//tink/testing:keyset_builder",
     ],
 )
@@ -84,14 +84,14 @@ py_library(
     srcs = ["_aead_key_templates.py"],
     srcs_version = "PY3",
     deps = [
-        "//proto:aes_ctr_hmac_aead_py_pb2",
-        "//proto:aes_eax_py_pb2",
-        "//proto:aes_gcm_py_pb2",
-        "//proto:aes_gcm_siv_py_pb2",
-        "//proto:common_py_pb2",
-        "//proto:kms_aead_py_pb2",
-        "//proto:kms_envelope_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:aes_ctr_hmac_aead_py_pb2",
+        "//tink/proto:aes_eax_py_pb2",
+        "//tink/proto:aes_gcm_py_pb2",
+        "//tink/proto:aes_gcm_siv_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:kms_aead_py_pb2",
+        "//tink/proto:kms_envelope_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -102,14 +102,14 @@ py_test(
     deps = [
         ":aead",
         requirement("absl-py"),
-        "//proto:aes_ctr_hmac_aead_py_pb2",
-        "//proto:aes_eax_py_pb2",
-        "//proto:aes_gcm_py_pb2",
-        "//proto:aes_gcm_siv_py_pb2",
-        "//proto:common_py_pb2",
-        "//proto:kms_aead_py_pb2",
-        "//proto:kms_envelope_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:aes_ctr_hmac_aead_py_pb2",
+        "//tink/proto:aes_eax_py_pb2",
+        "//tink/proto:aes_gcm_py_pb2",
+        "//tink/proto:aes_gcm_siv_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:kms_aead_py_pb2",
+        "//tink/proto:kms_envelope_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -120,7 +120,7 @@ py_library(
     deps = [
         ":_aead",
         "//tink/core",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -133,6 +133,6 @@ py_test(
         requirement("absl-py"),
         "//tink:tink_python",
         "//tink/core",
-        "//proto:aes_gcm_py_pb2",
+        "//tink/proto:aes_gcm_py_pb2",
     ],
 )

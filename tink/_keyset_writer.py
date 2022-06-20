@@ -18,7 +18,7 @@ import abc
 from typing import BinaryIO, TextIO
 
 from google.protobuf import json_format
-from proto import tink_pb2
+from tink.proto import tink_pb2
 from tink import core
 
 

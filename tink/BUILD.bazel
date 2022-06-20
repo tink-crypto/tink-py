@@ -37,7 +37,7 @@ py_library(
         requirement("protobuf"),
         "//tink/aead",
         "//tink/core",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -53,7 +53,7 @@ py_test(
         "//tink/core",
         "//tink/hybrid",
         "//tink/mac",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
         "//tink/testing:helper",
     ],
 )
@@ -65,7 +65,7 @@ py_library(
     deps = [
         requirement("protobuf"),
         "//tink/core",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -77,7 +77,7 @@ py_test(
         ":tink_python",
         requirement("absl-py"),
         "//tink/core",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -88,7 +88,7 @@ py_library(
     deps = [
         requirement("protobuf"),
         "//tink/core",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -100,7 +100,7 @@ py_test(
         ":tink_python",
         requirement("absl-py"),
         "//tink/core",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -165,7 +165,7 @@ py_library(
     visibility = ["//visibility:public"],
     deps = [
         ":tink_python",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 

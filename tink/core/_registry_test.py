@@ -17,7 +17,7 @@
 from typing import cast, Mapping, Type, TypeVar
 from absl.testing import absltest
 
-from proto import tink_pb2
+from tink.proto import tink_pb2
 
 from tink import aead
 from tink import core

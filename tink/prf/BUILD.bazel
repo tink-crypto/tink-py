@@ -44,10 +44,10 @@ py_test(
         requirement("absl-py"),
         "//tink:tink_python",
         "//tink/core",
-        "//proto:common_py_pb2",
-        "//proto:hkdf_prf_py_pb2",
-        "//proto:hmac_prf_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:hkdf_prf_py_pb2",
+        "//tink/proto:hmac_prf_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -80,10 +80,10 @@ py_library(
     srcs = ["_prf_key_templates.py"],
     srcs_version = "PY3",
     deps = [
-        "//proto:aes_cmac_prf_py_pb2",
-        "//proto:common_py_pb2",
-        "//proto:hkdf_prf_py_pb2",
-        "//proto:hmac_prf_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:aes_cmac_prf_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:hkdf_prf_py_pb2",
+        "//tink/proto:hmac_prf_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )

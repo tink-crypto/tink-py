@@ -20,7 +20,7 @@ should be restricted. Users can read encrypted keysets using
 tink.read_keyset_handle.
 """
 
-from proto import tink_pb2
+from tink.proto import tink_pb2
 import tink
 
 

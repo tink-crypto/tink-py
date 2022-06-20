@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 """Pre-generated JWT KeyTemplate."""
 
-from proto import jwt_ecdsa_pb2
-from proto import jwt_hmac_pb2
-from proto import jwt_rsa_ssa_pkcs1_pb2
-from proto import jwt_rsa_ssa_pss_pb2
-from proto import tink_pb2
+from tink.proto import jwt_ecdsa_pb2
+from tink.proto import jwt_hmac_pb2
+from tink.proto import jwt_rsa_ssa_pkcs1_pb2
+from tink.proto import jwt_rsa_ssa_pss_pb2
+from tink.proto import tink_pb2
 from tink.internal import big_integer_util
 
 

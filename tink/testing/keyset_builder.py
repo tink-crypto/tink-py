@@ -15,7 +15,7 @@
 
 import io
 import random
-from proto import tink_pb2
+from tink.proto import tink_pb2
 import tink
 from tink import cleartext_keyset_handle
 

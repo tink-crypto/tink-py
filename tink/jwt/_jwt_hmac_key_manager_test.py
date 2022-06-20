@@ -21,8 +21,8 @@ from typing import cast, Any
 from absl.testing import absltest
 from absl.testing import parameterized
 
-from proto import jwt_hmac_pb2
-from proto import tink_pb2
+from tink.proto import jwt_hmac_pb2
+from tink.proto import tink_pb2
 import tink
 from tink import jwt
 from tink.cc.pybind import tink_bindings

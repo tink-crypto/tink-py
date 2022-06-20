@@ -16,9 +16,9 @@
 from absl.testing import absltest
 from absl.testing import parameterized
 
-from proto import common_pb2
-from proto import ecdsa_pb2
-from proto import tink_pb2
+from tink.proto import common_pb2
+from tink.proto import ecdsa_pb2
+from tink.proto import tink_pb2
 import tink
 from tink import core
 from tink import signature

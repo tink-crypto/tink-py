@@ -16,7 +16,7 @@
 import struct
 from absl.testing import absltest
 
-from proto import aes_gcm_pb2
+from tink.proto import aes_gcm_pb2
 import tink
 from tink import aead
 from tink import core

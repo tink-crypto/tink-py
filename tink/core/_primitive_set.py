@@ -17,7 +17,7 @@
 import collections
 from typing import Generic, List, Type, TypeVar
 
-from proto import tink_pb2
+from tink.proto import tink_pb2
 from tink.core import _crypto_format
 from tink.core import _tink_error
 

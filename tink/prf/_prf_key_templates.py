@@ -20,11 +20,11 @@ aes_eax_pb2.AesEaxKey, one can do:
 handle = keyset_handle.KeysetHandle(aead_key_templates.AES128_EAX).
 """
 
-from proto import aes_cmac_prf_pb2
-from proto import common_pb2
-from proto import hkdf_prf_pb2
-from proto import hmac_prf_pb2
-from proto import tink_pb2
+from tink.proto import aes_cmac_prf_pb2
+from tink.proto import common_pb2
+from tink.proto import hkdf_prf_pb2
+from tink.proto import hmac_prf_pb2
+from tink.proto import tink_pb2
 
 _AES_CMAC_PRF_KEY_TYPE_URL = (
     'type.googleapis.com/google.crypto.tink.AesCmacPrfKey')

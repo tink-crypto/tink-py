@@ -95,11 +95,11 @@ py_library(
     deps = [
         "//tink:tink_python",
         "//tink/internal:big_integer_util",
-        "//proto:jwt_ecdsa_py_pb2",
-        "//proto:jwt_hmac_py_pb2",
-        "//proto:jwt_rsa_ssa_pkcs1_py_pb2",
-        "//proto:jwt_rsa_ssa_pss_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:jwt_ecdsa_py_pb2",
+        "//tink/proto:jwt_hmac_py_pb2",
+        "//tink/proto:jwt_rsa_ssa_pkcs1_py_pb2",
+        "//tink/proto:jwt_rsa_ssa_pss_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -148,7 +148,7 @@ py_library(
         ":_json_util",
         ":_jwt_error",
         ":_raw_jwt",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -161,7 +161,7 @@ py_test(
         ":_jwt_error",
         ":_jwt_format",
         ":_raw_jwt",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
         requirement("absl-py"),
     ],
 )
@@ -208,9 +208,9 @@ py_library(
         ":_verified_jwt",
         "//tink/cc/pybind:tink_bindings",
         "//tink/core",
-        "//proto:common_py_pb2",
-        "//proto:jwt_hmac_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:jwt_hmac_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -225,7 +225,7 @@ py_test(
         ":jwt",
         requirement("absl-py"),
         "//tink:tink_python",
-        "//proto:jwt_hmac_py_pb2",
+        "//tink/proto:jwt_hmac_py_pb2",
     ],
 )
 
@@ -241,7 +241,7 @@ py_library(
         ":_raw_jwt",
         ":_verified_jwt",
         "//tink/core",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -253,8 +253,8 @@ py_test(
         ":_json_util",
         ":_jwt_format",
         ":jwt",
-        "//proto:jwt_hmac_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:jwt_hmac_py_pb2",
+        "//tink/proto:tink_py_pb2",
         requirement("absl-py"),
         "//tink:cleartext_keyset_handle",
         "//tink:tink_python",
@@ -277,8 +277,8 @@ py_library(
         ":_verified_jwt",
         "//tink/cc/pybind:tink_bindings",
         "//tink/core",
-        "//proto:jwt_ecdsa_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:jwt_ecdsa_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -290,8 +290,8 @@ py_test(
         ":_jwt_signature_key_manager",
         ":_jwt_signature_wrappers",
         ":jwt",
-        "//proto:jwt_ecdsa_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:jwt_ecdsa_py_pb2",
+        "//tink/proto:tink_py_pb2",
         requirement("absl-py"),
         "//tink:tink_python",
     ],
@@ -310,7 +310,7 @@ py_library(
         ":_raw_jwt",
         ":_verified_jwt",
         "//tink/core",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -323,10 +323,10 @@ py_test(
         ":_json_util",
         ":_jwt_format",
         ":jwt",
-        "//proto:jwt_ecdsa_py_pb2",
-        "//proto:jwt_rsa_ssa_pkcs1_py_pb2",
-        "//proto:jwt_rsa_ssa_pss_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:jwt_ecdsa_py_pb2",
+        "//tink/proto:jwt_rsa_ssa_pkcs1_py_pb2",
+        "//tink/proto:jwt_rsa_ssa_pss_py_pb2",
+        "//tink/proto:tink_py_pb2",
         requirement("absl-py"),
         "//tink:cleartext_keyset_handle",
         "//tink:tink_python",
@@ -341,10 +341,10 @@ py_library(
     deps = [
         "//tink:cleartext_keyset_handle",
         "//tink:tink_python",
-        "//proto:jwt_ecdsa_py_pb2",
-        "//proto:jwt_rsa_ssa_pkcs1_py_pb2",
-        "//proto:jwt_rsa_ssa_pss_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:jwt_ecdsa_py_pb2",
+        "//tink/proto:jwt_rsa_ssa_pkcs1_py_pb2",
+        "//tink/proto:jwt_rsa_ssa_pss_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 

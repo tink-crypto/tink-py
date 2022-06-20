@@ -22,10 +22,10 @@ handle = keyset_handle.KeysetHandle(mac_key_templates.HMAC_SHA256_128BITTAG).
 
 import warnings
 
-from proto import common_pb2
-from proto import ecies_aead_hkdf_pb2
-from proto import hpke_pb2
-from proto import tink_pb2
+from tink.proto import common_pb2
+from tink.proto import ecies_aead_hkdf_pb2
+from tink.proto import hpke_pb2
+from tink.proto import tink_pb2
 from tink import aead
 
 

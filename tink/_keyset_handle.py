@@ -18,7 +18,7 @@ import random
 from typing import Type, TypeVar
 
 from google.protobuf import message
-from proto import tink_pb2
+from tink.proto import tink_pb2
 from tink import _keyset_reader
 from tink import _keyset_writer
 from tink import aead

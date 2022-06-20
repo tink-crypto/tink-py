@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,26 +18,25 @@ syntax = "proto3";
 
 package google.crypto.tink;
 
-import "proto/common.proto";
+import "tink/proto/common.proto";
 
 option java_package = "com.google.crypto.tink.proto";
 option java_multiple_files = true;
-option go_package = "github.com/google/tink/proto/hmac_go_proto";
+option go_package = "github.com/google/tink/proto/hmac_prf_go_proto";
 
-message HmacParams {
+message HmacPrfParams {
   HashType hash = 1;  // HashType is an enum.
-  uint32 tag_size = 2;
 }
 
-// key_type: type.googleapis.com/google.crypto.tink.HmacKey
-message HmacKey {
+// key_type: type.googleapis.com/google.crypto.tink.HmacPrfKey
+message HmacPrfKey {
   uint32 version = 1;
-  HmacParams params = 2;
+  HmacPrfParams params = 2;
   bytes key_value = 3;
 }
 
-message HmacKeyFormat {
-  HmacParams params = 1;
+message HmacPrfKeyFormat {
+  HmacPrfParams params = 1;
   uint32 key_size = 2;
   uint32 version = 3;
 }

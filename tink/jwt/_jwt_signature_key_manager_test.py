@@ -20,8 +20,8 @@ from typing import cast
 from absl.testing import absltest
 from absl.testing import parameterized
 
-from proto import jwt_ecdsa_pb2
-from proto import tink_pb2
+from tink.proto import jwt_ecdsa_pb2
+from tink.proto import tink_pb2
 import tink
 from tink import jwt
 from tink.jwt import _jwt_format

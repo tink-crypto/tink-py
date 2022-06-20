@@ -25,10 +25,10 @@ handle = keyset_handle.KeysetHandle(
 
 import warnings
 
-from proto import aes_ctr_hmac_streaming_pb2
-from proto import aes_gcm_hkdf_streaming_pb2
-from proto import common_pb2
-from proto import tink_pb2
+from tink.proto import aes_ctr_hmac_streaming_pb2
+from tink.proto import aes_gcm_hkdf_streaming_pb2
+from tink.proto import common_pb2
+from tink.proto import tink_pb2
 
 _AES_GCM_HKDF_STREAMING_KEY_TYPE_URL = (
     'type.googleapis.com/google.crypto.tink.AesGcmHkdfStreamingKey')

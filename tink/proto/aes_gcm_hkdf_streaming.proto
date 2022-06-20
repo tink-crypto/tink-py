@@ -14,33 +14,33 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+// Definitions for streaming encryption using AES-GCM
+// with HKDF as key derivation function.
 syntax = "proto3";
 
 package google.crypto.tink;
 
-import "proto/common.proto";
-import "proto/hmac.proto";
+import "tink/proto/common.proto";
 
 option java_package = "com.google.crypto.tink.proto";
 option java_multiple_files = true;
-option go_package = "github.com/google/tink/proto/aes_ctr_hmac_streaming_go_proto";
+option go_package = "github.com/google/tink/proto/aes_gcm_hkdf_streaming_go_proto";
 
-message AesCtrHmacStreamingParams {
+message AesGcmHkdfStreamingParams {
   uint32 ciphertext_segment_size = 1;
-  uint32 derived_key_size = 2;  // size of AES-CTR keys derived for each segment
-  HashType hkdf_hash_type = 3;  // hash function for key derivation via HKDF
-  HmacParams hmac_params = 4;   // params for authentication tags
+  uint32 derived_key_size = 2;  // size of AES-GCM keys derived for each segment
+  HashType hkdf_hash_type = 3;
 }
 
-message AesCtrHmacStreamingKeyFormat {
+message AesGcmHkdfStreamingKeyFormat {
   uint32 version = 3;
-  AesCtrHmacStreamingParams params = 1;
+  AesGcmHkdfStreamingParams params = 1;
   uint32 key_size = 2;  // size of the main key (aka. "ikm", input key material)
 }
 
-// key_type: type.googleapis.com/google.crypto.tink.AesCtrHmacStreamingKey
-message AesCtrHmacStreamingKey {
+// key_type: type.googleapis.com/google.crypto.tink.AesGcmHkdfStreamingKey
+message AesGcmHkdfStreamingKey {
   uint32 version = 1;
-  AesCtrHmacStreamingParams params = 2;
-  bytes key_value = 3;  // the main key, aka. "ikm", input key material
+  AesGcmHkdfStreamingParams params = 2;
+  bytes key_value = 3;
 }

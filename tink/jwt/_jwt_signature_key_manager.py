@@ -15,10 +15,10 @@
 
 from typing import Any, Optional, Type, Tuple, Callable
 
-from proto import jwt_ecdsa_pb2
-from proto import jwt_rsa_ssa_pkcs1_pb2
-from proto import jwt_rsa_ssa_pss_pb2
-from proto import tink_pb2
+from tink.proto import jwt_ecdsa_pb2
+from tink.proto import jwt_rsa_ssa_pkcs1_pb2
+from tink.proto import jwt_rsa_ssa_pss_pb2
+from tink.proto import tink_pb2
 from tink import core
 from tink.cc.pybind import tink_bindings
 from tink.jwt import _json_util

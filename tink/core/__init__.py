@@ -14,7 +14,7 @@
 
 """Core package."""
 
-from proto import tink_pb2
+from tink.proto import tink_pb2
 from tink.core import _crypto_format
 from tink.core import _key_manager
 from tink.core import _primitive_set

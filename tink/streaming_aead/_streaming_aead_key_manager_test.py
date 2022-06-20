@@ -17,10 +17,10 @@ import io
 
 from absl.testing import absltest
 from absl.testing import parameterized
-from proto import aes_ctr_hmac_streaming_pb2
-from proto import aes_gcm_hkdf_streaming_pb2
-from proto import common_pb2
-from proto import tink_pb2
+from tink.proto import aes_ctr_hmac_streaming_pb2
+from tink.proto import aes_gcm_hkdf_streaming_pb2
+from tink.proto import common_pb2
+from tink.proto import tink_pb2
 from tink import core
 from tink import streaming_aead
 from tink.streaming_aead import _raw_streaming_aead

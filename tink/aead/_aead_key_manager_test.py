@@ -16,13 +16,13 @@
 
 from absl.testing import absltest
 from absl.testing import parameterized
-from proto import aes_ctr_hmac_aead_pb2
-from proto import aes_eax_pb2
-from proto import aes_gcm_pb2
-from proto import aes_gcm_siv_pb2
-from proto import common_pb2
-from proto import tink_pb2
-from proto import xchacha20_poly1305_pb2
+from tink.proto import aes_ctr_hmac_aead_pb2
+from tink.proto import aes_eax_pb2
+from tink.proto import aes_gcm_pb2
+from tink.proto import aes_gcm_siv_pb2
+from tink.proto import common_pb2
+from tink.proto import tink_pb2
+from tink.proto import xchacha20_poly1305_pb2
 import tink
 from tink import aead
 from tink import core

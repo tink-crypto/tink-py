@@ -16,8 +16,8 @@
 
 from absl.testing import absltest
 from absl.testing import parameterized
-from proto import aes_siv_pb2
-from proto import tink_pb2
+from tink.proto import aes_siv_pb2
+from tink.proto import tink_pb2
 from tink import daead
 
 

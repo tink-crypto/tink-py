@@ -18,7 +18,7 @@ import binascii
 import struct
 from typing import Any, Optional, Tuple
 
-from proto import tink_pb2
+from tink.proto import tink_pb2
 from tink.jwt import _json_util
 from tink.jwt import _jwt_error
 from tink.jwt import _raw_jwt

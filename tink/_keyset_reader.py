@@ -18,7 +18,7 @@ import abc
 
 from google.protobuf import json_format
 from google.protobuf import message
-from proto import tink_pb2
+from tink.proto import tink_pb2
 from tink import core
 
 

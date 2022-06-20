@@ -54,10 +54,10 @@ py_test(
         "//tink:tink_python",
         "//tink/aead",
         "//tink/core",
-        "//proto:common_py_pb2",
-        "//proto:ecies_aead_hkdf_py_pb2",
-        "//proto:hpke_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:ecies_aead_hkdf_py_pb2",
+        "//tink/proto:hpke_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -82,7 +82,7 @@ py_test(
         requirement("absl-py"),
         "//tink:cleartext_keyset_handle",
         "//tink:tink_python",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
         "//tink/testing:keyset_builder",
     ],
 )
@@ -94,10 +94,10 @@ py_library(
     deps = [
         "//tink/aead",
         "//tink/daead",
-        "//proto:common_py_pb2",
-        "//proto:ecies_aead_hkdf_py_pb2",
-        "//proto:hpke_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:ecies_aead_hkdf_py_pb2",
+        "//tink/proto:hpke_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -109,9 +109,9 @@ py_test(
         ":hybrid",
         requirement("absl-py"),
         "//tink/aead",
-        "//proto:common_py_pb2",
-        "//proto:ecies_aead_hkdf_py_pb2",
-        "//proto:hpke_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:ecies_aead_hkdf_py_pb2",
+        "//tink/proto:hpke_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )

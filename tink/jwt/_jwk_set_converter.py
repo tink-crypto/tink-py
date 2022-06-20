@@ -19,10 +19,10 @@ import random
 
 from typing import Dict, List, Optional, Union
 
-from proto import jwt_ecdsa_pb2
-from proto import jwt_rsa_ssa_pkcs1_pb2
-from proto import jwt_rsa_ssa_pss_pb2
-from proto import tink_pb2
+from tink.proto import jwt_ecdsa_pb2
+from tink.proto import jwt_rsa_ssa_pkcs1_pb2
+from tink.proto import jwt_rsa_ssa_pss_pb2
+from tink.proto import tink_pb2
 import tink
 from tink import cleartext_keyset_handle
 from tink.jwt import _jwt_format

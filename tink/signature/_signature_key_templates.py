@@ -23,11 +23,11 @@ handle = keyset_handle.KeysetHandle(signature_key_templates.ECDSA_P256);
 
 import warnings
 
-from proto import common_pb2
-from proto import ecdsa_pb2
-from proto import rsa_ssa_pkcs1_pb2
-from proto import rsa_ssa_pss_pb2
-from proto import tink_pb2
+from tink.proto import common_pb2
+from tink.proto import ecdsa_pb2
+from tink.proto import rsa_ssa_pkcs1_pb2
+from tink.proto import rsa_ssa_pss_pb2
+from tink.proto import tink_pb2
 from tink.internal import big_integer_util
 
 

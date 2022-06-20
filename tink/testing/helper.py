@@ -17,7 +17,7 @@
 import os
 from typing import Mapping
 
-from proto import tink_pb2
+from tink.proto import tink_pb2
 from tink import aead
 from tink import core
 from tink import daead

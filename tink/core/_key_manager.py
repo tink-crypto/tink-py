@@ -17,7 +17,7 @@
 import abc
 from typing import Any, Generic, Type, TypeVar
 
-from proto import tink_pb2
+from tink.proto import tink_pb2
 from tink.core import _tink_error
 
 

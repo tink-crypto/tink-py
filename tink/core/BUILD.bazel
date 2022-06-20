@@ -15,7 +15,7 @@ py_library(
         ":_primitive_wrapper",
         ":_registry",
         ":_tink_error",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -25,7 +25,7 @@ py_library(
     srcs_version = "PY3",
     deps = [
         ":_tink_error",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -47,7 +47,7 @@ py_library(
         ":_primitive_set",
         ":_primitive_wrapper",
         ":_tink_error",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -64,7 +64,7 @@ py_test(
         "//tink/mac:_mac_wrapper",
         "//tink/prf",
         "//tink/prf:_prf_set_wrapper",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
         "//tink/testing:helper",
     ],
 )
@@ -75,7 +75,7 @@ py_library(
     srcs_version = "PY3",
     deps = [
         ":_tink_error",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -86,7 +86,7 @@ py_test(
     deps = [
         ":core",
         requirement("absl-py"),
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -97,7 +97,7 @@ py_library(
     deps = [
         ":_crypto_format",
         ":_tink_error",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -110,7 +110,7 @@ py_test(
         requirement("absl-py"),
         "//tink/aead",
         "//tink/mac",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
         "//tink/testing:helper",
     ],
 )

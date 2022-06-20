@@ -102,10 +102,10 @@ py_test(
         "//tink:cleartext_keyset_handle",
         "//tink:tink_python",
         "//tink/core",
-        "//proto:aes_ctr_hmac_streaming_py_pb2",
-        "//proto:aes_gcm_hkdf_streaming_py_pb2",
-        "//proto:common_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:aes_ctr_hmac_streaming_py_pb2",
+        "//tink/proto:aes_gcm_hkdf_streaming_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:tink_py_pb2",
         "//tink/testing:bytes_io",
     ],
 )
@@ -115,10 +115,10 @@ py_library(
     srcs = ["_streaming_aead_key_templates.py"],
     srcs_version = "PY3",
     deps = [
-        "//proto:aes_ctr_hmac_streaming_py_pb2",
-        "//proto:aes_gcm_hkdf_streaming_py_pb2",
-        "//proto:common_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:aes_ctr_hmac_streaming_py_pb2",
+        "//tink/proto:aes_gcm_hkdf_streaming_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 
@@ -130,10 +130,10 @@ py_test(
     deps = [
         ":streaming_aead",
         requirement("absl-py"),
-        "//proto:aes_ctr_hmac_streaming_py_pb2",
-        "//proto:aes_gcm_hkdf_streaming_py_pb2",
-        "//proto:common_py_pb2",
-        "//proto:tink_py_pb2",
+        "//tink/proto:aes_ctr_hmac_streaming_py_pb2",
+        "//tink/proto:aes_gcm_hkdf_streaming_py_pb2",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:tink_py_pb2",
     ],
 )
 

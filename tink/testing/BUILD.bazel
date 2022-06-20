@@ -16,7 +16,7 @@ py_library(
         "//tink/hybrid",
         "//tink/mac",
         "//tink/prf",
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
         "//tink/signature",
     ],
 )
@@ -57,7 +57,7 @@ py_library(
         "keyset_builder.py",
     ],
     deps = [
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
         "@tink_py//tink:cleartext_keyset_handle",
         "@tink_py//tink:tink_python",
     ],
@@ -71,7 +71,7 @@ py_test(
     deps = [
         ":keyset_builder",
         requirement("absl-py"),
-        "//proto:tink_py_pb2",
+        "//tink/proto:tink_py_pb2",
         "@tink_py//tink:tink_python",
         "@tink_py//tink/aead",
         "@tink_py//tink/hybrid",

@@ -15,8 +15,8 @@
 
 from typing import Optional, Type
 
-from proto import jwt_hmac_pb2
-from proto import tink_pb2
+from tink.proto import jwt_hmac_pb2
+from tink.proto import tink_pb2
 from tink import core
 from tink.cc.pybind import tink_bindings
 from tink.jwt import _json_util

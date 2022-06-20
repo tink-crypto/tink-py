@@ -16,7 +16,7 @@
 import io
 
 from absl.testing import absltest
-from proto import tink_pb2
+from tink.proto import tink_pb2
 import tink
 from tink import aead
 from tink import core

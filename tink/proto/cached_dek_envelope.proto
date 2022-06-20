@@ -18,7 +18,7 @@ syntax = "proto3";
 
 package google.crypto.tink;
 
-import "proto/tink.proto";
+import "tink/proto/tink.proto";
 
 option java_multiple_files = true;
 option java_package = "com.google.crypto.tink.proto";

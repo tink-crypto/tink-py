@@ -21,10 +21,10 @@ handle = keyset_handle.KeysetHandle(mac_key_templates.HMAC_SHA256_128BITTAG).
 
 import warnings
 
-from proto import aes_cmac_pb2
-from proto import common_pb2
-from proto import hmac_pb2
-from proto import tink_pb2
+from tink.proto import aes_cmac_pb2
+from tink.proto import common_pb2
+from tink.proto import hmac_pb2
+from tink.proto import tink_pb2
 
 
 def _create_hmac_key_template(

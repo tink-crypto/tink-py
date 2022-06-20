@@ -15,7 +15,7 @@
 
 from typing import Optional, Type
 
-from proto import tink_pb2
+from tink.proto import tink_pb2
 from tink import core
 from tink.jwt import _jwt_error
 from tink.jwt import _jwt_format

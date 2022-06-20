@@ -18,7 +18,7 @@ from typing import Type
 from absl import logging
 
 
-from proto import tink_pb2
+from tink.proto import tink_pb2
 from tink import core
 from tink.mac import _mac
 

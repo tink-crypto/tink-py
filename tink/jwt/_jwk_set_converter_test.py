@@ -16,7 +16,7 @@
 from absl.testing import absltest
 from absl.testing import parameterized
 
-from proto import tink_pb2
+from tink.proto import tink_pb2
 import tink
 from tink import cleartext_keyset_handle
 from tink import jwt
