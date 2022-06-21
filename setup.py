@@ -286,7 +286,7 @@ class BuildBazelExtension(build_ext.build_ext):
 def main() -> None:
   # Generate compiled protocol buffers.
   protoc_command = _get_protoc_command()
-  for proto_file in glob.glob('proto/*.proto'):
+  for proto_file in glob.glob('tink/proto/*.proto'):
     _generate_proto(protoc_command, proto_file)
 
   setuptools.setup(
