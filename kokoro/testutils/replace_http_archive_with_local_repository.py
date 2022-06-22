@@ -25,12 +25,13 @@ For examples:
   ./kokoro/testutils/replace_http_archive_with_local_repository.py \
     -f "cc/WORKSPACE" \
     -t "../../tink"
+
+TODO(b/236795986): Add unit tests for this script.
 """
 
 import argparse
 import textwrap
 
-_TINK_MONOREPO_GITHUB_ARCHIVE_URL = 'https://github.com/google/tink/archive/master.zip'
 _TINK_POLIREPO_GITHUB_ORG_URL = 'https://github.com/tink-crypto'
 
 
@@ -50,52 +51,6 @@ def _replace_http_archive_with_local_repository(workspace_content: str,
       load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
       """)
   workspace_content = workspace_content.replace(http_archive_load, '')
-
-  # TODO(b/234429843): Remove this once we migrate tink-examples to using
-  # tink-py as a dependency instead of tink/python.
-  # Tink C++.
-  tink_cc_before = textwrap.dedent(f"""\
-      http_archive(
-          name = "tink_cc",
-          urls = ["{_TINK_MONOREPO_GITHUB_ARCHIVE_URL}"],
-          strip_prefix = "tink-master/cc",
-      )""")
-  tink_cc_after = textwrap.dedent(f"""\
-      local_repository(
-          name = "tink_cc",
-          path = "{tink_base_path}/cc",
-      )""")
-  workspace_content = workspace_content.replace(tink_cc_before, tink_cc_after)
-
-  # Tink C++ AWS-KMS.
-  tink_cc_awskms_before = textwrap.dedent(f"""\
-      http_archive(
-          name = "tink_cc_awskms",
-          urls = ["{_TINK_MONOREPO_GITHUB_ARCHIVE_URL}"],
-          strip_prefix = "tink-master/cc/integration/awskms",
-      )""")
-  tink_cc_awskms_after = textwrap.dedent(f"""\
-      local_repository(
-          name = "tink_cc_awskms",
-          path = "{tink_base_path}/cc/integration/awskms",
-      )""")
-  workspace_content = workspace_content.replace(tink_cc_awskms_before,
-                                                tink_cc_awskms_after)
-
-  # Tink C++ Cloud KMS.
-  tink_cc_gcpkms_before = textwrap.dedent(f"""\
-      http_archive(
-          name = "tink_cc_gcpkms",
-          urls = ["{_TINK_MONOREPO_GITHUB_ARCHIVE_URL}"],
-          strip_prefix = "tink-master/cc/integration/gcpkms",
-      )""")
-  tink_cc_gcpkms_after = textwrap.dedent(f"""\
-      local_repository(
-          name = "tink_cc_gcpkms",
-          path = "{tink_base_path}/cc/integration/gcpkms",
-      )""")
-  workspace_content = workspace_content.replace(tink_cc_gcpkms_before,
-                                                tink_cc_gcpkms_after)
 
   # Tink C++.
   tink_cc_before = textwrap.dedent(f"""\
@@ -185,19 +140,19 @@ def _replace_http_archive_with_local_repository(workspace_content: str,
                                                 tink_java_awskms_after)
 
   # Tink Python.
-  tink_python_before = textwrap.dedent(f"""\
+  tink_py_before = textwrap.dedent(f"""\
       http_archive(
           name = "tink_py",
-          urls = ["{_TINK_MONOREPO_GITHUB_ARCHIVE_URL}"],
-          strip_prefix = "tink-master/python",
+          urls = ["{_TINK_POLIREPO_GITHUB_ORG_URL}/tink-py/archive/main.zip"],
+          strip_prefix = "tink-py-main",
       )""")
-  tink_python_after = textwrap.dedent(f"""\
+  tink_py_after = textwrap.dedent(f"""\
       local_repository(
           name = "tink_py",
-          path = "{tink_base_path}/python",
+          path = "{tink_base_path}/tink_py",
       )""")
-  workspace_content = workspace_content.replace(tink_python_before,
-                                                tink_python_after)
+  workspace_content = workspace_content.replace(tink_py_before,
+                                                tink_py_after)
 
   return workspace_content
 
