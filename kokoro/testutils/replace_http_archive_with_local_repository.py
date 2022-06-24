@@ -30,6 +30,7 @@ TODO(b/236795986): Add unit tests for this script.
 """
 
 import argparse
+import re
 import textwrap
 
 _TINK_POLIREPO_GITHUB_ORG_URL = 'https://github.com/tink-crypto'
@@ -46,12 +47,6 @@ def _replace_http_archive_with_local_repository(workspace_content: str,
   Returns:
     The modified WORKSPACE file content.
   """
-  # Remove loading of http_archive.
-  http_archive_load = textwrap.dedent("""\
-      load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-      """)
-  workspace_content = workspace_content.replace(http_archive_load, '')
-
   # Tink C++.
   tink_cc_before = textwrap.dedent(f"""\
       http_archive(
@@ -138,7 +133,6 @@ def _replace_http_archive_with_local_repository(workspace_content: str,
       )""")
   workspace_content = workspace_content.replace(tink_java_awskms_before,
                                                 tink_java_awskms_after)
-
   # Tink Python.
   tink_py_before = textwrap.dedent(f"""\
       http_archive(
@@ -153,6 +147,14 @@ def _replace_http_archive_with_local_repository(workspace_content: str,
       )""")
   workspace_content = workspace_content.replace(tink_py_before,
                                                 tink_py_after)
+
+  # Remove loading of http_archive if there are no other http_archive entries
+  # left in workspace_content.
+  if not re.search(r'^[^#]*http_archive\(', workspace_content):
+    http_archive_load = textwrap.dedent("""
+        load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+        """)
+    workspace_content = workspace_content.replace(http_archive_load, '')
 
   return workspace_content
 
