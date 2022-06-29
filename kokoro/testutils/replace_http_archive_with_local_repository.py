@@ -147,6 +147,20 @@ def _replace_http_archive_with_local_repository(workspace_content: str,
       )""")
   workspace_content = workspace_content.replace(tink_py_before,
                                                 tink_py_after)
+  # Tink Go.
+  tink_go_before = textwrap.dedent(f"""\
+      http_archive(
+          name = "tink_go",
+          urls = ["{_TINK_POLIREPO_GITHUB_ORG_URL}/tink-go/archive/main.zip"],
+          strip_prefix = "tink-go-main",
+      )""")
+  tink_go_after = textwrap.dedent(f"""\
+      local_repository(
+          name = "tink_go",
+          path = "{tink_base_path}/tink_go",
+      )""")
+  workspace_content = workspace_content.replace(tink_go_before,
+                                                tink_go_after)
 
   # Remove loading of http_archive if there are no other http_archive entries
   # left in workspace_content.
