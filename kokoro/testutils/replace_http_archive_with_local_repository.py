@@ -164,7 +164,8 @@ def _replace_http_archive_with_local_repository(workspace_content: str,
 
   # Remove loading of http_archive if there are no other http_archive entries
   # left in workspace_content.
-  if not re.search(r'^[^#]*http_archive\(', workspace_content):
+  if not re.search(
+      r'^[^#]*http_archive\(', workspace_content, flags=re.MULTILINE):
     http_archive_load = textwrap.dedent("""
         load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
         """)
