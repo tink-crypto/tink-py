@@ -57,12 +57,6 @@ fi
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_python3.sh
 source ./kokoro/testutils/install_protoc.sh
-source ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
 
-# testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
-export TINK_PYTHON_ROOT_PATH="$(pwd)"
-# Run Python tests directly so the package is used.
-# We exclude tests in tink/cc/pybind: they are implementation details and may
-# depend on a testonly shared object.
-find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
-  | xargs -0 -n1 python3
+# Generate release of the pip package and test it.
+./tools/distribution/create_release.sh
