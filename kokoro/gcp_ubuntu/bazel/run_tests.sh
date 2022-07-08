@@ -36,21 +36,20 @@ fi
 # test running it from the root of a local copy of the tink-py repository.
 : "${TINK_BASE_DIR:=$(pwd)/..}"
 
+readonly DEPENDENCIES=(
+  tink-cc
+  tink-cc-awskms
+  tink-cc-gcpkms
+)
+
 # If dependencies of tink-py aren't in TINK_BASE_DIR we fetch them from GitHub.
-if [[ ! -d "${TINK_BASE_DIR}/tink_cc" ]]; then
-  git clone https://github.com/tink-crypto/tink-cc.git \
-    "${TINK_BASE_DIR}/tink_cc"
-fi
-
-if [[ ! -d "${TINK_BASE_DIR}/tink_cc_awskms" ]]; then
-  git clone https://github.com/tink-crypto/tink-cc-awskms.git \
-    "${TINK_BASE_DIR}/tink_cc_awskms"
-fi
-
-if [[ ! -d "${TINK_BASE_DIR}/tink_cc_gcpkms" ]]; then
-  git clone https://github.com/tink-crypto/tink-cc-gcpkms.git \
-    "${TINK_BASE_DIR}/tink_cc_gcpkms"
-fi
+for dependency in "${DEPENDENCIES[@]}"; do
+  relative_path="$(echo ${dependency} | sed 's~-~_~g')"
+  if [[ ! -d "${TINK_BASE_DIR}/${relative_path}" ]]; then
+    git clone https://github.com/tink-crypto/"${dependency}".git \
+      "${TINK_BASE_DIR}/${relative_path}"
+  fi
+done
 
 echo "Using Tink from ${TINK_BASE_DIR}/tink_cc"
 echo "Using Tink from ${TINK_BASE_DIR}/tink_cc_awskms"
@@ -60,9 +59,19 @@ echo "Using Tink from ${TINK_BASE_DIR}/tink_cc_gcpkms"
 source ./kokoro/testutils/install_python3.sh
 ./kokoro/testutils/copy_credentials.sh "testdata"
 
+TINK_PY_MANUAL_TARGETS=()
+# These tests require valid credentials to access KMS services.
+if [[ -n "${KOKORO_ROOT:-}" ]]; then
+  TINK_PY_MANUAL_TARGETS+=(
+    "//tink/integration/awskms:_aws_kms_aead_test"
+    "//tink/integration/gcpkms:_gcp_kms_aead_test"
+  )
+fi
+readonly TINK_PY_MANUAL_TARGETS
+
 cp "WORKSPACE" "WORKSPACE.bak"
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \
   -f "WORKSPACE" \
   -t "${TINK_BASE_DIR}"
-./kokoro/testutils/run_bazel_tests.sh .
+./kokoro/testutils/run_bazel_tests.sh . "${TINK_PY_MANUAL_TARGETS[@]}"
 mv "WORKSPACE.bak" "WORKSPACE"
