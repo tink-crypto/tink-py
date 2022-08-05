@@ -58,6 +58,16 @@ echo "Using Tink from ${TINK_BASE_DIR}/tink_cc_gcpkms"
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_python3.sh
 source ./kokoro/testutils/install_tink_via_pip.sh "${TINK_BASE_DIR}/tink_py"
+./kokoro/testutils/copy_credentials.sh "examples/testdata"
+
+readonly MANUAL_EXAMPLE_PYTHON_TARGETS=(
+  "//gcs:gcs_envelope_aead_test_package"
+  "//gcs:gcs_envelope_aead_test"
+  "//envelope_aead:envelope_test_package"
+  "//envelope_aead:envelope_test"
+  "//encrypted_keyset:encrypted_keyset_test_package"
+  "//encrypted_keyset:encrypted_keyset_test"
+)
 
 cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
 
@@ -65,6 +75,7 @@ cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
   -f "examples/WORKSPACE" \
   -t "${TINK_BASE_DIR}"
 
-./kokoro/testutils/run_bazel_tests.sh "examples"
+./kokoro/testutils/run_bazel_tests.sh -m "examples" \
+  "${MANUAL_EXAMPLE_PYTHON_TARGETS[@]}"
 
 mv "examples/WORKSPACE.bak" "examples/WORKSPACE"
