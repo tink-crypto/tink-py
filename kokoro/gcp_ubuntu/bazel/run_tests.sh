@@ -57,7 +57,7 @@ echo "Using Tink from ${TINK_BASE_DIR}/tink_cc_gcpkms"
 
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_python3.sh
-./kokoro/testutils/copy_credentials.sh "testdata"
+./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
 TINK_PY_MANUAL_TARGETS=()
 # These tests require valid credentials to access KMS services.

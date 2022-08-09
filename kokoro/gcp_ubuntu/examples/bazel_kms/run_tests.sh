@@ -58,7 +58,7 @@ echo "Using Tink from ${TINK_BASE_DIR}/tink_cc_gcpkms"
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_python3.sh
 source ./kokoro/testutils/install_tink_via_pip.sh "${TINK_BASE_DIR}/tink_py"
-./kokoro/testutils/copy_credentials.sh "examples/testdata"
+./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
 readonly MANUAL_EXAMPLE_PYTHON_TARGETS=(
   "//gcs:gcs_envelope_aead_test_package"

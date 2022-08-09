@@ -53,7 +53,7 @@ if [[ ! -d "${TINK_BASE_DIR}/tink_cc_gcpkms" ]]; then
     "${TINK_BASE_DIR}/tink_cc_gcpkms"
 fi
 
-./kokoro/testutils/copy_credentials.sh "testdata"
+./kokoro/testutils/copy_credentials.sh "testdata" "all"
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_python3.sh
 source ./kokoro/testutils/install_protoc.sh
