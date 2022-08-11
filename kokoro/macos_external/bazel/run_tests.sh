@@ -56,6 +56,8 @@ echo "Using Tink from ${TINK_BASE_DIR}/tink_cc_awskms"
 echo "Using Tink from ${TINK_BASE_DIR}/tink_cc_gcpkms"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
+# Install protobuf pip packages.
+pip3 install protobuf --user
 
 TINK_PY_MANUAL_TARGETS=()
 # These tests require valid credentials to access KMS services.

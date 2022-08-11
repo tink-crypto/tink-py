@@ -58,6 +58,10 @@ fi
 source ./kokoro/testutils/install_protoc.sh
 source ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
 
+# Get root certificates for gRPC
+curl -OLsS https://raw.githubusercontent.com/grpc/grpc/master/etc/roots.pem
+export GRPC_DEFAULT_SSL_ROOTS_FILE_PATH="$(pwd)/roots.pem"
+
 # testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
 export TINK_PYTHON_ROOT_PATH="$(pwd)"
 # Run Python tests directly so the package is used.
