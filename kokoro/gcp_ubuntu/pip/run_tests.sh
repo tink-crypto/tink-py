@@ -26,32 +26,14 @@ if [[ -n "${KOKORO_ROOT:-}" ]]; then
   use_bazel.sh "$(cat .bazelversion)"
 fi
 
-# Note: When running on the Kokoro CI, we expect these two folders to exist:
-#
-#  ${KOKORO_ARTIFACTS_DIR}/git/tink_cc
-#  ${KOKORO_ARTIFACTS_DIR}/git/tink_cc_awskms
-#  ${KOKORO_ARTIFACTS_DIR}/git/tink_cc_gcpkms
-#  ${KOKORO_ARTIFACTS_DIR}/git/tink_py
-#
-# If this is not the case, we are using this script locally for a manual one-off
-# test running it from the root of a local copy of the tink-py repository.
-: "${TINK_BASE_DIR:=$(pwd)/..}"
+: "${TINK_BASE_DIR:=$(cd .. && pwd)}"
 
-# If dependencies of tink-py aren't in TINK_BASE_DIR we fetch them from GitHub.
-if [[ ! -d "${TINK_BASE_DIR}/tink_cc" ]]; then
-  git clone https://github.com/tink-crypto/tink-cc.git \
-    "${TINK_BASE_DIR}/tink_cc"
-fi
-
-if [[ ! -d "${TINK_BASE_DIR}/tink_cc_awskms" ]]; then
-  git clone https://github.com/tink-crypto/tink-cc-awskms.git \
-    "${TINK_BASE_DIR}/tink_cc_awskms"
-fi
-
-if [[ ! -d "${TINK_BASE_DIR}/tink_cc_gcpkms" ]]; then
-  git clone https://github.com/tink-crypto/tink-cc-gcpkms.git \
-    "${TINK_BASE_DIR}/tink_cc_gcpkms"
-fi
+# Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
+# downloaded.
+readonly GITHUB_ORG="https://github.com/tink-crypto"
+./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
+  "${GITHUB_ORG}/tink-cc" "${GITHUB_ORG}/tink-cc-awskms" \
+  "${GITHUB_ORG}/tink-cc-gcpkms"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 # Sourcing required to update callers environment.
