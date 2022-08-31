@@ -22,7 +22,8 @@ set -euo pipefail
 
 # If we are running on Kokoro cd into the repository.
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
-  cd "${KOKORO_ARTIFACTS_DIR}/git/tink_py"
+  TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
+  cd "${TINK_BASE_DIR}/tink_py"
   use_bazel.sh "$(cat .bazelversion)"
 fi
 
