@@ -44,7 +44,7 @@ TINK_PY_MANUAL_TARGETS=()
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
   TINK_PY_MANUAL_TARGETS+=(
     "//tink/integration/awskms:_aws_kms_aead_test"
-    "//tink/integration/gcpkms:_gcp_kms_aead_test"
+    #"//tink/integration/gcpkms:_gcp_kms_aead_test"
   )
 fi
 readonly TINK_PY_MANUAL_TARGETS
