@@ -98,7 +98,7 @@ def _patch_workspace(workspace_content: str) -> str:
   defined in the Bazel workspace. By default, the WORKSPACE file contains
   http_archive rules that contain URLs pointing to archives of the tink-cc,
   tink-cc-awskms and tink-cc-gcpkm GitHub repositories
-  at the latest commit on their master/main branch.
+  at the latest commit on their main branch.
 
   This behavior can be modified via the following environment variables, in
   order of precedence:
@@ -112,11 +112,11 @@ def _patch_workspace(workspace_content: str) -> str:
           ${TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH}/tink_cc_gcpkms
 
     * TINK_PYTHON_SETUPTOOLS_OVERRIDE_TAGGED_VERSIONS
-        Instead of fetching dependencies from the master/main branch fetch
+        Instead of fetching dependencies from the main branch fetch
         archives that correspond with the given tagged versions of tink-cc,
         tink-cc-awskms and tink-cc-gcpkms specified as a list of comma separated
-        values, e.g., "master,1.8.2,2.0.1" means
-        tink-cc@master, tink-cc-awskms@1.8.2, tink-cc-gcpkms@2.0.1.
+        values, e.g., "main,1.8.2,2.0.1" means
+        tink-cc@main, tink-cc-awskms@1.8.2, tink-cc-gcpkms@2.0.1.
 
   Args:
     workspace_content: The original WORKSPACE.
@@ -134,22 +134,22 @@ def _patch_workspace(workspace_content: str) -> str:
         'TINK_PYTHON_SETUPTOOLS_OVERRIDE_TAGGED_VERSIONS'].split(',')
     return _patch_http_archive_with_tagged_version(workspace_content,
                                                    tagged_versions)
-  # Nothing to do, dependencies are fetched from master/main.
+  # Nothing to do, dependencies are fetched from main.
   return workspace_content
 
 
 def _patch_http_archive_with_tagged_version(workspace_content: str,
                                             tagged_versions: List[str]) -> str:
-  """Replaces the archive from master/main to versioned."""
+  """Replaces the archive from main to versioned."""
   if len(tagged_versions) != 3:
     raise ValueError(
         f'Invalid tagged versions for Tink C++ dependencies: {tagged_versions}')
 
   workspace_content = workspace_content.replace(
-      'tink-cc/archive/master.zip',
+      'tink-cc/archive/main.zip',
       f'tink-cc/archive/v{tagged_versions[0]}.zip')
   workspace_content = workspace_content.replace(
-      'strip_prefix = "tink-cc-master"',
+      'strip_prefix = "tink-cc-main"',
       f'strip_prefix = "tink-cc-{tagged_versions[0]}"')
 
   workspace_content = workspace_content.replace(
@@ -203,8 +203,8 @@ def _patch_http_archive_with_local_repo(workspace_content: str,
       name='tink_cc',
       repo_name='tink-cc',
       local_path=f'{base_path}/tink_cc',
-      archive_filename='master.zip',
-      strip_prefix='tink-cc-master')
+      archive_filename='main.zip',
+      strip_prefix='tink-cc-main')
 
   workspace_content = _replace_http_archive_with_local_repo(
       workspace_content=workspace_content,

@@ -2,11 +2,11 @@ workspace(name = "tink_py")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# All the dependencies below are ar HEAD.
+# All the dependencies below are at HEAD.
 http_archive(
     name = "tink_cc",
-    urls = ["https://github.com/tink-crypto/tink-cc/archive/master.zip"],
-    strip_prefix = "tink-cc-master",
+    urls = ["https://github.com/tink-crypto/tink-cc/archive/main.zip"],
+    strip_prefix = "tink-cc-main",
 )
 
 http_archive(
