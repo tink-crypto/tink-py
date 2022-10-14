@@ -22,7 +22,7 @@ set -euo pipefail
 
 readonly DESTINATION_PATH="$1"
 shift 1
-readonly GIT_REPOS="$@"
+readonly GIT_REPOS=("$@")
 
 for git_repo in "${GIT_REPOS[@]}"; do
   repo_folder_name="$(echo ${git_repo##*/} | sed 's#-#_#g')"
