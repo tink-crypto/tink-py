@@ -23,8 +23,7 @@ set -euo pipefail
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
   cd "${TINK_BASE_DIR}/tink_py"
-  chmod +x "${KOKORO_GFILE_DIR}/use_bazel.sh"
-  "${KOKORO_GFILE_DIR}/use_bazel.sh" "$(cat .bazelversion)"
+  use_bazel.sh "$(cat .bazelversion)"
 fi
 
 : "${TINK_BASE_DIR:=$(cd .. && pwd)}"
@@ -36,6 +35,10 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc" "${GITHUB_ORG}/tink-cc-awskms" \
   "${GITHUB_ORG}/tink-cc-gcpkms"
 
+# Sourcing required to update callers environment.
+source ./kokoro/testutils/install_tink_via_pip.sh "${TINK_BASE_DIR}/tink_py"
+# Install requirements for examples.
+pip3 install --user -r examples/requirements.txt -c examples/constraints.in
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
 cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
@@ -43,10 +46,9 @@ cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \
   -f "examples/WORKSPACE" -t "${TINK_BASE_DIR}"
 
-# All manual .*_test targets except *test_package ones.
+# All the manual *test_package targets.
 readonly MANUAL_TARGETS="$(cd examples \
-  && bazel query \
-    'attr(tags, manual, kind(.*_test, ...)) except filter(.*test_package, ...)')"
+  && bazel query 'filter(.*test_package, attr(tags, manual, ...))')"
 IFS=' ' read -a MANUAL_TARGETS_ARRAY \
   <<< "$(tr '\n' ' ' <<< "${MANUAL_TARGETS}")"
 readonly MANUAL_TARGETS_ARRAY

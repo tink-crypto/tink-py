@@ -35,28 +35,27 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc" "${GITHUB_ORG}/tink-cc-awskms" \
   "${GITHUB_ORG}/tink-cc-gcpkms"
 
-# Sourcing required to update callers environment.
-source ./kokoro/testutils/install_tink_via_pip.sh "${TINK_BASE_DIR}/tink_py"
-# Install requirements for examples.
-pip3 install --user -r examples/requirements.txt -c examples/constraints.in
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
-
-readonly MANUAL_EXAMPLE_PYTHON_TARGETS=(
-  "//gcs:gcs_envelope_aead_test_package"
-  "//gcs:gcs_envelope_aead_test"
-  "//envelope_aead:envelope_test_package"
-  "//envelope_aead:envelope_test"
-  "//encrypted_keyset:encrypted_keyset_test_package"
-  "//encrypted_keyset:encrypted_keyset_test"
-)
 
 cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
 
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "examples/WORKSPACE" \
-  -t "${TINK_BASE_DIR}"
+  -f "examples/WORKSPACE" -t "${TINK_BASE_DIR}"
 
-./kokoro/testutils/run_bazel_tests.sh -m "examples" \
-  "${MANUAL_EXAMPLE_PYTHON_TARGETS[@]}"
+# Install protobuf pip packages.
+# TODO(b/253216420): Investigate why these need to be installed instead on
+# MacOS, but not on GCP Ubuntu.
+pip3 install protobuf==3.20.1 --user
+pip3 install google-cloud-storage==2.5.0 --user
+
+# All manual test targets except *test_package ones.
+readonly MANUAL_TARGETS="$(cd examples \
+  && bazel query \
+    'attr(tags, manual, kind(.*_test, ...)) except filter(.*test_package, ...)')"
+IFS=' ' read -a MANUAL_TARGETS_ARRAY \
+  <<< "$(tr '\n' ' ' <<< "${MANUAL_TARGETS}")"
+readonly MANUAL_TARGETS_ARRAY
+
+./kokoro/testutils/run_bazel_tests.sh -m "examples" "${MANUAL_TARGETS_ARRAY[@]}"
 
 mv "examples/WORKSPACE.bak" "examples/WORKSPACE"
