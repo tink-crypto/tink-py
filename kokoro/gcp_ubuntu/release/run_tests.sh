@@ -38,9 +38,6 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc-gcpkms"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
-# Sourcing required to update callers environment.
-source ./kokoro/testutils/install_python3.sh
-source ./kokoro/testutils/install_protoc.sh
 
 # Generate release of the pip package and test it.
 ./tools/distribution/create_release.sh

@@ -36,8 +36,6 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc" "${GITHUB_ORG}/tink-cc-awskms" \
   "${GITHUB_ORG}/tink-cc-gcpkms"
 
-# Sourcing required to update callers environment.
-source ./kokoro/testutils/install_python3.sh
 source ./kokoro/testutils/install_tink_via_pip.sh "${TINK_BASE_DIR}/tink_py"
 # Install requirements for examples.
 pip3 install -r examples/requirements.txt -c examples/constraints.in
@@ -45,8 +43,7 @@ pip3 install -r examples/requirements.txt -c examples/constraints.in
 cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
 
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "examples/WORKSPACE" \
-  -t "${TINK_BASE_DIR}"
+  -f "examples/WORKSPACE" -t "${TINK_BASE_DIR}"
 
 ./kokoro/testutils/run_bazel_tests.sh "examples"
 

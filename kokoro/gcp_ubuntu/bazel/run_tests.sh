@@ -36,8 +36,6 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc" "${GITHUB_ORG}/tink-cc-awskms" \
   "${GITHUB_ORG}/tink-cc-gcpkms"
 
-# Sourcing required to update callers environment.
-source ./kokoro/testutils/install_python3.sh
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
 TINK_PY_MANUAL_TARGETS=()
@@ -52,7 +50,6 @@ readonly TINK_PY_MANUAL_TARGETS
 
 cp "WORKSPACE" "WORKSPACE.bak"
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "WORKSPACE" \
-  -t "${TINK_BASE_DIR}"
+  -f "WORKSPACE" -t "${TINK_BASE_DIR}"
 ./kokoro/testutils/run_bazel_tests.sh . "${TINK_PY_MANUAL_TARGETS[@]}"
 mv "WORKSPACE.bak" "WORKSPACE"

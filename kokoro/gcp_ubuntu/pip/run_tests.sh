@@ -38,9 +38,6 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc-gcpkms"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
-# Sourcing required to update callers environment.
-source ./kokoro/testutils/install_python3.sh
-source ./kokoro/testutils/install_protoc.sh
 source ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
 
 # testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
