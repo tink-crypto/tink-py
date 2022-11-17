@@ -45,7 +45,7 @@ cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
 
 # TODO(b/253216420): Investigate why this needs to be installed instead on
 # MacOS, but not on GCP Ubuntu.
-pip3 install protobuf==3.20.1 --user
+pip3 install protobuf==3.20.3 --user
 
 # All test targets except manual and *test_package ones.
 readonly MANUAL_TARGETS="$(cd examples \

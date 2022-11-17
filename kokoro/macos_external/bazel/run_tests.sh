@@ -38,7 +38,7 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 # Install protobuf pip packages.
-pip3 install protobuf --user
+pip3 install protobuf==3.20.3 --user
 
 TINK_PY_MANUAL_TARGETS=()
 # These tests require valid credentials to access KMS services.

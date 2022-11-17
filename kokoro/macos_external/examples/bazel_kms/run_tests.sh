@@ -46,7 +46,7 @@ cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
 # Install protobuf pip packages.
 # TODO(b/253216420): Investigate why these need to be installed instead on
 # MacOS, but not on GCP Ubuntu.
-pip3 install protobuf==3.20.1 --user
+pip3 install protobuf==3.20.3 --user
 pip3 install google-cloud-storage==2.5.0 --user
 
 # All manual test targets except *test_package ones.
