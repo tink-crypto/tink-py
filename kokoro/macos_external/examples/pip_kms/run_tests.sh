@@ -19,12 +19,16 @@
 
 set -euo pipefail
 
+BAZEL_CMD="bazel"
+if command -v "bazelisk" &> /dev/null; then
+  BAZEL_CMD="bazelisk"
+fi
+readonly BAZEL_CMD
+
 # If we are running on Kokoro cd into the repository.
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
   cd "${TINK_BASE_DIR}/tink_py"
-  chmod +x "${KOKORO_GFILE_DIR}/use_bazel.sh"
-  "${KOKORO_GFILE_DIR}/use_bazel.sh" "$(cat .bazelversion)"
 fi
 
 : "${TINK_BASE_DIR:=$(cd .. && pwd)}"
@@ -49,7 +53,7 @@ cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
 
 # All the manual *test_package targets.
 readonly MANUAL_TARGETS="$(cd examples \
-  && bazel query 'filter(.*test_package, attr(tags, manual, ...))')"
+  && "${BAZEL_CMD}" query 'filter(.*test_package, attr(tags, manual, ...))')"
 IFS=' ' read -a MANUAL_TARGETS_ARRAY \
   <<< "$(tr '\n' ' ' <<< "${MANUAL_TARGETS}")"
 readonly MANUAL_TARGETS_ARRAY

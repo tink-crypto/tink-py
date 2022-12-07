@@ -23,8 +23,6 @@ set -euo pipefail
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
   cd "${TINK_BASE_DIR}/tink_py"
-  chmod +x "${KOKORO_GFILE_DIR}/use_bazel.sh"
-  "${KOKORO_GFILE_DIR}/use_bazel.sh" "$(cat .bazelversion)"
 fi
 
 : "${TINK_BASE_DIR:=$(cd .. && pwd)}"
@@ -52,7 +50,6 @@ readonly TINK_PY_MANUAL_TARGETS
 
 cp "WORKSPACE" "WORKSPACE.bak"
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "WORKSPACE" \
-  -t "${TINK_BASE_DIR}"
+  -f "WORKSPACE" -t "${TINK_BASE_DIR}"
 ./kokoro/testutils/run_bazel_tests.sh . "${TINK_PY_MANUAL_TARGETS[@]}"
 mv "WORKSPACE.bak" "WORKSPACE"
