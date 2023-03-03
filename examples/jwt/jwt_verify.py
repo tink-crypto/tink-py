@@ -15,13 +15,8 @@
 # [START python-jwt-signature-example]
 """A utility for verifying Json Web Tokens (JWT)."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import datetime
 
-# copybara:tink_placeholder(Internal import)
 from absl import app
 from absl import flags
 from absl import logging

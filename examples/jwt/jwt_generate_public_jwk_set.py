@@ -16,11 +16,6 @@
 """A utility for generating the public JWK set from the public keyset.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# copybara:tink_placeholder(Internal import)
 from absl import app
 from absl import flags
 from absl import logging
