@@ -36,6 +36,9 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
+# TODO(b/276277854) It is not clear why this is needed.
+pip3 install google-cloud-kms==2.15.0 --user
+
 TINK_PY_MANUAL_TARGETS=()
 # These tests require valid credentials to access KMS services.
 if [[ -n "${KOKORO_ROOT:-}" ]]; then

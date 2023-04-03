@@ -47,10 +47,9 @@ cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \
   -f "examples/WORKSPACE" -t "${TINK_BASE_DIR}"
 
-# Install protobuf pip packages.
-# TODO(b/253216420): Investigate why these need to be installed instead on
-# MacOS, but not on GCP Ubuntu.
+# TODO(b/276277854) It is not clear why this is needed.
 pip3 install protobuf==3.20.3 --user
+pip3 install google-cloud-kms==2.15.0 --user
 pip3 install google-cloud-storage==2.5.0 --user
 
 # All manual test targets except *test_package ones.

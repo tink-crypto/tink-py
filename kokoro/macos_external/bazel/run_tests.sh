@@ -35,8 +35,10 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc-gcpkms"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
-# Install protobuf pip packages.
+
+# TODO(b/276277854) It is not clear why this is needed.
 pip3 install protobuf==3.20.3 --user
+pip3 install google-cloud-kms==2.15.0 --user
 
 TINK_PY_MANUAL_TARGETS=()
 # These tests require valid credentials to access KMS services.
