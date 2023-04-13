@@ -31,8 +31,7 @@ fi
 # downloaded.
 readonly GITHUB_ORG="https://github.com/tink-crypto"
 ./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
-  "${GITHUB_ORG}/tink-cc" "${GITHUB_ORG}/tink-cc-awskms" \
-  "${GITHUB_ORG}/tink-cc-gcpkms"
+  "${GITHUB_ORG}/tink-cc"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
