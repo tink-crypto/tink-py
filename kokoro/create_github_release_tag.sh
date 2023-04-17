@@ -18,7 +18,7 @@ set -euo pipefail
 
 # Fail if RELEASE_VERSION is not set.
 if [[ -z "${RELEASE_VERSION:-}" ]]; then
-  echo "RELEASE_VERSION must be set" >&2
+  echo "ERROR: RELEASE_VERSION must be set" >&2
   exit 1
 fi
 
@@ -36,7 +36,7 @@ readonly IS_KOKORO
 : "${DO_MAKE_RELEASE:="false"}"
 
 if [[ ! "${DO_MAKE_RELEASE}" =~ ^(false|true)$ ]]; then
-  echo "DO_MAKE_RELEASE must be either \"true\" or \"false\"" >&2
+  echo "ERROR: DO_MAKE_RELEASE must be either \"true\" or \"false\"" >&2
   exit 1
 fi
 
@@ -51,6 +51,16 @@ if [[ "${IS_KOKORO}" == "true" ]] ; then
   readonly TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
   cd "${TINK_BASE_DIR}/tink_py"
 fi
+
+readonly VERSION_VALUE_IN_VERSION_FILE="$(grep ^TINK VERSION | cut -d\" -f2)"
+if [[ ! "${VERSION_VALUE_IN_VERSION_FILE}" == "${RELEASE_VERSION}"]]; then
+  echo "ERROR: Values in RELEASE_VERSION and VERSION file must coincide!" >&2
+  echo "Found:" >&2
+  echo "  RELEASE_VERSION=${RELEASE_VERSION}" >&2
+  echo "  Value in VERSION file=${VERSION_VALUE_IN_VERSION_FILE}" >&2
+  exit 1
+fi
+
 if [[ "${DO_MAKE_RELEASE}" == "true" ]]; then
   GITHUB_RELEASE_UTIL_OPTS+=( -r )
 fi
@@ -60,7 +70,7 @@ readonly GITHUB_RELEASE_UTIL_OPTS
 readonly TMP_FOLDER="$(mktemp -d "${TMPDIR}/release_XXXXXX")"
 readonly RELEASE_UTIL_SCRIPT="$(pwd)/kokoro/testutils/github_release_util.sh"
 if [[ ! -f "${RELEASE_UTIL_SCRIPT}" ]]; then
-  echo "${RELEASE_UTIL_SCRIPT} not found." >&2
+  echo "ERROR: ${RELEASE_UTIL_SCRIPT} not found." >&2
   echo "Make sure you run this script from the root of tink-py." >&2
   exit 1
 fi
