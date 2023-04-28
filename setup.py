@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """Setup for the tink-py package with pip."""
-from distutils import spawn
 
 import glob
 import os
@@ -46,9 +45,9 @@ def _get_tink_version() -> str:
 
 def _get_bazel_command() -> str:
   """Finds the bazel command."""
-  if spawn.find_executable('bazelisk'):
+  if shutil.which('bazelisk'):
     return 'bazelisk'
-  elif spawn.find_executable('bazel'):
+  elif shutil.which('bazel'):
     return 'bazel'
   raise FileNotFoundError('Could not find bazel executable. Please install '
                           'bazel to compile the Tink Python package.')
@@ -58,10 +57,11 @@ def _get_protoc_command() -> str:
   """Finds the protoc command."""
   if 'PROTOC' in os.environ and os.path.exists(os.environ['PROTOC']):
     return os.environ['PROTOC']
-  else:
-    return spawn.find_executable('protoc')
-  raise FileNotFoundError('Could not find protoc executable. Please install '
-                          'protoc to compile the Tink Python package.')
+  protoc_path = shutil.which('protoc')
+  if protoc_path is None:
+    raise FileNotFoundError('Could not find protoc executable. Please install '
+                            'protoc to compile the Tink Python package.')
+  return protoc_path
 
 
 def _generate_proto(protoc: str, source: str) -> None:
