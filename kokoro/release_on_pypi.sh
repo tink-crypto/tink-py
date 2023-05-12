@@ -118,7 +118,8 @@ password = ${TINK_PYPI_API_TOKEN}
 username = __token__
 password = ${TINK_TEST_PYPI_API_TOKEN}
 EOF
-    run_if_do_make_release pip3 install twine --user
+    run_if_do_make_release pip3 install --require-hashes \
+      -r kokoro/release_requirements.txt
     if [[ "${RELEASE_ON_TEST_PYPI}" == "true" ]]; then
       run_if_do_make_release python3 -m twine upload --repository testpypi \
         --skip-existing release/*
