@@ -41,7 +41,7 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 source ./kokoro/testutils/install_tink_via_pip.sh "${TINK_BASE_DIR}/tink_py"
 # Install requirements for examples.
-pip3 install -r examples/requirements.txt -c examples/constraints.in
+pip3 install --require-hashes -r examples/requirements.txt
 
 cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
 

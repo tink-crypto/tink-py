@@ -42,7 +42,7 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_tink_via_pip.sh "${TINK_BASE_DIR}/tink_py"
 # Install requirements for examples.
-pip3 install --user -r examples/requirements.txt -c examples/constraints.in
+pip3 install --user --require-hashes -r examples/requirements.txt
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
 cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
