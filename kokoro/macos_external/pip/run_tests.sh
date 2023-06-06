@@ -41,9 +41,10 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
+
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_protoc.sh
-source ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
+./kokoro/testutils/install_tink_via_pip.sh "$(pwd)" "${TINK_BASE_DIR}"
 
 # Get root certificates for gRPC
 curl -OLsS https://raw.githubusercontent.com/grpc/grpc/master/etc/roots.pem
