@@ -14,41 +14,41 @@
 # limitations under the License.
 ################################################################################
 
-# The user may specify TINK_BASE_DIR as the location where finding the
-# dependencies of tink-py.
+# By default when run locally this script executes tests directly on the host.
+# The CONTAINER_IMAGE variable can be set to execute tests in a custom container
+# image for local testing. E.g.:
+#
+# CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
+#  sh ./kokoro/gcp_ubuntu/examples/pip_kms/run_tests.sh
+#
+# The user may specify TINK_BASE_DIR as the folder where to look for tink-py
+# and its dependencies. That is:
+#   ${TINK_BASE_DIR}/tink_cc
+#   ${TINK_BASE_DIR}/tink_py
+# NOTE: tink_cc is fetched from GitHub if not found.
+set -eEuo pipefail
 
+readonly C_PREFIX="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images"
+readonly GITHUB_ORG="https://github.com/tink-crypto"
+
+IS_KOKORO="false"
+if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
+  IS_KOKORO="true"
+fi
+readonly IS_KOKORO
+
+_create_test_command() {
+  cat <<'EOF' > _do_run_test.sh
 set -euo pipefail
-
 BAZEL_CMD="bazel"
 if command -v "bazelisk" &> /dev/null; then
   BAZEL_CMD="bazelisk"
 fi
 readonly BAZEL_CMD
 
-# If we are running on Kokoro cd into the repository.
-if [[ -n "${KOKORO_ROOT:-}" ]]; then
-  TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
-  cd "${TINK_BASE_DIR}/tink_py"
-fi
-
-: "${TINK_BASE_DIR:=$(cd .. && pwd)}"
-
-# Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
-# downloaded.
-readonly GITHUB_ORG="https://github.com/tink-crypto"
-./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
-  "${GITHUB_ORG}/tink-cc"
-
-./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
-
-./kokoro/testutils/install_tink_via_pip.sh "$(pwd)" "${TINK_BASE_DIR}"
+./kokoro/testutils/install_tink_via_pip.sh "$(pwd)" ..
 # Install requirements for examples.
 pip3 install --require-hashes -r examples/requirements.txt
-
-cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
-
-./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "examples/WORKSPACE" -t "${TINK_BASE_DIR}"
 
 # All the manual *test_package targets.
 readonly MANUAL_TARGETS="$(cd examples \
@@ -58,5 +58,60 @@ IFS=' ' read -a MANUAL_TARGETS_ARRAY \
 readonly MANUAL_TARGETS_ARRAY
 
 ./kokoro/testutils/run_bazel_tests.sh -m "examples" "${MANUAL_TARGETS_ARRAY[@]}"
+EOF
 
-mv "examples/WORKSPACE.bak" "examples/WORKSPACE"
+  chmod +x _do_run_test.sh
+}
+
+cleanup() {
+  rm -rf _do_run_test.sh
+  mv "examples/WORKSPACE.bak" "examples/WORKSPACE"
+}
+
+main() {
+  local run_command_args=()
+  if [[ "${IS_KOKORO}" == "true" ]]; then
+    TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
+    local -r c_name="linux-tink-py-base"
+    local -r c_hash="3307f6df04cae8fb97f1b1e6ec06b5e38063055da0b0a8c7b85735d761848486"
+    CONTAINER_IMAGE="${C_PREFIX}/${c_name}@sha256:${c_hash}"
+    run_command_args+=( -k "${TINK_GCR_SERVICE_KEY}" )
+  fi
+  : "${TINK_BASE_DIR:=$(cd .. && pwd)}"
+  readonly TINK_BASE_DIR
+  readonly CONTAINER_IMAGE
+
+  if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
+    run_command_args+=( -c "${CONTAINER_IMAGE}" )
+  fi
+
+  cd "${TINK_BASE_DIR}/tink_py"
+
+  # Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
+  # downloaded.
+  ./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
+    "${GITHUB_ORG}/tink-cc"
+
+  ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
+
+  cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
+
+  ./kokoro/testutils/replace_http_archive_with_local_repository.py \
+    -f "examples/WORKSPACE" -t ../..
+
+  # Run cleanup on EXIT.
+  trap cleanup EXIT
+
+  # Share the required Kokoro env variables.
+  cat <<EOF > env_variables.txt
+KOKORO_ROOT
+EOF
+  run_command_args+=( -e env_variables.txt )
+  readonly run_command_args
+
+  _create_test_command
+
+  ./kokoro/testutils/run_command.sh "${run_command_args[@]}" ./_do_run_test.sh
+}
+
+main "$@"
