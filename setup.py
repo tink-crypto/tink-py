@@ -91,70 +91,50 @@ def _parse_requirements(requirements_filename: str) -> List[str]:
     ]
 
 
-def _patch_workspace(workspace_content: str) -> str:
-  """Update the Bazel workspace with valid repository references.
+def _patch_workspace(workspace_file: str):
+  """Update WORKSPACE with local Bazel dependencies based on an env variable.
 
-  By default, the WORKSPACE file contains http_archive rules that contain URLs
-  pointing to the tink-cc GitHub repository at the latest commit on their `main`
-  branch.
+  If TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH is set, override the default
+  tink-cc dependency with a local_repository rule assuming the path for
+  tink-cc is ${TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH}/tink_cc.
 
-  This behavior can be modified via the following environment variables, in
-  order of precedence:
-
-    * TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH
-        Instead of using the http_archive() rule, use a local_repository()
-        rules for tink-cc assuming it is located at
-        ${TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH}/tink_cc.
-
-    * TINK_PYTHON_SETUPTOOLS_OVERRIDE_TAGGED_VERSION
-        Instead of fetching tink-cc from the `main` branch, fetch
-        the given tagged version, e.g., "2.0.0" means tink-cc@2.0.0.
+  NOTE: This is for testing only!
 
   Args:
-    workspace_content: The original WORKSPACE.
-
-  Returns:
-    The patched workspace_content with either local or remote dependencies.
+    workspace_file: The WORKSPACE file.
   """
-
+  with open(workspace_file, 'r') as f:
+    workspace_content = f.read()
   if 'TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH' in os.environ:
     base_path = os.environ['TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH']
-    return _patch_http_archive_with_local_repo(workspace_content, base_path)
-
-  if 'TINK_PYTHON_SETUPTOOLS_OVERRIDE_TAGGED_VERSION' in os.environ:
-    tagged_version = os.environ[
-        'TINK_PYTHON_SETUPTOOLS_OVERRIDE_TAGGED_VERSION'
-    ]
-    return _patch_http_archive_with_tagged_version(workspace_content,
-                                                   tagged_version)
-  # Nothing to do, dependencies are fetched from main.
-  return workspace_content
-
-
-def _patch_http_archive_with_tagged_version(workspace_content: str,
-                                            tagged_version: str) -> str:
-  """Modifies workspace_content to fetch tink-cc at tagged_version."""
-  workspace_content = workspace_content.replace(
-      'tink-cc/archive/main.zip', f'tink-cc/archive/v{tagged_version}.zip'
-  )
-  workspace_content = workspace_content.replace(
-      'strip_prefix = "tink-cc-main"',
-      f'strip_prefix = "tink-cc-{tagged_version}"')
-  return workspace_content
+    workspace_content = _replace_http_archive_with_local_repo(
+        workspace_content=workspace_content,
+        name='tink_cc',
+        repo_name='tink-cc',
+        local_path=f'{base_path}/tink_cc',
+        archive_filename='main.zip',
+        strip_prefix='tink-cc-main',
+    )
+  with open(workspace_file, 'w') as f:
+    f.write(workspace_content)
 
 
-def _replace_http_archive_with_local_repo(workspace_content: str, name: str,
-                                          repo_name: str, local_path: str,
-                                          archive_filename: str,
-                                          strip_prefix: str) -> str:
+def _replace_http_archive_with_local_repo(
+    workspace_content: str,
+    name: str,
+    repo_name: str,
+    local_path: str,
+    archive_filename: str,
+    strip_prefix: str,
+) -> str:
   """Replaces http_archive rule with local_repository in workspace_content."""
   before = textwrap.dedent(f"""\
-      http_archive(
-          name = "{name}",
-          urls = ["{_TINK_CRYPTO_GITHUB_ORG_URL}/{repo_name}/archive/{archive_filename}"],
-          strip_prefix = "{strip_prefix}",
-      )
-      """)
+    http_archive(
+        name = "{name}",
+        urls = ["{_TINK_CRYPTO_GITHUB_ORG_URL}/{repo_name}/archive/{archive_filename}"],
+        strip_prefix = "{strip_prefix}",
+    )
+    """)
   after = textwrap.dedent(f"""\
       # Modified by setup.py
       local_repository(
@@ -163,24 +143,6 @@ def _replace_http_archive_with_local_repo(workspace_content: str, name: str,
       )
       """)
   return workspace_content.replace(before, after)
-
-
-def _patch_http_archive_with_local_repo(workspace_content: str,
-                                        base_path: str) -> str:
-  """Patches workspace_content replacing http_archive rules with local_repository."""
-  workspace_content = workspace_content.replace(
-      'load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")\n',
-      '')
-
-  workspace_content = _replace_http_archive_with_local_repo(
-      workspace_content=workspace_content,
-      name='tink_cc',
-      repo_name='tink-cc',
-      local_path=f'{base_path}/tink_cc',
-      archive_filename='main.zip',
-      strip_prefix='tink-cc-main')
-
-  return workspace_content
 
 
 class BazelExtension(setuptools.Extension):
@@ -210,11 +172,8 @@ class BuildBazelExtension(build_ext.build_ext):
     build_ext.build_ext.run(self)
 
   def bazel_build(self, ext: str) -> None:
-    # Change WORKSPACE to include tink_cc from an archive
-    with open('WORKSPACE', 'r') as f:
-      workspace_contents = f.read()
-    with open('WORKSPACE', 'w') as f:
-      f.write(_patch_workspace(workspace_contents))
+    # Patch WORKSPACE if needed.
+    _patch_workspace('WORKSPACE')
 
     if not os.path.exists(self.build_temp):
       os.makedirs(self.build_temp)
