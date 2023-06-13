@@ -50,8 +50,6 @@ readonly IMAGE="${IMAGE_NAME}@${IMAGE_DIGEST}"
 #######################################
 __create_and_test_wheels_for_linux() {
   echo "### Building and testing Linux binary wheels ###"
-  local -r tink_py_relative_path="${PWD##*/}"
-  local -r workdir="/tmp/tink/${tink_py_relative_path}"
   # Use signatures for getting images from registry (see
   # https://docs.docker.com/engine/security/trust/content_trust/).
   export DOCKER_CONTENT_TRUST=1
@@ -60,19 +58,26 @@ __create_and_test_wheels_for_linux() {
   # file so we save a copy for backup.
   cp WORKSPACE WORKSPACE.bak
 
+  # Base directory in the container image.
+  local -r tink_deps_container_dir="/tmp/tink"
+  local -r tink_py_relative_path="${PWD##*/}"
+  # Path to tink-py within the container.
+  local -r tink_py_container_dir="${tink_deps_container_dir}/${tink_py_relative_path}"
+
   # Build binary wheels.
   docker run \
-    --volume "${TINK_PYTHON_ROOT_PATH}/..:/tmp/tink" \
-    --workdir "${workdir}" \
+    --volume "${TINK_PYTHON_ROOT_PATH}/..:${tink_deps_container_dir}" \
+    --workdir "${tink_py_container_dir}" \
+    -e TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH="${tink_deps_container_dir}" \
     "${IMAGE}" \
-    "${workdir}/tools/distribution/build_linux_binary_wheels.sh"
+    "${tink_py_container_dir}/tools/distribution/build_linux_binary_wheels.sh"
 
   ## Test binary wheels.
   docker run \
-    --volume "${TINK_PYTHON_ROOT_PATH}/..:/tmp/tink" \
-    --workdir "${workdir}" \
+    --volume "${TINK_PYTHON_ROOT_PATH}/..:${tink_deps_container_dir}" \
+    --workdir "${tink_py_container_dir}" \
     "${IMAGE}" \
-    "${workdir}/tools/distribution/test_linux_binary_wheels.sh"
+    "${tink_py_container_dir}/tools/distribution/test_linux_binary_wheels.sh"
 
   # Docker runs as root so we transfer ownership to the non-root user.
   sudo chown -R "$(id -un):$(id -gn)" "${TINK_PYTHON_ROOT_PATH}"
