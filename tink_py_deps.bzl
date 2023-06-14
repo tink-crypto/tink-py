@@ -32,10 +32,10 @@ def tink_py_deps():
         )
 
     if not native.existing_rule("pybind11_bazel"):
-        # Commit from 2021-01-05
+        # Commit from 2023-05-03
         http_archive(
             name = "pybind11_bazel",
-            strip_prefix = "pybind11_bazel-72cbbf1fbc830e487e3012862b7b720001b70672",
-            url = "https://github.com/pybind/pybind11_bazel/archive/72cbbf1fbc830e487e3012862b7b720001b70672.zip",
-            sha256 = "fec6281e4109115c5157ca720b8fe20c8f655f773172290b03f57353c11869c2",
+            strip_prefix = "pybind11_bazel-b162c7c88a253e3f6b673df0c621aca27596ce6b",
+            url = "https://github.com/pybind/pybind11_bazel/archive/b162c7c88a253e3f6b673df0c621aca27596ce6b.zip",
+            sha256 = "b72c5b44135b90d1ffaba51e08240be0b91707ac60bea08bb4d84b47316211bb",
         )
