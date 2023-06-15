@@ -103,22 +103,15 @@ __create_and_test_sdist_for_linux() {
   local latest="${sorted[${#sorted[@]}-1]}"
   enable_py_version "${latest}"
 
-  # Patch the workspace to use http_archive rules which specify the release tag.
-  #
-  # This is done so that an already patched version of WORKSPACE is present in
-  # the sdist. THen, when building from the sdist, the default patching logic
-  # in performed by setup.py will be a no-op.
-  #
   # TODO(b/281635529): Use a container for a more hermetic testing environment.
+  # TODO(b/286525475): Make patching optional and for test only.
+  # Patch the WORKSPACE file to use a local tink_cc.
+  export TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH="${TINK_PYTHON_ROOT_PATH}/.."
   cp WORKSPACE WORKSPACE.bak
-  TINK_PYTHON_SETUPTOOLS_TAGGED_VERSION="${TINK_VERSION}" \
-    python3 -c "import setup; _patch_workspace('WORKSPACE')"
-
   # Build source distribution.
   python3 setup.py sdist --owner=root --group=root
-  local sdist_filename="tink-${TINK_VERSION}.tar.gz"
+  local -r sdist_filename="tink-${TINK_VERSION}.tar.gz"
   cp "dist/${sdist_filename}" release/
-
   # Restore the original WORKSPACE.
   mv WORKSPACE.bak WORKSPACE
 
