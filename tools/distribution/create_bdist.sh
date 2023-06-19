@@ -14,11 +14,9 @@
 # limitations under the License.
 ################################################################################
 
-# This script creates the release artifacts of Tink Python which includes a
-# source distribution and binary wheels for Linux and macOS.  All Python tests
-# are exectued for each binary wheel and the source distribution.
+# This script creates binary wheels for Tink Python for Linux and macOS.
 
-set -euox pipefail
+set -eEuox pipefail
 
 declare -a PYTHON_VERSIONS=
 PYTHON_VERSIONS+=("3.7")
@@ -37,6 +35,33 @@ readonly IMAGE_NAME="quay.io/pypa/manylinux2014_x86_64"
 readonly IMAGE_DIGEST="sha256:31d7d1cbbb8ea93ac64c3113bceaa0e9e13d65198229a25eee16dc70e8bf9cf7"
 readonly IMAGE="${IMAGE_NAME}@${IMAGE_DIGEST}"
 
+usage() {
+  cat <<EOF
+Usage:  $0 [-l]
+  -l: [Optional] If set build binary wheels against a local tink-cc located at ${PWD}/..
+  -h: Help. Print this usage information.
+EOF
+  exit 1
+}
+
+readonly TINK_CC_USE_LOCAL="false"
+
+parse_args() {
+  # Parse options.
+  while getopts "hl" opt; do
+    case "${opt}" in
+      l) TINK_CC_USE_LOCAL="true" ;;
+      *) usage ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+  readonly TINK_CC_USE_LOCAL
+}
+
+cleanup() {
+  mv WORKSPACE.bak WORKSPACE
+}
+
 #######################################
 # Builds Tink Python built distribution (Wheel) [1].
 #
@@ -48,7 +73,7 @@ readonly IMAGE="${IMAGE_NAME}@${IMAGE_DIGEST}"
 # Arguments:
 #   None
 #######################################
-__create_and_test_wheels_for_linux() {
+create_bdist_for_linux() {
   echo "### Building and testing Linux binary wheels ###"
   # Use signatures for getting images from registry (see
   # https://docs.docker.com/engine/security/trust/content_trust/).
@@ -58,17 +83,27 @@ __create_and_test_wheels_for_linux() {
   # file so we save a copy for backup.
   cp WORKSPACE WORKSPACE.bak
 
+  trap cleanup EXIT
+
   # Base directory in the container image.
   local -r tink_deps_container_dir="/tmp/tink"
   local -r tink_py_relative_path="${PWD##*/}"
   # Path to tink-py within the container.
   local -r tink_py_container_dir="${tink_deps_container_dir}/${tink_py_relative_path}"
 
+  local env_variables=()
+  if [[ "${TINK_CC_USE_LOCAL}" == "true" ]]; then
+    env_variables+=(
+      -e TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH="${tink_deps_container_dir}"
+    )
+  fi
+  readonly env_variables
+
   # Build binary wheels.
   docker run \
     --volume "${TINK_PYTHON_ROOT_PATH}/..:${tink_deps_container_dir}" \
     --workdir "${tink_py_container_dir}" \
-    -e TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH="${tink_deps_container_dir}" \
+    "${env_variables[@]}" \
     "${IMAGE}" \
     "${tink_py_container_dir}/tools/distribution/build_linux_binary_wheels.sh"
 
@@ -81,64 +116,6 @@ __create_and_test_wheels_for_linux() {
 
   # Docker runs as root so we transfer ownership to the non-root user.
   sudo chown -R "$(id -un):$(id -gn)" "${TINK_PYTHON_ROOT_PATH}"
-  # Restore the original WORKSPACE.
-  mv WORKSPACE.bak WORKSPACE
-}
-
-#######################################
-# Builds Tink Python source distribution [1].
-#
-# This function must be called from within the Tink Python's root folder.
-#
-# [1] https://packaging.python.org/en/latest/glossary/#term-Source-Distribution-or-sdist
-# Globals:
-#   PYTHON_VERSIONS
-# Arguments:
-#   None
-#######################################
-__create_and_test_sdist_for_linux() {
-  echo "### Building and testing Linux source distribution ###"
-  local sorted=( $( echo "${PYTHON_VERSIONS[@]}" \
-    | xargs -n1 | sort -V | xargs ) )
-  local latest="${sorted[${#sorted[@]}-1]}"
-  enable_py_version "${latest}"
-
-  # TODO(b/281635529): Use a container for a more hermetic testing environment.
-  # TODO(b/286525475): Make patching optional and for test only.
-  # Patch the WORKSPACE file to use a local tink_cc.
-  export TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH="${TINK_PYTHON_ROOT_PATH}/.."
-  cp WORKSPACE WORKSPACE.bak
-  # Build source distribution.
-  python3 setup.py sdist --owner=root --group=root
-  local -r sdist_filename="tink-${TINK_VERSION}.tar.gz"
-  cp "dist/${sdist_filename}" release/
-  # Restore the original WORKSPACE.
-  mv WORKSPACE.bak WORKSPACE
-
-  # Test install from source distribution.
-  python3 --version
-  python3 -m pip list
-  # Install Tink dependencies.
-  python3 -m pip install --require-hashes -r requirements.txt
-  python3 -m pip install --no-deps --no-index -v "release/${sdist_filename}"
-  python3 -m pip list
-  find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
-    | xargs -0 -n1 python3
-}
-
-#######################################
-# Creates a Tink Python distribution for Linux.
-#
-# This function must be called from within the Tink Python's root folder.
-#
-# Globals:
-#   None
-# Arguments:
-#   None
-#######################################
-create_distribution_for_linux() {
-  __create_and_test_wheels_for_linux
-  __create_and_test_sdist_for_linux
 }
 
 #######################################
@@ -151,7 +128,7 @@ create_distribution_for_linux() {
 # Arguments:
 #   None
 #######################################
-create_distribution_for_macos() {
+create_bdist_for_macos() {
   echo "### Building macOS binary wheels ###"
 
   for v in "${PYTHON_VERSIONS[@]}"; do
@@ -167,17 +144,18 @@ create_distribution_for_macos() {
 
 enable_py_version() {
   # A partial version number (e.g. "3.9").
-  local partial_version="$1"
+  local -r partial_version="$1"
 
   # The latest installed Python version that matches the partial version number
   # (e.g. "3.9.5").
-  local version="$(pyenv versions --bare | grep "${partial_version}" | tail -1)"
+  local -r version="$(pyenv versions --bare | grep "${partial_version}" \
+    | tail -1)"
 
   # Set current Python version via environment variable.
   pyenv shell "${version}"
 
   # Update environment.
-  pip install --require-hashes -r \
+  python3 -m pip install --require-hashes -r \
     "${TINK_PYTHON_ROOT_PATH}/tools/distribution/requirements.txt"
 }
 
@@ -186,9 +164,9 @@ main() {
   mkdir -p release
 
   if [[ "${PLATFORM}" == 'linux' ]]; then
-    create_distribution_for_linux
+    create_bdist_for_linux
   elif [[ "${PLATFORM}" == 'darwin' ]]; then
-    create_distribution_for_macos
+    create_bdist_for_macos
   else
     echo "${PLATFORM} is not a supported platform."
     exit 1

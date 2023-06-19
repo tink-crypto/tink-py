@@ -102,9 +102,12 @@ main() {
     exit 1
   fi
 
-  # Generate release of the pip package and test it. The result will be in
-  # release/.
-  ./tools/distribution/create_release.sh
+  # Generate source distribution and binary wheels **without** editing the
+  # WORSPACE file, and test them. The generated artifacts are going to be placed
+  # in release/.
+  ./tools/distribution/create_sdist.sh
+  ./tools/distribution/create_bdist.sh
+
 
   if [[ "${IS_KOKORO}" == "true" ]]; then
     # See https://packaging.python.org/en/latest/specifications/pypirc/#using-a-pypi-token.

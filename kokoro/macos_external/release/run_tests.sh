@@ -37,5 +37,5 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
-# Generate and test release artifacts.
-./tools/distribution/create_release.sh
+# Generate binary wheels and test them.
+./tools/distribution/create_bdist.sh -l

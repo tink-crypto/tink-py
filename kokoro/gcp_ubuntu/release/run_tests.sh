@@ -36,5 +36,6 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
-# Generate release of the pip package and test it.
-./tools/distribution/create_release.sh
+# Generate source distribution and binary wheels and test them.
+./tools/distribution/create_sdist.sh -l
+./tools/distribution/create_bdist.sh -l
