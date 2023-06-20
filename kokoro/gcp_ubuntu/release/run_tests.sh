@@ -14,19 +14,45 @@
 # limitations under the License.
 ################################################################################
 
-
-# The user may specify TINK_BASE_DIR for setting a local copy of Tink to use
-# when running the script locally.
-
+# By default when run locally this script executes tests directly on the host.
+# The CONTAINER_IMAGE variable can be set to execute tests in a custom container
+# image for local testing. E.g.:
+#
+# CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
+#  sh ./kokoro/gcp_ubuntu/release/run_tests.sh
+#
+# The user may specify TINK_BASE_DIR as the folder where to look for tink-py
+# and its dependencies. That is:
+#   ${TINK_BASE_DIR}/tink_cc
+#   ${TINK_BASE_DIR}/tink_py
+# NOTE: tink_cc is fetched from GitHub if not found.
 set -euo pipefail
 
-# If we are running on Kokoro cd into the repository.
-if [[ -n "${KOKORO_ROOT:-}" ]]; then
-  TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
-  cd "${TINK_BASE_DIR}/tink_py"
+IS_KOKORO="false"
+if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
+  IS_KOKORO="true"
 fi
+readonly IS_KOKORO
 
+RUN_COMMAND_ARGS=()
+if [[ "${IS_KOKORO}" == "true" ]]; then
+  TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
+  readonly C_PREFIX="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images"
+  readonly C_NAME="linux-tink-py-base"
+  readonly C_HASH="3307f6df04cae8fb97f1b1e6ec06b5e38063055da0b0a8c7b85735d761848486"
+  CONTAINER_IMAGE="${C_PREFIX}/${C_NAME}@sha256:${C_HASH}"
+  RUN_COMMAND_ARGS+=( -k "${TINK_GCR_SERVICE_KEY}" )
+fi
 : "${TINK_BASE_DIR:=$(cd .. && pwd)}"
+readonly TINK_BASE_DIR
+readonly CONTAINER_IMAGE
+
+if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
+  RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
+fi
+readonly RUN_COMMAND_ARGS
+
+cd "${TINK_BASE_DIR}/tink_py"
 
 # Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
 # downloaded.
@@ -37,5 +63,7 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
 # Generate source distribution and binary wheels and test them.
-./tools/distribution/create_sdist.sh -l
+./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \
+  ./tools/distribution/create_sdist.sh -l
+
 ./tools/distribution/create_bdist.sh -l
