@@ -28,8 +28,6 @@ readonly PYTHON_VERSIONS
 readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 
 export TINK_PYTHON_ROOT_PATH="${PWD}"
-readonly TINK_VERSION="$(grep ^TINK "${TINK_PYTHON_ROOT_PATH}/VERSION" \
-  | awk '{gsub(/"/, "", $3); print $3}')"
 
 readonly IMAGE_NAME="quay.io/pypa/manylinux2014_x86_64"
 readonly IMAGE_DIGEST="sha256:31d7d1cbbb8ea93ac64c3113bceaa0e9e13d65198229a25eee16dc70e8bf9cf7"
@@ -45,7 +43,7 @@ EOF
   exit 1
 }
 
-readonly TINK_CC_USE_LOCAL="false"
+TINK_CC_USE_LOCAL="false"
 RELEASE_TYPE="dev"
 TINK_VERSION=
 
