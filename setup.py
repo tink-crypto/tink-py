@@ -12,7 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Setup for the tink-py package with pip."""
+"""Setup for the tink-py package with pip.
+
+The behavior of this script can be modified using two enviroment variables:
+
+  - TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION: To change the version that is used.
+  - TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH: To use a local path to locate the
+    project dependencies.
+"""
 
 import glob
 import os
@@ -31,7 +38,13 @@ _TINK_CRYPTO_GITHUB_ORG_URL = 'https://github.com/tink-crypto'
 
 
 def _get_tink_version() -> str:
-  """Parses the version number from VERSION file."""
+  """Returns the project version.
+
+  If the TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION environment variable is set,
+  this function returns its value; otherwise, it parses the value in VERSION.
+  """
+  if 'TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION' in os.environ:
+    return os.environ['TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION']
   with open(os.path.join(_PROJECT_BASE_DIR, 'VERSION')) as f:
     try:
       version_line = next(
