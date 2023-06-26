@@ -21,8 +21,14 @@
 
 set -euo pipefail
 
+IS_KOKORO="false"
+if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
+  IS_KOKORO="true"
+fi
+readonly IS_KOKORO
+
 # If we are running on Kokoro cd into the repository.
-if [[ -n "${KOKORO_ROOT:-}" ]]; then
+if [[ "${IS_KOKORO}" == "true" ]]; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
   cd "${TINK_BASE_DIR}/tink_py"
 fi
@@ -37,5 +43,15 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
+CREATE_DIST_OPTIONS=()
+if [[ "${IS_KOKORO}" == "true" ]]; then
+  if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+    CREATE_DIST_OPTIONS+=( -t release )
+  else
+    CREATE_DIST_OPTIONS+=( -l )
+  fi
+fi
+readonly CREATE_DIST_OPTIONS
+
 # Generate binary wheels and test them.
-./tools/distribution/create_bdist.sh -l
+./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"

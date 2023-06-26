@@ -24,8 +24,9 @@ readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 
 usage() {
   cat <<EOF
-Usage:  $0 [-l] [-v <Python version to use>]
+Usage:  $0 [-l] [-v <Python version to use>] [-t <release type (dev|release)>]
   -l: [Optional] Build sdist against a local tink-cc located at ./..
+  -t: [Optional] Type of release; if "dev", the genereted sdist archive is named tink-<version from VERSION>-dev0.tar.gz; if "release", tink-<version from VERSION>.tar.gz (default=dev).
   -v: [Optional] Python version to use (default=3.10).
   -h: Help. Print this usage information.
 EOF
@@ -34,19 +35,34 @@ EOF
 
 TINK_CC_USE_LOCAL="false"
 PYTHON_VERSION="3.10"
+RELEASE_TYPE="dev"
+TINK_VERSION=
 
 parse_args() {
   # Parse options.
-  while getopts "hlv:" opt; do
+  while getopts "hlv:t:" opt; do
     case "${opt}" in
       l) TINK_CC_USE_LOCAL="true" ;;
       v) PYTHON_VERSION="${OPTARG}" ;;
+      t) RELEASE_TYPE="${OPTARG}" ;;
       *) usage ;;
     esac
   done
   shift $((OPTIND - 1))
   readonly TINK_CC_USE_LOCAL
   readonly PYTHON_VERSION
+  readonly RELEASE_TYPE
+
+  TINK_VERSION="$(grep ^TINK "VERSION" | awk '{gsub(/"/, "", $3); print $3}')"
+  case "${RELEASE_TYPE}" in
+    dev) TINK_VERSION="${TINK_VERSION}.dev0" ;;
+    release) ;;
+    *)
+      echo "ERROR: Invalid release type ${RELEASE_TYPE}" >&2
+      usage
+      ;;
+  esac
+  readonly TINK_VERSION
 }
 
 cleanup() {
@@ -60,6 +76,8 @@ main() {
     echo "ERROR: ${PLATFORM} is not a supported platform." >&2
     exit 1
   fi
+
+  parse_args "$@"
 
   export TINK_PYTHON_ROOT_PATH="${PWD}"
 
@@ -81,17 +99,15 @@ main() {
   if [[ "${TINK_CC_USE_LOCAL}" == "true" ]]; then
     export TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH="$(cd .. && pwd)"
   fi
+  export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
 
   cp WORKSPACE WORKSPACE.bak
 
   trap cleanup EXIT
 
-  local -r tink_version="$(grep ^TINK "${TINK_PYTHON_ROOT_PATH}/VERSION" \
-    | awk '{gsub(/"/, "", $3); print $3}')"
-
   # Build source distribution.
   python3 setup.py sdist --owner=root --group=root
-  local -r sdist_filename="tink-${tink_version}.tar.gz"
+  local -r sdist_filename="tink-${TINK_VERSION}.tar.gz"
   cp "dist/${sdist_filename}" release/
   # Install Tink dependencies.
   python3 -m pip install --require-hashes -r requirements.txt

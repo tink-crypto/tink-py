@@ -37,25 +37,41 @@ readonly IMAGE="${IMAGE_NAME}@${IMAGE_DIGEST}"
 
 usage() {
   cat <<EOF
-Usage:  $0 [-l]
+Usage:  $0 [-l] [-t <release type (dev|release)>]
   -l: [Optional] If set build binary wheels against a local tink-cc located at ${PWD}/..
+  -t: [Optional] Type of release; if "dev", the genereted wheels use <version from VERSION>-dev0; if "release", <version from VERSION> (default=dev).
   -h: Help. Print this usage information.
 EOF
   exit 1
 }
 
 readonly TINK_CC_USE_LOCAL="false"
+RELEASE_TYPE="dev"
+TINK_VERSION=
 
 parse_args() {
   # Parse options.
-  while getopts "hl" opt; do
+  while getopts "hlt:" opt; do
     case "${opt}" in
       l) TINK_CC_USE_LOCAL="true" ;;
+      t) RELEASE_TYPE="${OPTARG}" ;;
       *) usage ;;
     esac
   done
   shift $((OPTIND - 1))
   readonly TINK_CC_USE_LOCAL
+  readonly RELEASE_TYPE
+
+  TINK_VERSION="$(grep ^TINK "VERSION" | awk '{gsub(/"/, "", $3); print $3}')"
+  case "${RELEASE_TYPE}" in
+    dev) TINK_VERSION="${TINK_VERSION}.dev0" ;;
+    release) ;;
+    *)
+      echo "ERROR: Invalid release type ${RELEASE_TYPE}" >&2
+      usage
+      ;;
+  esac
+  readonly TINK_VERSION
 }
 
 cleanup() {
@@ -91,7 +107,9 @@ create_bdist_for_linux() {
   # Path to tink-py within the container.
   local -r tink_py_container_dir="${tink_deps_container_dir}/${tink_py_relative_path}"
 
-  local env_variables=()
+  local env_variables=(
+    -e TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
+  )
   if [[ "${TINK_CC_USE_LOCAL}" == "true" ]]; then
     env_variables+=(
       -e TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH="${tink_deps_container_dir}"
@@ -131,6 +149,7 @@ create_bdist_for_linux() {
 create_bdist_for_macos() {
   echo "### Building macOS binary wheels ###"
 
+  export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
   for v in "${PYTHON_VERSIONS[@]}"; do
     enable_py_version "${v}"
 
@@ -160,6 +179,8 @@ enable_py_version() {
 }
 
 main() {
+  parse_args "$@"
+
   eval "$(pyenv init -)"
   mkdir -p release
 

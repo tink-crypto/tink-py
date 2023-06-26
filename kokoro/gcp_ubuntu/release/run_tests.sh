@@ -62,8 +62,18 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
+CREATE_DIST_OPTIONS=()
+if [[ "${IS_KOKORO}" == "true" ]]; then
+  if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+    CREATE_DIST_OPTIONS+=( -t release )
+  else
+    CREATE_DIST_OPTIONS+=( -l )
+  fi
+fi
+readonly CREATE_DIST_OPTIONS
+
 # Generate source distribution and binary wheels and test them.
 ./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \
-  ./tools/distribution/create_sdist.sh -l
+  ./tools/distribution/create_sdist.sh "${CREATE_DIST_OPTIONS[@]}"
 
-./tools/distribution/create_bdist.sh -l
+./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
