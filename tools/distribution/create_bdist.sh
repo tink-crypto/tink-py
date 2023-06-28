@@ -148,11 +148,14 @@ create_bdist_for_macos() {
   echo "### Building macOS binary wheels ###"
 
   export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
-  for v in "${PYTHON_VERSIONS[@]}"; do
-    enable_py_version "${v}"
+  rm -rf release && mkdir -p release
+  for python_version in "${PYTHON_VERSIONS[@]}"; do
+    enable_py_version "${python_version}"
 
+    build_dir="$(mktemp -d -t release.XXXXX)"
     # Build binary wheel.
-    python3 -m pip wheel -w release .
+    python3 -m pip wheel -w "${build_dir}" .
+    mv "${build_dir}/tink-${TINK_VERSION}"* release/
 
     # Test binary wheel.
     # TODO(ckl): Implement test.
