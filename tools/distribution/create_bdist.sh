@@ -18,12 +18,7 @@
 
 set -eEuox pipefail
 
-declare -a PYTHON_VERSIONS=
-PYTHON_VERSIONS+=("3.7")
-PYTHON_VERSIONS+=("3.8")
-PYTHON_VERSIONS+=("3.9")
-PYTHON_VERSIONS+=("3.10")
-readonly PYTHON_VERSIONS
+readonly PYTHON_VERSIONS=( "3.7" "3.8" "3.9" "3.10" )
 
 readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 
@@ -65,7 +60,7 @@ parse_args() {
     dev) TINK_VERSION="${TINK_VERSION}.dev0" ;;
     release) ;;
     *)
-      echo "ERROR: Invalid release type ${RELEASE_TYPE}" >&2
+      echo "InputError: Invalid release type ${RELEASE_TYPE}" >&2
       usage
       ;;
   esac
@@ -165,15 +160,23 @@ create_bdist_for_macos() {
 enable_py_version() {
   # A partial version number (e.g. "3.9").
   local -r partial_version="$1"
+  if [[ -z "${partial_version}" ]]; then
+    echo "InternalError: Partial version must be specified" >&2
+    exit 1
+  fi
 
   # The latest installed Python version that matches the partial version number
   # (e.g. "3.9.5").
-  local -r version="$(pyenv versions --bare | grep "${partial_version}" \
-    | tail -1)"
-
+  local version="$(pyenv versions --bare | grep "${partial_version}" | tail -1)"
+  if [[ -z "${version}" ]]; then
+    # Install the latest available.
+    version="$(pyenv install --list | grep "  ${partial_version}" | tail -1 \
+      | xargs)"
+    pyenv install "${version}"
+  fi
+  readonly version
   # Set current Python version via environment variable.
   pyenv shell "${version}"
-
   # Update environment.
   python3 -m pip install --require-hashes -r \
     "${TINK_PYTHON_ROOT_PATH}/tools/distribution/requirements.txt"
