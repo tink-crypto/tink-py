@@ -23,6 +23,7 @@ The behavior of this script can be modified using two enviroment variables:
 
 import glob
 import os
+import platform
 import posixpath
 import shutil
 import subprocess
@@ -176,7 +177,7 @@ class BuildBazelExtension(build_ext.build_ext):
   """A command that runs Bazel to build a C/C++ extension."""
 
   def __init__(self, dist: str) -> None:
-    super(BuildBazelExtension, self).__init__(dist)
+    super().__init__(dist)
     self.bazel_command = _get_bazel_command()
 
   def run(self) -> None:
@@ -200,6 +201,21 @@ class BuildBazelExtension(build_ext.build_ext):
         self.bazel_command, 'build', ext.bazel_target,
         '--compilation_mode=' + ('dbg' if self.debug else 'opt')
     ]
+
+    if platform.system() == 'Darwin':
+      # Set the minimum macOS version to support based on
+      # MACOSX_DEPLOYMENT_TARGET. This mimics the CMake behavior: when
+      # MACOSX_DEPLOYMENT_TARGET is set, use its value to determine the minimum
+      # OS version.
+      #
+      # See https://github.com/bazelbuild/bazel/issues/16932.
+      # NOTE: If macos_minimum_os is unspecified, Bazel uses the default value
+      # of macos_sdk_version which is taken from the default system Xcode:
+      # https://bazel.build/reference/command-line-reference#flag--macos_minimum_os.
+      deploymnet_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
+      if deploymnet_target:
+        bazel_argv += [f'--macos_minimum_os={deploymnet_target}']
+
     self.spawn(bazel_argv)
     ext_bazel_bin_path = os.path.join('bazel-bin', ext.relpath,
                                       ext.target_name + '.so')

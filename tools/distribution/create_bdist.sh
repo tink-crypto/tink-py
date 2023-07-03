@@ -143,6 +143,9 @@ create_bdist_for_macos() {
   echo "### Building macOS binary wheels ###"
 
   export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
+  # Mavericks.
+  export MACOSX_DEPLOYMENT_TARGET=10.9
+
   rm -rf release && mkdir -p release
   for python_version in "${PYTHON_VERSIONS[@]}"; do
     enable_py_version "${python_version}"
