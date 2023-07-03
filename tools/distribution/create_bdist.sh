@@ -150,13 +150,15 @@ create_bdist_for_macos() {
   for python_version in "${PYTHON_VERSIONS[@]}"; do
     enable_py_version "${python_version}"
 
-    build_dir="$(mktemp -d -t release.XXXXX)"
+    tmp_build_dir="$(mktemp -d -t tmp_build_dir)"
     # Build binary wheel.
-    python3 -m pip wheel -w "${build_dir}" .
-    mv "${build_dir}/tink-${TINK_VERSION}"* release/
+    python3 -m pip wheel -w "${tmp_build_dir}" .
+    mv "${tmp_build_dir}/tink-${TINK_VERSION}"* release/
 
-    # Test binary wheel.
-    # TODO(ckl): Implement test.
+    # Install and test the binary wheel.
+    python3 -m pip install release/tink*-cp"${python_version//./}"*.whl
+    find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
+      | xargs -0 -n1 python3
   done
 }
 
