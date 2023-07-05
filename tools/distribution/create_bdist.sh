@@ -156,7 +156,9 @@ create_bdist_for_macos() {
     mv "${tmp_build_dir}/tink-${TINK_VERSION}"* release/
 
     # Install and test the binary wheel.
-    python3 -m pip install release/tink*-cp"${python_version//./}"*.whl
+    python3 -m pip install --require-hashes -r requirements.txt
+    python3 -m pip install --no-deps --no-index \
+      release/tink*-cp"${python_version//./}"*.whl
     find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
       | xargs -0 -n1 python3
   done
