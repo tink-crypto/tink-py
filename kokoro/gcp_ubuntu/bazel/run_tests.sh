@@ -37,10 +37,9 @@ readonly IS_KOKORO
 RUN_COMMAND_ARGS=()
 if [[ "${IS_KOKORO}" == "true" ]]; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
-  readonly C_PREFIX="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images"
-  readonly C_NAME="linux-tink-py-base"
-  readonly C_HASH="3307f6df04cae8fb97f1b1e6ec06b5e38063055da0b0a8c7b85735d761848486"
-  CONTAINER_IMAGE="${C_PREFIX}/${C_NAME}@sha256:${C_HASH}"
+  source \
+    "${TINK_BASE_DIR}/tink_py/kokoro/testutils/tink_test_container_images.sh"
+  CONTAINER_IMAGE="${TINK_PY_BASE_IMAGE}"
   RUN_COMMAND_ARGS+=( -k "${TINK_GCR_SERVICE_KEY}" )
 fi
 : "${TINK_BASE_DIR:=$(cd .. && pwd)}"

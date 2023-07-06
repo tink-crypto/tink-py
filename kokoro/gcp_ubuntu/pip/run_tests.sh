@@ -28,7 +28,6 @@
 # NOTE: tink_cc is fetched from GitHub if not found.
 set -eEuo pipefail
 
-readonly C_PREFIX="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images"
 readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 IS_KOKORO="false"
@@ -63,9 +62,9 @@ main() {
   local run_command_args=()
   if [[ "${IS_KOKORO}" == "true" ]]; then
     TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
-    local -r c_name="linux-tink-py-base"
-    local -r c_hash="3307f6df04cae8fb97f1b1e6ec06b5e38063055da0b0a8c7b85735d761848486"
-    CONTAINER_IMAGE="${C_PREFIX}/${c_name}@sha256:${c_hash}"
+    source \
+      "${TINK_BASE_DIR}/tink_py/kokoro/testutils/tink_test_container_images.sh"
+    CONTAINER_IMAGE="${TINK_PY_BASE_IMAGE}"
     run_command_args+=( -k "${TINK_GCR_SERVICE_KEY}" )
   fi
   : "${TINK_BASE_DIR:=$(cd .. && pwd)}"
