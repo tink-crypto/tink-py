@@ -69,7 +69,7 @@ main() {
   if [[ "${IS_KOKORO}" == "true" ]]; then
     TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
     source \
-      "${TINK_BASE_DIR}/tink_py/kokoro/testutils/tink_test_container_images.sh"
+      "${TINK_BASE_DIR}/tink_py/kokoro/testutils/py_test_container_images.sh"
     CONTAINER_IMAGE="${TINK_PY_BASE_IMAGE}"
     run_command_args+=( -k "${TINK_GCR_SERVICE_KEY}" )
   fi
