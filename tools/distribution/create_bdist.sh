@@ -24,9 +24,15 @@ readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 
 export TINK_PYTHON_ROOT_PATH="${PWD}"
 
-readonly IMAGE_NAME="quay.io/pypa/manylinux2014_x86_64"
-readonly IMAGE_DIGEST="sha256:31d7d1cbbb8ea93ac64c3113bceaa0e9e13d65198229a25eee16dc70e8bf9cf7"
-readonly IMAGE="${IMAGE_NAME}@${IMAGE_DIGEST}"
+readonly MANYLINUX_X86_64_IMAGE_NAME="quay.io/pypa/manylinux2014_x86_64"
+readonly MANYLINUX_X86_64_IMAGE_SHA256="sha256:2f9e5abda045d41f5418216fe7601cf12249989b9aba0a83d009b8cc434cb220"
+readonly MANYLINUX_X86_64_IMAGE="${MANYLINUX_X86_64_IMAGE_NAME}@${MANYLINUX_X86_64_IMAGE_SHA256}"
+
+readonly MANYLINUX_AARCH64_IMAGE_NAME="quay.io/pypa/manylinux2014_aarch64"
+readonly MANYLINUX_AARCH64_IMAGE_SHA256="sha256:8fd5c58bf1c6a217cddd711144e25af433f2e1f5928245b6e2476affb5d1a76b"
+readonly MANYLINUX_AARCH64_IMAGE="${MANYLINUX_AARCH64_IMAGE_NAME}@${MANYLINUX_AARCH64_IMAGE_SHA256}"
+
+readonly ARCH="$(uname -m)"
 
 usage() {
   cat <<EOF
@@ -110,19 +116,25 @@ create_bdist_for_linux() {
   fi
   readonly env_variables
 
+  local manylinux_image="${MANYLINUX_X86_64_IMAGE}"
+  if [[ "${ARCH}" == "aarch64" || "${ARCH}" == "arm64" ]]; then
+    manylinux_image="${MANYLINUX_AARCH64_IMAGE}"
+  fi
+  readonly manylinux_image
+
   # Build binary wheels.
   docker run \
     --volume "${TINK_PYTHON_ROOT_PATH}/..:${tink_deps_container_dir}" \
     --workdir "${tink_py_container_dir}" \
     "${env_variables[@]}" \
-    "${IMAGE}" \
+    "${manylinux_image}" \
     "${tink_py_container_dir}/tools/distribution/build_linux_binary_wheels.sh"
 
   ## Test binary wheels.
   docker run \
     --volume "${TINK_PYTHON_ROOT_PATH}/..:${tink_deps_container_dir}" \
     --workdir "${tink_py_container_dir}" \
-    "${IMAGE}" \
+    "${manylinux_image}" \
     "${tink_py_container_dir}/tools/distribution/test_linux_binary_wheels.sh"
 
   # Docker runs as root so we transfer ownership to the non-root user.

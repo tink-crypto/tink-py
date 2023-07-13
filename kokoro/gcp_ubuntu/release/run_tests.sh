@@ -71,8 +71,11 @@ if [[ "${IS_KOKORO}" == "true" ]]; then
 fi
 readonly CREATE_DIST_OPTIONS
 
-# Generate source distribution and binary wheels and test them.
-./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \
-  ./tools/distribution/create_sdist.sh "${CREATE_DIST_OPTIONS[@]}"
-
+# TODO(b/291055539): Add a separate script for aarch64.
+# Run this only on x86_64.
+if [[ "$(uname -m)" == "x86_64" ]]; then
+  # Generate source distribution and binary wheels and test them.
+  ./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \
+    ./tools/distribution/create_sdist.sh "${CREATE_DIST_OPTIONS[@]}"
+fi
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
