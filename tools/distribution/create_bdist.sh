@@ -66,7 +66,7 @@ parse_args() {
     dev) TINK_VERSION="${TINK_VERSION}.dev0" ;;
     release) ;;
     *)
-      echo "InputError: Invalid release type ${RELEASE_TYPE}" >&2
+      echo "InvalidArgumentError: Invalid release type ${RELEASE_TYPE}" >&2
       usage
       ;;
   esac
@@ -142,6 +142,78 @@ create_bdist_for_linux() {
 }
 
 #######################################
+# Creates a binary wheel for Tink Python on macOS.
+#
+# This function must be called from within the Tink Python's root folder.
+#
+# Arguments:
+#   min_macos_version: Target minimum macOS version.
+#   arch: Target arch (x86_64 or arm64).
+#   out_dir: Path where to store the generated wheels.
+#######################################
+_build_wheel_for_macos() {
+  local -r min_macos_version="${1:-}"
+  local -r arch="${2:-}"
+  local -r out_dir="${3:-}"
+
+  if [[ ! "${min_macos_version}" =~ ^[0-9]+.[0-9]+$ ]]; then
+    echo "InvalidArgumentError: Invalid macOS version ${min_macos_version}" >&2
+    exit 1
+  fi
+
+  if [[ "${arch}" != "x86_64" && "${arch}" != "arm64" ]]; then
+    echo -n "InvalidArgumentError: Unsupported architecture ${arch}, " >&2
+    echo "only x86_64 and arm64 are supported" >&2
+    exit 1
+  fi
+
+  if [[ ! -d "${out_dir}" ]]; then
+    echo "InvalidArgumentError: Output folder ${out_dir} does not exist" >&2
+    exit 1
+  fi
+
+  (
+    export MACOSX_DEPLOYMENT_TARGET="${min_macos_version}"
+    export _PYTHON_HOST_PLATFORM="macosx-${min_macos_version}-${arch}"
+    export ARCHFLAGS="-arch ${arch}"
+    time python3 -m pip wheel -w "${out_dir}" .
+  )
+}
+
+#######################################
+# Creates a universal2 wheel from an x86_64 wheel and an arm64 wheel.
+#
+# The function uses delocate (https://pypi.org/project/delocate/) to combine
+# both wheels into a universal2 wheel.
+#
+# Arguments:
+#   arm64_whl: arm64 wheel.
+#   x86_whl: x86_64 wheel.
+#   out_dir: Path where to store the generated wheel.
+#######################################
+_create_universal2_macos_wheel() {
+  local -r arm64_whl="${1:-}"
+  local -r x86_whl="${2:-}"
+  local -r out_dir="${3:-$(pwd)}"
+
+  if [[ ! -d "${out_dir}" ]]; then
+    echo "InvalidArgumentError: Output folder ${out_dir} does not exist" >&2
+    exit 1
+  fi
+
+  # NOTE: The resulting wheel is named after the 1st parameter (in this case
+  # arm64_whl). We thus use a separate folder to avoid delocate to overwrite it.
+  local -r tmp_build_dir="$(mktemp -d -t universal2)"
+  time python3 -m delocate.cmd.delocate_fuse "${arm64_whl}" "${x86_whl}" \
+    -w "${tmp_build_dir}"
+  local -r generated_whl="${tmp_build_dir}/$(basename "${arm64_whl}")"
+  local -r rename_to="${out_dir}/$(basename ${generated_whl//arm64/universal2})"
+  mv "${generated_whl}" "${rename_to}"
+  # Cleanup.
+  rm -rf "${tmp_build_dir}"
+}
+
+#######################################
 # Creates a Tink Python distribution for MacOS.
 #
 # This function must be called from within the Tink Python's root folder.
@@ -155,24 +227,38 @@ create_bdist_for_macos() {
   echo "### Building macOS binary wheels ###"
 
   export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
-  # Mavericks.
-  export MACOSX_DEPLOYMENT_TARGET=10.9
-
   rm -rf release && mkdir -p release
   for python_version in "${PYTHON_VERSIONS[@]}"; do
     enable_py_version "${python_version}"
 
     tmp_build_dir="$(mktemp -d -t tmp_build_dir)"
-    # Build binary wheel.
-    python3 -m pip wheel -w "${tmp_build_dir}" .
-    mv "${tmp_build_dir}/tink-${TINK_VERSION}"* release/
 
-    # Install and test the binary wheel.
+    # Build binary wheel for arm64.
+    _build_wheel_for_macos 11.0 arm64 "${tmp_build_dir}"
+    arm64_whl="$(echo ${tmp_build_dir}/tink-*arm64.whl)"
+    time python3 -m delocate.cmd.delocate_wheel \
+      --require-archs arm64 -v "${arm64_whl}"
+
+    # Build binary wheel for x86.
+    _build_wheel_for_macos 10.9 x86_64 "${tmp_build_dir}"
+    x86_64_whl="$(echo ${tmp_build_dir}/tink-*x86_64.whl)"
+    time python3 -m delocate.cmd.delocate_wheel \
+      --require-archs x86_64 -v "${x86_64_whl}"
+
+    _create_universal2_macos_wheel "${arm64_whl}" "${x86_64_whl}" "release"
+
+    ls -l release
+
+    # Install and test the universal2 binary wheel.
+    # NOTE: On x86_64 platforms only the x86_64 part is tested!
+    # TODO(b/291705604): Separate artifact generation from testing.
     python3 -m pip install --require-hashes -r requirements.txt
     python3 -m pip install --no-deps --no-index \
-      release/tink*-cp"${python_version//./}"*.whl
+      release/tink*-cp"${python_version//./}"*universal2.whl
     find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
       | xargs -0 -n1 python3
+
+    rm -rf "${tmp_build_dir}"
   done
 }
 
@@ -180,7 +266,7 @@ enable_py_version() {
   # A partial version number (e.g. "3.9").
   local -r partial_version="$1"
   if [[ -z "${partial_version}" ]]; then
-    echo "InternalError: Partial version must be specified" >&2
+    echo "InvalidArgumentError: Partial version must be specified" >&2
     exit 1
   fi
 

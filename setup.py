@@ -212,9 +212,14 @@ class BuildBazelExtension(build_ext.build_ext):
       # NOTE: If macos_minimum_os is unspecified, Bazel uses the default value
       # of macos_sdk_version which is taken from the default system Xcode:
       # https://bazel.build/reference/command-line-reference#flag--macos_minimum_os.
-      deploymnet_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
-      if deploymnet_target:
-        bazel_argv += [f'--macos_minimum_os={deploymnet_target}']
+      deployment_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
+      if deployment_target:
+        bazel_argv += [f'--macos_minimum_os={deployment_target}']
+
+      archflags = os.getenv('ARCHFLAGS', '')
+      if platform.machine() == 'x86_64' and 'arm64' in archflags:
+        # We are cross compiling for arm64; set the correct CPU params.
+        bazel_argv += ['--cpu=darwin_arm64', '--macos_cpus=arm64']
 
     self.spawn(bazel_argv)
     ext_bazel_bin_path = os.path.join('bazel-bin', ext.relpath,
