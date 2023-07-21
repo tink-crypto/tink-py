@@ -36,6 +36,8 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 ./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
   "${GITHUB_ORG}/tink-cc"
 
+./kokoro/testutils/copy_credentials.sh "testdata" "all"
+
 CREATE_DIST_OPTIONS=()
 if [[ "${IS_KOKORO}" == "true" ]]; then
   if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
