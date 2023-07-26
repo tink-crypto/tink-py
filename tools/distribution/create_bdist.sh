@@ -130,13 +130,6 @@ create_bdist_for_linux() {
     "${manylinux_image}" \
     "${tink_py_container_dir}/tools/distribution/build_linux_binary_wheels.sh"
 
-  ## Test binary wheels.
-  docker run \
-    --volume "${TINK_PYTHON_ROOT_PATH}/..:${tink_deps_container_dir}" \
-    --workdir "${tink_py_container_dir}" \
-    "${manylinux_image}" \
-    "${tink_py_container_dir}/tools/distribution/test_linux_binary_wheels.sh"
-
   # Docker runs as root so we transfer ownership to the non-root user.
   sudo chown -R "$(id -un):$(id -gn)" "${TINK_PYTHON_ROOT_PATH}"
 }
@@ -247,18 +240,8 @@ create_bdist_for_macos() {
 
     _create_universal2_macos_wheel "${arm64_whl}" "${x86_64_whl}" "release"
 
-    ls -l release
-
-    # Install and test the universal2 binary wheel.
-    # NOTE: On x86_64 platforms only the x86_64 part is tested!
-    # TODO(b/291705604): Separate artifact generation from testing.
-    python3 -m pip install --require-hashes -r requirements.txt
-    python3 -m pip install --no-deps --no-index \
-      release/tink*-cp"${python_version//./}"*universal2.whl
-    find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
-      | xargs -0 -n1 python3
-
     rm -rf "${tmp_build_dir}"
+    ls -l release
   done
 }
 

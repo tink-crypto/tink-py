@@ -50,3 +50,4 @@ readonly CREATE_DIST_OPTIONS
 
 # Generate binary wheels and test them.
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
+./tools/distribution/test_dist.sh release

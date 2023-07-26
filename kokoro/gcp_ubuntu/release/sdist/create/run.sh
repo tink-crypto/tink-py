@@ -71,6 +71,8 @@ if [[ "${IS_KOKORO}" == "true" ]]; then
 fi
 readonly CREATE_DIST_OPTIONS
 
-# Generate source distribution and binary wheels and test them.
+# Generate a source distribution test it.
 ./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \
   ./tools/distribution/create_sdist.sh "${CREATE_DIST_OPTIONS[@]}"
+./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \
+  ./tools/distribution/test_dist.sh release

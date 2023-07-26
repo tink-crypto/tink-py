@@ -109,13 +109,8 @@ main() {
   python3 setup.py sdist --owner=root --group=root
   local -r sdist_filename="tink-${TINK_VERSION}.tar.gz"
   cp "dist/${sdist_filename}" release/
-  # Install Tink dependencies.
-  python3 -m pip install --require-hashes -r requirements.txt
-  # Install Tink from the generated sdist.
-  python3 -m pip install --no-deps --no-index -v "release/${sdist_filename}"
-  # Run unit tests.
-  find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
-    | xargs -0 -n1 python3
+
+  ls -l release/
 }
 
 main "$@"
