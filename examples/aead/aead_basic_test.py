@@ -14,7 +14,7 @@
 """Tests for aead_basic."""
 
 from absl.testing import absltest
-import aead_basic
+from aead import aead_basic
 
 
 class AeadSimpleTest(absltest.TestCase):

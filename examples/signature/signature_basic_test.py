@@ -14,7 +14,7 @@
 """Tests for signature_basic."""
 
 from absl.testing import absltest
-import signature_basic
+from signature import signature_basic
 
 
 class SignatureSimpleTest(absltest.TestCase):

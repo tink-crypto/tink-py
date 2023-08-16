@@ -18,7 +18,7 @@ import tink
 
 from tink import aead
 
-import load_cleartext_keyset
+from walkthrough import load_cleartext_keyset
 
 _AES_GCM_KEYSET = r"""{
       "key": [{

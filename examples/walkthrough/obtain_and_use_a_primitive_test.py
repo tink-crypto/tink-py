@@ -16,8 +16,8 @@ from absl.testing import absltest
 
 from tink import aead
 
-import load_cleartext_keyset
-import obtain_and_use_a_primitive
+from walkthrough import load_cleartext_keyset
+from walkthrough import obtain_and_use_a_primitive
 
 _KMS_AEAD_KEY = r"""{
   "key": [

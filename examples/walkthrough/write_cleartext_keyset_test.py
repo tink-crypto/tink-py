@@ -18,9 +18,9 @@ from absl.testing import absltest
 
 from tink import aead
 
-import create_keyset
-import load_cleartext_keyset
-import write_cleartext_keyset
+from walkthrough import create_keyset
+from walkthrough import load_cleartext_keyset
+from walkthrough import write_cleartext_keyset
 
 
 class LoadCleartextKeysetTest(absltest.TestCase):

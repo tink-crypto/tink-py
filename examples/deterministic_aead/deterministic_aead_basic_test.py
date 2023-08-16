@@ -14,7 +14,7 @@
 """Tests for deterministic_aead_basic."""
 
 from absl.testing import absltest
-import deterministic_aead_basic
+from deterministic_aead import deterministic_aead_basic
 
 
 class DeterministicAeadSimpleTest(absltest.TestCase):

@@ -16,7 +16,7 @@ from absl.testing import absltest
 
 from tink import aead
 
-import create_keyset
+from walkthrough import create_keyset
 
 
 class CreateKeysetTest(absltest.TestCase):

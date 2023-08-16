@@ -14,7 +14,7 @@
 """Tests for mac_basic."""
 
 from absl.testing import absltest
-import mac_basic
+from mac import mac_basic
 
 
 class MacBasicTest(absltest.TestCase):

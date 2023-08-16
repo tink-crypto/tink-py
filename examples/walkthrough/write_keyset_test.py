@@ -18,9 +18,9 @@ from absl.testing import absltest
 import tink
 from tink import aead
 
-import create_keyset
-import load_encrypted_keyset
-import write_keyset
+from walkthrough import create_keyset
+from walkthrough import load_encrypted_keyset
+from walkthrough import write_keyset
 
 from tink.testing import fake_kms
 

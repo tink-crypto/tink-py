@@ -19,7 +19,7 @@ import tink
 from tink import aead
 from tink import cleartext_keyset_handle
 
-import load_encrypted_keyset
+from walkthrough import load_encrypted_keyset
 from tink.testing import fake_kms
 
 _FAKE_KMS_AEAD_KEYSET = r"""{

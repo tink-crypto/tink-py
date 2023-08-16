@@ -14,7 +14,7 @@
 """Tests for hybrid_basic."""
 
 from absl.testing import absltest
-import hybrid_basic
+from hybrid import hybrid_basic
 
 
 class HybridEncryptionSimpleTest(absltest.TestCase):
