@@ -52,6 +52,7 @@ get_python_and_abi() {
   #   - cp38-cp38
   #   - cp39-cp39
   #   - cp310-cp310
+  #   - cp311-cp311
   echo "${wheel_file}" | grep -oEi 'cp[0-9]{2,}-cp[0-9]{2,}m?'
 }
 
