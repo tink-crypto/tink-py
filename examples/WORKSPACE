@@ -2,17 +2,9 @@ workspace(name = "examples_python")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# Overrides what is loaded by tink_py_deps.
-http_archive(
-    name = "tink_cc",
-    urls = ["https://github.com/tink-crypto/tink-cc/archive/main.zip"],
-    strip_prefix = "tink-cc-main",
-)
-
-http_archive(
+local_repository(
     name = "tink_py",
-    urls = ["https://github.com/tink-crypto/tink-py/archive/main.zip"],
-    strip_prefix = "tink-py-main",
+    path = "..",
 )
 
 # Load Tink dependencies.

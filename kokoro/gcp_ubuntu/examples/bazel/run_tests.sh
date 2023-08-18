@@ -61,7 +61,7 @@ EOF
 
 cleanup() {
   rm -rf _do_run_test.sh
-  mv "examples/WORKSPACE.bak" "examples/WORKSPACE"
+  mv "WORKSPACE.bak" "WORKSPACE"
 }
 
 main() {
@@ -89,10 +89,9 @@ main() {
   ./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
     "${GITHUB_ORG}/tink-cc"
 
-  cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
-
+  cp "WORKSPACE" "WORKSPACE.bak"
   ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-    -f "examples/WORKSPACE" -t ../..
+    -f "WORKSPACE" -t ..
 
   # Run cleanup on EXIT.
   trap cleanup EXIT

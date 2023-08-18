@@ -45,11 +45,6 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 # Install requirements for examples.
 pip3 install --user --require-hashes -r examples/requirements.txt
 
-cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
-
-./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "examples/WORKSPACE" -t "${TINK_BASE_DIR}"
-
 # All the manual *test_package targets.
 readonly MANUAL_TARGETS="$(cd examples \
   && "${BAZEL_CMD}" query 'filter(.*test_package, attr(tags, manual, ...))')"
@@ -58,5 +53,3 @@ IFS=' ' read -a MANUAL_TARGETS_ARRAY \
 readonly MANUAL_TARGETS_ARRAY
 
 ./kokoro/testutils/run_bazel_tests.sh -m "examples" "${MANUAL_TARGETS_ARRAY[@]}"
-
-mv "examples/WORKSPACE.bak" "examples/WORKSPACE"

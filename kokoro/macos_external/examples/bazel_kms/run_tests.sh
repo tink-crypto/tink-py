@@ -41,10 +41,9 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
-cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
-
+cp "WORKSPACE" "WORKSPACE.bak"
 ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "examples/WORKSPACE" -t "${TINK_BASE_DIR}"
+  -f "WORKSPACE" -t "${TINK_BASE_DIR}"
 
 # TODO(b/276277854) It is not clear why this is needed.
 pip3 install protobuf==3.20.3 --user
@@ -61,4 +60,4 @@ readonly MANUAL_TARGETS_ARRAY
 
 ./kokoro/testutils/run_bazel_tests.sh -m "examples" "${MANUAL_TARGETS_ARRAY[@]}"
 
-mv "examples/WORKSPACE.bak" "examples/WORKSPACE"
+mv "WORKSPACE.bak" "WORKSPACE"

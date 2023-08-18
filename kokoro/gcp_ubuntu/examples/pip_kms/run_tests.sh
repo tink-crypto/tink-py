@@ -64,7 +64,6 @@ EOF
 
 cleanup() {
   rm -rf _do_run_test.sh
-  mv "examples/WORKSPACE.bak" "examples/WORKSPACE"
 }
 
 main() {
@@ -92,11 +91,6 @@ main() {
     "${GITHUB_ORG}/tink-cc"
 
   ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
-
-  cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
-
-  ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-    -f "examples/WORKSPACE" -t ../..
 
   # Run cleanup on EXIT.
   trap cleanup EXIT
