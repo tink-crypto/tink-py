@@ -41,6 +41,7 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
+./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_protoc.sh

@@ -112,6 +112,7 @@ main() {
     "${GITHUB_ORG}/tink-cc"
 
   ./kokoro/testutils/copy_credentials.sh "testdata" "all"
+  ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
   # Run cleanup on EXIT.
   trap cleanup EXIT
