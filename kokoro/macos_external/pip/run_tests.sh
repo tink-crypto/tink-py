@@ -57,3 +57,23 @@ export TINK_PYTHON_ROOT_PATH="$(pwd)"
 # depend on a testonly shared object.
 find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
   | xargs -0 -n1 python3
+
+# Install requirements for examples.
+python3 -m pip install --require-hashes -r examples/requirements.txt
+
+if [[ "${KOKORO_JOB_NAME:-}" =~ .*/pip_kms/.* ]]; then
+  # Run all the *test_package targets, including manual ones that interact with
+  # a KMS.
+  TARGETS="$(cd examples && "${BAZEL_CMD}" query 'filter(.*test_package, ...)')"
+else
+  # *test_package targets excluding manual ones.
+  TARGETS="$(cd examples \
+  && "${BAZEL_CMD}" query \
+    'filter(.*test_package, ...) except attr(tags, manual, ...)')"
+fi
+readonly TARGETS
+
+IFS=' ' read -a TARGETS_ARRAY <<< "$(tr '\n' ' ' <<< "${TARGETS}")"
+readonly TARGETS_ARRAY
+
+./kokoro/testutils/run_bazel_tests.sh -m "examples" "${TARGETS_ARRAY[@]}"

@@ -40,6 +40,12 @@ _create_test_command() {
   cat <<'EOF' > _do_run_test.sh
 set -euo pipefail
 
+BAZEL_CMD="bazel"
+if command -v "bazelisk" &> /dev/null; then
+  BAZEL_CMD="bazelisk"
+fi
+readonly BAZEL_CMD
+
 ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)" ..
 
 # testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
@@ -49,6 +55,28 @@ export TINK_PYTHON_ROOT_PATH="$(pwd)"
 # depend on a testonly shared object.
 find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
   | xargs -0 -n1 python3
+
+# Run examples that rely on the tink pip package to be installed.
+
+# Install requirements for examples.
+python3 -m pip install --require-hashes -r examples/requirements.txt
+
+if [[ "${KOKORO_JOB_NAME:-}" =~ .*/pip_kms/.* ]]; then
+  # Run all the *test_package targets, including manual ones that interact with
+  # a KMS.
+  TARGETS="$(cd examples && "${BAZEL_CMD}" query 'filter(.*test_package, ...)')"
+else
+  # *test_package targets excluding manual ones.
+  TARGETS="$(cd examples \
+  && "${BAZEL_CMD}" query \
+    'filter(.*test_package, ...) except attr(tags, manual, ...)')"
+fi
+readonly TARGETS
+
+IFS=' ' read -a TARGETS_ARRAY <<< "$(tr '\n' ' ' <<< "${TARGETS}")"
+readonly TARGETS_ARRAY
+
+./kokoro/testutils/run_bazel_tests.sh -m "examples" "${TARGETS_ARRAY[@]}"
 EOF
 
   chmod +x _do_run_test.sh
@@ -56,6 +84,7 @@ EOF
 
 cleanup() {
   rm -rf _do_run_test.sh
+  rm -rf env_variables.txt
 }
 
 main() {
@@ -91,6 +120,7 @@ main() {
   # Share the required Kokoro env variables.
   cat <<EOF > env_variables.txt
 KOKORO_ROOT
+KOKORO_JOB_NAME
 EOF
   run_command_args+=( -e env_variables.txt )
   readonly run_command_args
