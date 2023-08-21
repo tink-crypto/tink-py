@@ -40,8 +40,11 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc"
 
 cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
-./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "examples/WORKSPACE" -t "${TINK_BASE_DIR}"
+sed -i '.bak' 's~# Placeholder for tink-cc override.~\
+local_repository(\
+    name = "tink_cc",\
+    path = "../../tink_cc",\
+)~' examples/WORKSPACE
 
 # Install protobuf pip packages.
 

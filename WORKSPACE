@@ -2,11 +2,7 @@ workspace(name = "tink_py")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-http_archive(
-    name = "tink_cc",
-    urls = ["https://github.com/tink-crypto/tink-cc/archive/main.zip"],
-    strip_prefix = "tink-cc-main",
-)
+# Placeholder for tink-cc override.
 
 load("@tink_py//:tink_py_deps.bzl", "tink_py_deps")
 

@@ -73,8 +73,14 @@ fi
 readonly TINK_PY_MANUAL_TARGETS
 
 cp "WORKSPACE" "WORKSPACE.bak"
-./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "WORKSPACE" -t ..
+mapfile -d '' TINK_CC_LOCAL_REPO <<'EOF'
+local_repository(\
+    name = "tink_cc",\
+    path = "../tink_cc",\
+)\
+EOF
+readonly TINK_CC_LOCAL_REPO
+sed -i "s~# Placeholder for tink-cc override.~${TINK_CC_LOCAL_REPO}~" WORKSPACE
 
 trap cleanup EXIT
 

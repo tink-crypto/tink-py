@@ -51,7 +51,11 @@ fi
 readonly TINK_PY_MANUAL_TARGETS
 
 cp "WORKSPACE" "WORKSPACE.bak"
-./kokoro/testutils/replace_http_archive_with_local_repository.py \
-  -f "WORKSPACE" -t "${TINK_BASE_DIR}"
+sed -i '.bak' 's~# Placeholder for tink-cc override.~\
+local_repository(\
+    name = "tink_cc",\
+    path = "../tink_cc",\
+)~' WORKSPACE
+
 ./kokoro/testutils/run_bazel_tests.sh . "${TINK_PY_MANUAL_TARGETS[@]}"
 mv "WORKSPACE.bak" "WORKSPACE"

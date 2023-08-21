@@ -105,7 +105,7 @@ def _parse_requirements(requirements_filename: str) -> List[str]:
     ]
 
 
-def _patch_workspace(workspace_file: str):
+def _patch_workspace(workspace_file_path: str):
   """Update WORKSPACE with local Bazel dependencies based on an env variable.
 
   If TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH is set, override the default
@@ -115,48 +115,25 @@ def _patch_workspace(workspace_file: str):
   NOTE: This is for testing only!
 
   Args:
-    workspace_file: The WORKSPACE file.
+    workspace_file_path: The WORKSPACE file path.
   """
-  with open(workspace_file, 'r') as f:
+  if 'TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH' not in os.environ:
+    # Do nothing.
+    return
+
+  with open(workspace_file_path, 'r') as f:
     workspace_content = f.read()
-  if 'TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH' in os.environ:
-    base_path = os.environ['TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH']
-    workspace_content = _replace_http_archive_with_local_repo(
-        workspace_content=workspace_content,
-        name='tink_cc',
-        repo_name='tink-cc',
-        local_path=f'{base_path}/tink_cc',
-        archive_filename='main.zip',
-        strip_prefix='tink-cc-main',
-    )
-  with open(workspace_file, 'w') as f:
-    f.write(workspace_content)
-
-
-def _replace_http_archive_with_local_repo(
-    workspace_content: str,
-    name: str,
-    repo_name: str,
-    local_path: str,
-    archive_filename: str,
-    strip_prefix: str,
-) -> str:
-  """Replaces http_archive rule with local_repository in workspace_content."""
-  before = textwrap.dedent(f"""\
-    http_archive(
-        name = "{name}",
-        urls = ["{_TINK_CRYPTO_GITHUB_ORG_URL}/{repo_name}/archive/{archive_filename}"],
-        strip_prefix = "{strip_prefix}",
-    )
-    """)
+  base_path = os.environ['TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH']
+  before = '# Placeholder for tink-cc override.'
   after = textwrap.dedent(f"""\
       # Modified by setup.py
       local_repository(
-          name = "{name}",
-          path = "{local_path}",
-      )
-      """)
-  return workspace_content.replace(before, after)
+          name = "tink_cc",
+          path = "{base_path}/tink_cc",
+      )""")
+  workspace_content = workspace_content.replace(before, after)
+  with open(workspace_file_path, 'w') as f:
+    f.write(workspace_content)
 
 
 class BazelExtension(setuptools.Extension):

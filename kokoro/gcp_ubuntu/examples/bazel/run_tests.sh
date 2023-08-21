@@ -90,8 +90,15 @@ main() {
     "${GITHUB_ORG}/tink-cc"
 
   cp "examples/WORKSPACE" "examples/WORKSPACE.bak"
-  ./kokoro/testutils/replace_http_archive_with_local_repository.py \
-    -f "examples/WORKSPACE" -t ../..
+  mapfile -d '' TINK_CC_LOCAL_REPO <<'EOF'
+local_repository(\
+    name = "tink_cc",\
+    path = "../../tink_cc",\
+)\
+EOF
+  readonly TINK_CC_LOCAL_REPO
+  sed -i "s~# Placeholder for tink-cc override.~${TINK_CC_LOCAL_REPO}~" \
+    examples/WORKSPACE
 
   # Run cleanup on EXIT.
   trap cleanup EXIT
