@@ -19,6 +19,12 @@
 
 set -euo pipefail
 
+BAZEL_CMD="bazel"
+if command -v "bazelisk" &> /dev/null; then
+  BAZEL_CMD="bazelisk"
+fi
+readonly BAZEL_CMD
+
 # If we are running on Kokoro cd into the repository.
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
@@ -34,28 +40,52 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
+./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
 # TODO(b/276277854) It is not clear why this is needed.
-pip3 install protobuf==3.20.3 --user
-pip3 install google-cloud-kms==2.15.0 --user
+python3 -m pip install --require-hashes -r requirements.txt
 
-TINK_PY_MANUAL_TARGETS=()
-# These tests require valid credentials to access KMS services.
-if [[ -n "${KOKORO_ROOT:-}" ]]; then
-  TINK_PY_MANUAL_TARGETS+=(
-    "//tink/integration/awskms:_aws_kms_integration_test"
-    "//tink/integration/gcpkms:_gcp_kms_client_integration_test"
-    "//tink/integration/gcpkms:_gcp_kms_integration_test"
-  )
-fi
-readonly TINK_PY_MANUAL_TARGETS
-
-cp "WORKSPACE" "WORKSPACE.bak"
 sed -i '.bak' 's~# Placeholder for tink-cc override.~\
 local_repository(\
     name = "tink_cc",\
     path = "../tink_cc",\
 )~' WORKSPACE
 
-./kokoro/testutils/run_bazel_tests.sh . "${TINK_PY_MANUAL_TARGETS[@]}"
+./kokoro/testutils/run_bazel_tests.sh .
+if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
+  readonly MANUAL_TARGETS="$(
+    "${BAZEL_CMD}" query 'attr(tags, manual, kind(.*_test, ...))')"
+  IFS=' ' read -a MANUAL_TARGETS_ARRAY <<< "$(tr '\n' ' ' \
+    <<< "${MANUAL_TARGETS}")"
+  readonly MANUAL_TARGETS_ARRAY
+  ./kokoro/testutils/run_bazel_tests.sh -m . "${MANUAL_TARGETS_ARRAY[@]}"
+fi
+
 mv "WORKSPACE.bak" "WORKSPACE"
+
+# Run examples tests.
+sed -i '.bak' 's~# Placeholder for tink-cc override.~\
+local_repository(\
+    name = "tink_cc",\
+    path = "../../tink_cc",\
+)~' examples/WORKSPACE
+
+if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
+  # Run all the test targets excluding *test_package, including manual ones that
+  # interact with a KMS.
+  TARGETS="$(cd examples && "${BAZEL_CMD}" query \
+    'kind(.*_test, ...) except filter(.*test_package, ...)')"
+else
+  # Run all the test targets excluding *test_package, exclude manual ones.
+  TARGETS="$(cd examples \
+    && "${BAZEL_CMD}" query \
+      'kind(.*_test, ...) except filter(.*test_package, ...) except attr(tags, manual, ...)')"
+fi
+readonly TARGETS
+
+IFS=' ' read -a TARGETS_ARRAY <<< "$(tr '\n' ' ' <<< "${TARGETS}")"
+readonly TARGETS_ARRAY
+
+./kokoro/testutils/run_bazel_tests.sh -m "examples" "${TARGETS_ARRAY[@]}"
+
+mv "examples/WORKSPACE.bak" "examples/WORKSPACE"
