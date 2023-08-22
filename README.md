@@ -3,25 +3,34 @@
 <!-- GCP Ubuntu --->
 
 [tink_py_bazel_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-gcp-ubuntu.svg
-[tink_py_examples_bazel_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-examples-bazel-gcp-ubuntu.svg
-[tink_py_examples_bazel_kms_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-examples-bazel-kms-gcp-ubuntu.svg
+[tink_py_bazel_kms_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-kms-gcp-ubuntu.svg
 [tink_py_pip_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-gcp-ubuntu.svg
-[tink_py_release_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-gcp-ubuntu.svg
+[tink_py_pip_kms_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-kms-gcp-ubuntu.svg
+[tink_py_bdist_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-bdist-create-gcp-ubuntu.svg
+[tink_py_sdist_create_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-sdist-create-gcp-ubuntu.svg
+[tink_py_sdist_test_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-sdist-test-gcp-ubuntu.svg
+
+<!-- GCP Ubuntu (aarch64) --->
+
+[tink_py_bdist_create_badge_gcp_ubuntu_aarch64]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-bdist-create-gcp_ubuntu-arm64-external.svg
 
 <!-- MacOS --->
 
 [tink_py_bazel_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-macos-external.svg
-[tink_py_examples_bazel_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-examples-bazel-macos-external.svg
-[tink_py_examples_bazel_kms_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-examples-bazel-kms-macos-external.svg
+[tink_py_bazel_kms_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-kms-macos-external.svg
 [tink_py_pip_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-macos-external.svg
+[tink_py_pip_kms_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-kms-macos-external.svg
+[tink_py_bdist_create_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-bdist-create-macos-external.svg
 
-**Test**               | **GCP Ubuntu**                                                                    | **MacOS**
----------------------- | --------------------------------------------------------------------------------- | ---------
-Tink (Bazel)           | [![Bazel_GcpUbuntu][tink_py_bazel_badge_gcp_ubuntu]](#)                           | [![Bazel_MacOs][tink_py_bazel_badge_macos]](#)
-Tink Examples          | [![Examples_Bazel_GcpUbuntu][tink_py_examples_bazel_badge_gcp_ubuntu]](#)         | [![Examples_Bazel_MacOs][tink_py_examples_bazel_badge_macos]](#)
-Tink Examples with KMS | [![Examples_Bazel_Kms_GcpUbuntu][tink_py_examples_bazel_kms_badge_gcp_ubuntu]](#) | [![Examples_Bazel_Kms_MacOs][tink_py_examples_bazel_kms_badge_macos]](#)
-Tink Pip               | [![Pip_MacOs][tink_py_pip_badge_gcp_ubuntu]](#)                                   | [![Pip_GcpUbuntu][tink_py_pip_badge_macos]](#)
-Tink Release           | [![Release_GcpUbuntu][tink_py_release_badge_gcp_ubuntu]](#)                       | N/A
+**Test**              | **GCP Ubuntu**                                                        | **GCP Ubuntu (aarch64)**                                                       | **MacOS**
+--------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------
+Bazel                 | [![Bazel_GcpUbuntu][tink_py_bazel_badge_gcp_ubuntu]](#)               | N/A                                                                            | [![Bazel_MacOs][tink_py_bazel_badge_macos]](#)
+Bazel (with KMS)      | [![Bazel_Kms_GcpUbuntu][tink_py_bazel_kms_badge_gcp_ubuntu]](#)       | N/A                                                                            | [![Bazel_Kms_MacOs][tink_py_bazel_kms_badge_macos]](#)
+Pip                   | [![Pip_MacOs][tink_py_pip_badge_gcp_ubuntu]](#)                       | N/A                                                                            | [![Pip_MacOs][tink_py_pip_badge_macos]](#)
+Pip (with KMS)        | [![Pip_Kms_GcpUbuntu][tink_py_pip_kms_badge_gcp_ubuntu]](#)           | N/A                                                                            | [![Pip_Kms_MacOs][tink_py_pip_kms_badge_macos]](#)
+Bdist (Create + Test) | [![Bdist_GcpUbuntu][tink_py_bdist_badge_gcp_ubuntu]](#)               | [![Bdist_GcpUbuntu_Aarch64][tink_py_bdist_create_badge_gcp_ubuntu_aarch64]](#) | [![Bdist_MacOs][tink_py_bdist_create_badge_macos]](#)
+Sdist (Create)        | [![Sdist_Create_GcpUbuntu][tink_py_sdist_create_badge_gcp_ubuntu]](#) | N/A                                                                            | N/A
+Sdist (Test)          | [![Sdist_Test_GcpUbuntu][tink_py_sdist_test_badge_gcp_ubuntu]](#)     | N/A                                                                            | N/A
 
 
 Using crypto in your application [shouldn't have to][devs_are_users_too_slides]
