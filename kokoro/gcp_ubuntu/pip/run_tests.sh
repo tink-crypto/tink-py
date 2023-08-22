@@ -46,7 +46,7 @@ if command -v "bazelisk" &> /dev/null; then
 fi
 readonly BAZEL_CMD
 
-./kokoro/testutils/install_tink_via_pip.sh "$(pwd)" ..
+./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
 
 # testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
 export TINK_PYTHON_ROOT_PATH="$(pwd)"
@@ -85,6 +85,7 @@ EOF
 cleanup() {
   rm -rf _do_run_test.sh
   rm -rf env_variables.txt
+  mv WORKSPACE.bak WORKSPACE
 }
 
 main() {
@@ -114,11 +115,17 @@ main() {
   ./kokoro/testutils/copy_credentials.sh "testdata" "all"
   ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
+  sed -i'.bak' 's~# Placeholder for tink-cc override.~\
+local_repository(\
+    name = "tink_cc",\
+    path = "../tink_cc",\
+)~' WORKSPACE
+
   # Run cleanup on EXIT.
   trap cleanup EXIT
 
   _create_test_command
-  # Share the required Kokoro env variables.
+  # Share the required env variables.
   cat <<EOF > env_variables.txt
 KOKORO_ROOT
 KOKORO_JOB_NAME

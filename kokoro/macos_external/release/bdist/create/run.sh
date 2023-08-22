@@ -14,7 +14,7 @@
 # limitations under the License.
 ################################################################################
 
-set -euo pipefail
+set -eEuo pipefail
 
 IS_KOKORO="false"
 if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
@@ -43,11 +43,25 @@ if [[ "${IS_KOKORO}" == "true" ]]; then
   if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
     CREATE_DIST_OPTIONS+=( -t release )
   else
-    CREATE_DIST_OPTIONS+=( -l )
+    sed -i '.bak' 's~# Placeholder for tink-cc override.~\
+local_repository(\
+    name = "tink_cc",\
+    path = "../tink_cc",\
+)~' WORKSPACE
   fi
 fi
 readonly CREATE_DIST_OPTIONS
 
+_cleanup() {
+  if [[ -f "WORKSPACE.bak" ]]; then
+    mv "WORKSPACE.bak" "WORKSPACE"
+  fi
+}
+
+trap _cleanup EXIT
+
 # Generate binary wheels and test them.
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
 ./tools/distribution/test_dist.sh release
+
+mv "WORKSPACE.bak" "WORKSPACE"

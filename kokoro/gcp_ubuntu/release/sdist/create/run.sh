@@ -26,7 +26,7 @@
 #   ${TINK_BASE_DIR}/tink_cc
 #   ${TINK_BASE_DIR}/tink_py
 # NOTE: tink_cc is fetched from GitHub if not found.
-set -euo pipefail
+set -eEuo pipefail
 
 IS_KOKORO="false"
 if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
@@ -64,10 +64,22 @@ if [[ "${IS_KOKORO}" == "true" ]]; then
   if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
     CREATE_DIST_OPTIONS+=( -t release )
   else
-    CREATE_DIST_OPTIONS+=( -l )
+    sed -i'.bak' 's~# Placeholder for tink-cc override.~\
+local_repository(\
+    name = "tink_cc",\
+    path = "../tink_cc",\
+)~' WORKSPACE
   fi
 fi
 readonly CREATE_DIST_OPTIONS
+
+_cleanup() {
+  if [[ -f "WORKSPACE.bak" ]]; then
+    mv "WORKSPACE.bak" "WORKSPACE"
+  fi
+}
+
+trap _cleanup EXIT
 
 # Generate a source distribution.
 ./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \

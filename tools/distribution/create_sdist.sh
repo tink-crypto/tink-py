@@ -25,7 +25,6 @@ readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 usage() {
   cat <<EOF
 Usage:  $0 [-l] [-v <Python version to use>] [-t <release type (dev|release)>]
-  -l: [Optional] Build sdist against a local tink-cc located at ./..
   -t: [Optional] Type of release; if "dev", the genereted sdist archive is named tink-<version from VERSION>-dev0.tar.gz; if "release", tink-<version from VERSION>.tar.gz (default=dev).
   -v: [Optional] Python version to use (default=3.10).
   -h: Help. Print this usage information.
@@ -33,7 +32,6 @@ EOF
   exit 1
 }
 
-TINK_CC_USE_LOCAL="false"
 PYTHON_VERSION="3.10"
 RELEASE_TYPE="dev"
 TINK_VERSION=
@@ -42,14 +40,12 @@ parse_args() {
   # Parse options.
   while getopts "hlv:t:" opt; do
     case "${opt}" in
-      l) TINK_CC_USE_LOCAL="true" ;;
       v) PYTHON_VERSION="${OPTARG}" ;;
       t) RELEASE_TYPE="${OPTARG}" ;;
       *) usage ;;
     esac
   done
   shift $((OPTIND - 1))
-  readonly TINK_CC_USE_LOCAL
   readonly PYTHON_VERSION
   readonly RELEASE_TYPE
 
@@ -96,9 +92,6 @@ main() {
   python3 -m pip install --require-hashes -r \
     ./tools/distribution/requirements.txt
 
-  if [[ "${TINK_CC_USE_LOCAL}" == "true" ]]; then
-    export TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH="$(cd .. && pwd)"
-  fi
   export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
 
   cp WORKSPACE WORKSPACE.bak

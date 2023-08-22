@@ -45,7 +45,16 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_protoc.sh
-./kokoro/testutils/install_tink_via_pip.sh "$(pwd)" "${TINK_BASE_DIR}"
+
+sed -i '.bak' 's~# Placeholder for tink-cc override.~\
+local_repository(\
+    name = "tink_cc",\
+    path = "../tink_cc",\
+)~' WORKSPACE
+
+./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
+
+mv "WORKSPACE.bak" "WORKSPACE"
 
 # Get root certificates for gRPC
 curl -OLsS https://raw.githubusercontent.com/grpc/grpc/master/etc/roots.pem

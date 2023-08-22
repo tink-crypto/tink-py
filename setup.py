@@ -17,8 +17,6 @@
 The behavior of this script can be modified using two enviroment variables:
 
   - TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION: To change the version that is used.
-  - TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH: To use a local path to locate the
-    project dependencies.
 """
 
 import glob
@@ -27,8 +25,6 @@ import platform
 import posixpath
 import shutil
 import subprocess
-import textwrap
-
 from typing import List
 
 import setuptools
@@ -105,37 +101,6 @@ def _parse_requirements(requirements_filename: str) -> List[str]:
     ]
 
 
-def _patch_workspace(workspace_file_path: str):
-  """Update WORKSPACE with local Bazel dependencies based on an env variable.
-
-  If TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH is set, override the default
-  tink-cc dependency with a local_repository rule assuming the path for
-  tink-cc is ${TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH}/tink_cc.
-
-  NOTE: This is for testing only!
-
-  Args:
-    workspace_file_path: The WORKSPACE file path.
-  """
-  if 'TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH' not in os.environ:
-    # Do nothing.
-    return
-
-  with open(workspace_file_path, 'r') as f:
-    workspace_content = f.read()
-  base_path = os.environ['TINK_PYTHON_SETUPTOOLS_OVERRIDE_BASE_PATH']
-  before = '# Placeholder for tink-cc override.'
-  after = textwrap.dedent(f"""\
-      # Modified by setup.py
-      local_repository(
-          name = "tink_cc",
-          path = "{base_path}/tink_cc",
-      )""")
-  workspace_content = workspace_content.replace(before, after)
-  with open(workspace_file_path, 'w') as f:
-    f.write(workspace_content)
-
-
 class BazelExtension(setuptools.Extension):
   """A C/C++ extension that is defined as a Bazel BUILD target."""
 
@@ -163,9 +128,6 @@ class BuildBazelExtension(build_ext.build_ext):
     build_ext.build_ext.run(self)
 
   def bazel_build(self, ext: str) -> None:
-    # Patch WORKSPACE if needed.
-    _patch_workspace('WORKSPACE')
-
     if not os.path.exists(self.build_temp):
       os.makedirs(self.build_temp)
 
