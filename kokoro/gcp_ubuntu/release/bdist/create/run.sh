@@ -39,26 +39,20 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
 CREATE_DIST_OPTIONS=()
-if [[ "${IS_KOKORO}" == "true" ]]; then
-  if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
-    CREATE_DIST_OPTIONS+=( -t release )
-  else
-    sed -i'.bak' 's~# Placeholder for tink-cc override.~\
+if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+  CREATE_DIST_OPTIONS+=( -t release )
+else
+  sed -i'.bak' 's~# Placeholder for tink-cc override.~\
 local_repository(\
-    name = "tink_cc",\
-    path = "../tink_cc",\
+  name = "tink_cc",\
+  path = "../tink_cc",\
 )~' WORKSPACE
-  fi
+  _cleanup() {
+    mv "WORKSPACE.bak" "WORKSPACE"
+  }
+  trap _cleanup EXIT
 fi
 readonly CREATE_DIST_OPTIONS
-
-_cleanup() {
-  if [[ -f "WORKSPACE.bak" ]]; then
-    mv "WORKSPACE.bak" "WORKSPACE"
-  fi
-}
-
-trap _cleanup EXIT
 
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
 ./tools/distribution/test_dist.sh release

@@ -36,7 +36,7 @@ readonly ARCH="$(uname -m)"
 
 usage() {
   cat <<EOF
-Usage:  $0 [-l] [-t <release type (dev|release)>]
+Usage:  $0 [-t <release type (dev|release)>]
   -t: [Optional] Type of release; if "dev", the genereted wheels use <version from VERSION>-dev0; if "release", <version from VERSION> (default=dev).
   -h: Help. Print this usage information.
 EOF
@@ -48,7 +48,7 @@ TINK_VERSION=
 
 parse_args() {
   # Parse options.
-  while getopts "hlt:" opt; do
+  while getopts "ht:" opt; do
     case "${opt}" in
       t) RELEASE_TYPE="${OPTARG}" ;;
       *) usage ;;
@@ -69,10 +69,6 @@ parse_args() {
   readonly TINK_VERSION
 }
 
-cleanup() {
-  mv WORKSPACE.bak WORKSPACE
-}
-
 #######################################
 # Builds Tink Python built distribution (Wheel) [1].
 #
@@ -89,12 +85,6 @@ create_bdist_for_linux() {
   # Use signatures for getting images from registry (see
   # https://docs.docker.com/engine/security/trust/content_trust/).
   export DOCKER_CONTENT_TRUST=1
-
-  # We use setup.py to build wheels; setup.py makes changes to the WORKSPACE
-  # file so we save a copy for backup.
-  cp WORKSPACE WORKSPACE.bak
-
-  trap cleanup EXIT
 
   # Base directory in the container image.
   local -r tink_deps_container_dir="/tmp/tink"

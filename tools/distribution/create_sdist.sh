@@ -24,7 +24,7 @@ readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 
 usage() {
   cat <<EOF
-Usage:  $0 [-l] [-v <Python version to use>] [-t <release type (dev|release)>]
+Usage:  $0 [-v <Python version to use>] [-t <release type (dev|release)>]
   -t: [Optional] Type of release; if "dev", the genereted sdist archive is named tink-<version from VERSION>-dev0.tar.gz; if "release", tink-<version from VERSION>.tar.gz (default=dev).
   -v: [Optional] Python version to use (default=3.10).
   -h: Help. Print this usage information.
@@ -38,7 +38,7 @@ TINK_VERSION=
 
 parse_args() {
   # Parse options.
-  while getopts "hlv:t:" opt; do
+  while getopts "hv:t:" opt; do
     case "${opt}" in
       v) PYTHON_VERSION="${OPTARG}" ;;
       t) RELEASE_TYPE="${OPTARG}" ;;
@@ -59,10 +59,6 @@ parse_args() {
       ;;
   esac
   readonly TINK_VERSION
-}
-
-cleanup() {
-  mv WORKSPACE.bak WORKSPACE
 }
 
 main() {
@@ -93,10 +89,6 @@ main() {
     ./tools/distribution/requirements.txt
 
   export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
-
-  cp WORKSPACE WORKSPACE.bak
-
-  trap cleanup EXIT
 
   # Build source distribution.
   python3 setup.py sdist --owner=root --group=root

@@ -60,26 +60,20 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc"
 
 CREATE_DIST_OPTIONS=()
-if [[ "${IS_KOKORO}" == "true" ]]; then
-  if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
-    CREATE_DIST_OPTIONS+=( -t release )
-  else
-    sed -i'.bak' 's~# Placeholder for tink-cc override.~\
+if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+  CREATE_DIST_OPTIONS+=( -t release )
+else
+  sed -i'.bak' 's~# Placeholder for tink-cc override.~\
 local_repository(\
-    name = "tink_cc",\
-    path = "../tink_cc",\
+  name = "tink_cc",\
+  path = "../tink_cc",\
 )~' WORKSPACE
-  fi
+  _cleanup() {
+    mv "WORKSPACE.bak" "WORKSPACE"
+  }
+  trap _cleanup EXIT
 fi
 readonly CREATE_DIST_OPTIONS
-
-_cleanup() {
-  if [[ -f "WORKSPACE.bak" ]]; then
-    mv "WORKSPACE.bak" "WORKSPACE"
-  fi
-}
-
-trap _cleanup EXIT
 
 # Generate a source distribution.
 ./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \

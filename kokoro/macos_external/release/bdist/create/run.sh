@@ -22,13 +22,13 @@ if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
 fi
 readonly IS_KOKORO
 
-# If we are running on Kokoro cd into the repository.
 if [[ "${IS_KOKORO}" == "true" ]]; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
-  cd "${TINK_BASE_DIR}/tink_py"
 fi
-
 : "${TINK_BASE_DIR:=$(cd .. && pwd)}"
+readonly TINK_BASE_DIR
+
+cd "${TINK_BASE_DIR}/tink_py"
 
 # Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
 # downloaded.
@@ -38,30 +38,19 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
-CREATE_DIST_OPTIONS=()
-if [[ "${IS_KOKORO}" == "true" ]]; then
-  if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
-    CREATE_DIST_OPTIONS+=( -t release )
-  else
-    sed -i '.bak' 's~# Placeholder for tink-cc override.~\
+if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+  ./tools/distribution/create_bdist.sh -t release
+else
+  sed -i '.bak' 's~# Placeholder for tink-cc override.~\
 local_repository(\
-    name = "tink_cc",\
-    path = "../tink_cc",\
+  name = "tink_cc",\
+  path = "../tink_cc",\
 )~' WORKSPACE
-  fi
+  ./tools/distribution/create_bdist.sh
 fi
-readonly CREATE_DIST_OPTIONS
 
-_cleanup() {
-  if [[ -f "WORKSPACE.bak" ]]; then
-    mv "WORKSPACE.bak" "WORKSPACE"
-  fi
-}
-
-trap _cleanup EXIT
-
-# Generate binary wheels and test them.
-./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
 ./tools/distribution/test_dist.sh release
 
-mv "WORKSPACE.bak" "WORKSPACE"
+if [[ -f "WORKSPACE.bak" ]]; then
+  mv "WORKSPACE.bak" "WORKSPACE"
+fi
