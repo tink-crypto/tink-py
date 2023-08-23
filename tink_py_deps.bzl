@@ -62,6 +62,7 @@ def tink_py_deps():
     if not native.existing_rule("tink_cc"):
         http_archive(
             name = "tink_cc",
-            urls = ["https://github.com/tink-crypto/tink-cc/archive/main.zip"],
-            strip_prefix = "tink-cc-main",
+            urls = ["https://github.com/tink-crypto/tink-cc/archive/refs/tags/v2.0.0.zip"],
+            strip_prefix = "tink-cc-2.0.0",
+            sha256 = "103ddfce800e77f3b3b6b2c808a8611bc734b31ddb12fbcfd8bebc1b96a7e963",
         )
