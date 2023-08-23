@@ -59,6 +59,10 @@ fi
 if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
   # Run all the test targets excluding *test_package, including manual ones that
   # interact with a KMS.
+
+  #TODO(b/276277854) It is not clear why this is needed.
+  python3 -m pip install --require-hashes -r examples/requirements.txt
+
   TARGETS="$(cd examples && "${BAZEL_CMD}" query \
     'kind(.*_test, ...) except filter(.*test_package, ...)')"
 else
