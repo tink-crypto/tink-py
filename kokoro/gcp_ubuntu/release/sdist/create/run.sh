@@ -62,16 +62,6 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 CREATE_DIST_OPTIONS=()
 if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
   CREATE_DIST_OPTIONS+=( -t release )
-else
-  sed -i'.bak' 's~# Placeholder for tink-cc override.~\
-local_repository(\
-  name = "tink_cc",\
-  path = "../tink_cc",\
-)~' WORKSPACE
-  _cleanup() {
-    mv "WORKSPACE.bak" "WORKSPACE"
-  }
-  trap _cleanup EXIT
 fi
 readonly CREATE_DIST_OPTIONS
 
