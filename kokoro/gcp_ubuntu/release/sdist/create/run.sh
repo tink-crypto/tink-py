@@ -63,7 +63,7 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
   "${GITHUB_ORG}/tink-cc"
 
 CREATE_DIST_OPTIONS=()
-if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+if [[ "${KOKORO_ROOT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
   CREATE_DIST_OPTIONS+=( -t release )
 fi
 readonly CREATE_DIST_OPTIONS

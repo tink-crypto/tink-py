@@ -35,7 +35,7 @@ fi
 readonly IS_KOKORO
 
 if [[ -z "${USE_LOCAL_TINK_CC:-}" ]]; then
-  if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+  if [[ "${KOKORO_ROOT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
     USE_LOCAL_TINK_CC="false"
   else
     USE_LOCAL_TINK_CC="true"
@@ -60,7 +60,7 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
 CREATE_DIST_OPTIONS=()
-if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+if [[ "${KOKORO_ROOT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
   CREATE_DIST_OPTIONS+=( -t release )
 else
   CREATE_DIST_OPTIONS+=( -t dev )

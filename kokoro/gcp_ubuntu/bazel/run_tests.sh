@@ -43,7 +43,7 @@ readonly IS_KOKORO
 
 if [[ -z "${USE_LOCAL_TINK_CC:-}" ]]; then
   if [[ "${KOKORO_JOB_NAME:-}" =~ .*/(bazel|pip)_no_deps_override/.* \
-        || "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+        || "${KOKORO_ROOT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
     USE_LOCAL_TINK_CC="false"
   else
     USE_LOCAL_TINK_CC="true"
