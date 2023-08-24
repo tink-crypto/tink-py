@@ -52,7 +52,7 @@ if [[ "${IS_KOKORO}" == "true" ]] ; then
   cd "${TINK_BASE_DIR}/tink_py"
 fi
 
-readonly VERSION_VALUE_IN_VERSION_FILE="$(grep ^TINK VERSION | cut -d\" -f2)"
+readonly VERSION_VALUE_IN_VERSION_FILE="$(cat VERSION)"
 if [[ ! "${VERSION_VALUE_IN_VERSION_FILE}" == "${RELEASE_VERSION}"]]; then
   echo "ERROR: Values in RELEASE_VERSION and VERSION file must coincide!" >&2
   echo "Found:" >&2

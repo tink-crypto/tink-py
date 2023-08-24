@@ -49,7 +49,7 @@ parse_args() {
   readonly PYTHON_VERSION
   readonly RELEASE_TYPE
 
-  TINK_VERSION="$(grep ^TINK "VERSION" | awk '{gsub(/"/, "", $3); print $3}')"
+  TINK_VERSION="$(cat VERSION)"
   case "${RELEASE_TYPE}" in
     dev) TINK_VERSION="${TINK_VERSION}.dev0" ;;
     release) ;;

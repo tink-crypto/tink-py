@@ -24,6 +24,7 @@ import glob
 import os
 import platform
 import posixpath
+import re
 import shutil
 import subprocess
 import textwrap
@@ -45,14 +46,10 @@ def _get_tink_version() -> str:
   if 'TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION' in os.environ:
     return os.environ['TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION']
   with open(os.path.join(_PROJECT_BASE_DIR, 'VERSION')) as f:
-    try:
-      version_line = next(
-          line for line in f if line.startswith('TINK_VERSION_LABEL'))
-    except StopIteration:
-      raise ValueError(
-          f'Version not defined in {_PROJECT_BASE_DIR}/VERSION') from None
-    else:
-      return version_line.split(' = ')[-1].strip('\n \'"')
+    version = f.read().strip()
+    if not re.fullmatch(r'[0-9]+.[0-9]+.[0-9]+', version):
+      raise ValueError(f'Invalid version: {version}')
+    return version
 
 
 def _get_bazel_command() -> str:
