@@ -14,9 +14,25 @@
 # limitations under the License.
 ################################################################################
 
-# The user may specify TINK_BASE_DIR for setting the base folder where the
-# script should look for the dependencies of tink-py.
-
+# Builds and tests tink-py and its examples using Bazel.
+#
+# The behavior of this script can be modified using the following optional env
+# variables:
+#
+# - CONTAINER_IMAGE (unset by default): By default when run locally this script
+#   executes tests directly on the host. The CONTAINER_IMAGE variable can be set
+#   to execute tests in a custom container image for local testing. E.g.:
+#
+#   CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
+#     sh ./kokoro/macos_external/bazel/run_tests.sh
+#
+# - USE_LOCAL_TINK_CC ("true" by default): If true, the script  uses a local
+#   version of tink_cc located at TINK_BASE_DIR (see below).
+#   NOTE: tink_cc is fetched from GitHub if not found.
+#
+# - TINK_BASE_DIR (../ by default): This is the folder where to look for
+#   tink-py and its dependencies. That is ${TINK_BASE_DIR}/tink_py and
+#   optionally ${TINK_BASE_DIR}/tink_cc.
 set -euo pipefail
 
 BAZEL_CMD="bazel"
@@ -24,6 +40,15 @@ if command -v "bazelisk" &> /dev/null; then
   BAZEL_CMD="bazelisk"
 fi
 readonly BAZEL_CMD
+
+if [[ -z "${USE_LOCAL_TINK_CC:-}" ]]; then
+  if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+    USE_LOCAL_TINK_CC="false"
+  else
+    USE_LOCAL_TINK_CC="true"
+  fi
+fi
+readonly USE_LOCAL_TINK_CC
 
 # If we are running on Kokoro cd into the repository.
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
@@ -45,11 +70,13 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 # TODO(b/276277854) It is not clear why this is needed.
 python3 -m pip install --require-hashes -r requirements.txt
 
-sed -i '.bak' 's~# Placeholder for tink-cc override.~\
+if [[ "${USE_LOCAL_TINK_CC}" == "true" ]]; then
+  sed -i '.bak' 's~# Placeholder for tink-cc override.~\
 local_repository(\
     name = "tink_cc",\
     path = "../tink_cc",\
 )~' WORKSPACE
+fi
 
 ./kokoro/testutils/run_bazel_tests.sh .
 if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
@@ -61,14 +88,18 @@ if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
   ./kokoro/testutils/run_bazel_tests.sh -m . "${MANUAL_TARGETS_ARRAY[@]}"
 fi
 
-mv "WORKSPACE.bak" "WORKSPACE"
+if [[ -f "WORKSPACE.bak" ]]; then
+  mv "WORKSPACE.bak" "WORKSPACE"
+fi
 
 # Run examples tests.
-sed -i '.bak' 's~# Placeholder for tink-cc override.~\
+if [[ "${USE_LOCAL_TINK_CC}" == "true" ]]; then
+  sed -i '.bak' 's~# Placeholder for tink-cc override.~\
 local_repository(\
     name = "tink_cc",\
     path = "../../tink_cc",\
 )~' examples/WORKSPACE
+fi
 
 if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
   # Run all the test targets excluding *test_package, including manual ones that
@@ -90,4 +121,6 @@ readonly TARGETS_ARRAY
 
 ./kokoro/testutils/run_bazel_tests.sh -m "examples" "${TARGETS_ARRAY[@]}"
 
-mv "examples/WORKSPACE.bak" "examples/WORKSPACE"
+if [[ -f "examples/WORKSPACE.bak" ]]; then
+  mv "examples/WORKSPACE.bak" "examples/WORKSPACE"
+fi

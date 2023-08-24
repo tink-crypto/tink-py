@@ -14,18 +14,21 @@
 # limitations under the License.
 ################################################################################
 
-# By default when run locally this script executes tests directly on the host.
-# The CONTAINER_IMAGE variable can be set to execute tests in a custom container
-# image for local testing. E.g.:
+# Creates a source distribution.
 #
-# CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
-#  sh ./kokoro/gcp_ubuntu/release/sdist/create.sh
+# The behavior of this script can be modified using the following optional env
+# variables:
 #
-# The user may specify TINK_BASE_DIR as the folder where to look for tink-py
-# and its dependencies. That is:
-#   ${TINK_BASE_DIR}/tink_cc
-#   ${TINK_BASE_DIR}/tink_py
-# NOTE: tink_cc is fetched from GitHub if not found.
+# - CONTAINER_IMAGE (unset by default): By default when run locally this script
+#   executes tests directly on the host. The CONTAINER_IMAGE variable can be set
+#   to execute tests in a custom container image for local testing. E.g.:
+#
+#   CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
+#     sh ./kokoro/gcp_ubuntu/release/sdist/create/run.sh
+#
+# - TINK_BASE_DIR (../ by default): This is the folder where to look for
+#   tink-py and its dependencies. That is ${TINK_BASE_DIR}/tink_py and
+#   optionally ${TINK_BASE_DIR}/tink_cc.
 set -eEuo pipefail
 
 IS_KOKORO="false"

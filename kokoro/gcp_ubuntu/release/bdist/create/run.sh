@@ -14,6 +14,18 @@
 # limitations under the License.
 ################################################################################
 
+# Creates and tests a binary wheel distribution.
+#
+# The behavior of this script can be modified using the following optional env
+# variables:
+#
+# - USE_LOCAL_TINK_CC ("true" by default): If true, the script  uses a local
+#   version of tink_cc located at TINK_BASE_DIR (see below).
+#   NOTE: tink_cc is fetched from GitHub if not found.
+#
+# - TINK_BASE_DIR (../ by default): This is the folder where to look for
+#   tink-py and its dependencies. That is ${TINK_BASE_DIR}/tink_py and
+#   optionally ${TINK_BASE_DIR}/tink_cc.
 set -eEuo pipefail
 
 IS_KOKORO="false"
@@ -21,6 +33,15 @@ if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
   IS_KOKORO="true"
 fi
 readonly IS_KOKORO
+
+if [[ -z "${USE_LOCAL_TINK_CC:-}" ]]; then
+  if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+    USE_LOCAL_TINK_CC="false"
+  else
+    USE_LOCAL_TINK_CC="true"
+  fi
+fi
+readonly USE_LOCAL_TINK_CC
 
 if [[ "${IS_KOKORO}" == "true" ]]; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
@@ -41,7 +62,10 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 CREATE_DIST_OPTIONS=()
 if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
   CREATE_DIST_OPTIONS+=( -t release )
-else
+fi
+readonly CREATE_DIST_OPTIONS
+
+if [[ "${USE_LOCAL_TINK_CC}" == "true" ]]; then
   sed -i'.bak' 's~# Placeholder for tink-cc override.~\
 local_repository(\
   name = "tink_cc",\
@@ -52,7 +76,6 @@ local_repository(\
   }
   trap _cleanup EXIT
 fi
-readonly CREATE_DIST_OPTIONS
 
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
 ./tools/distribution/test_dist.sh release

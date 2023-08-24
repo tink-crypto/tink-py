@@ -14,21 +14,25 @@
 # limitations under the License.
 ################################################################################
 
-# Tests artifacts contained in ${TINK_BASE_DIR}/release.
+# Tests a source distribution located in ${TINK_BASE_DIR}/release..
 #
-# By default when run locally this script executes tests directly on the host.
-# The CONTAINER_IMAGE variable can be set to execute tests in a custom container
-# image for local testing. E.g.:
+# The behavior of this script can be modified using the following optional env
+# variables:
 #
-# CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
-#  sh ./kokoro/gcp_ubuntu/release/sdist/test/run.sh
+# - CONTAINER_IMAGE (unset by default): By default when run locally this script
+#   executes tests directly on the host. The CONTAINER_IMAGE variable can be set
+#   to execute tests in a custom container image for local testing. E.g.:
 #
-# The user may specify TINK_BASE_DIR as the folder where to look for tink-py
-# and its dependencies. That is:
-#   ${TINK_BASE_DIR}/tink_cc
-#   ${TINK_BASE_DIR}/tink_py
+#   CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
+#     sh ./kokoro/gcp_ubuntu/release/sdist/test/run.sh
 #
-# NOTE: tink_cc is fetched from GitHub if not found.
+# - USE_LOCAL_TINK_CC ("true" by default): If true, the script  uses a local
+#   version of tink_cc located at TINK_BASE_DIR (see below).
+#   NOTE: tink_cc is fetched from GitHub if not found.
+#
+# - TINK_BASE_DIR (../ by default): This is the folder where to look for
+#   tink-py and its dependencies. That is ${TINK_BASE_DIR}/tink_py and
+#   optionally ${TINK_BASE_DIR}/tink_cc.
 set -euo pipefail
 
 IS_KOKORO="false"
@@ -36,6 +40,15 @@ if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
   IS_KOKORO="true"
 fi
 readonly IS_KOKORO
+
+if [[ -z "${USE_LOCAL_TINK_CC:-}" ]]; then
+  if [[ "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+    USE_LOCAL_TINK_CC="false"
+  else
+    USE_LOCAL_TINK_CC="true"
+  fi
+fi
+readonly USE_LOCAL_TINK_CC
 
 RUN_COMMAND_ARGS=()
 if [[ "${IS_KOKORO}" == "true" ]]; then
@@ -66,16 +79,18 @@ if [[ ! -d release ]]; then
   exit 1
 fi
 
-if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
-  RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
-  # Absolute path in the container.
-  export TINK_PYTHON_SETUPTOOLS_LOCAL_TINK_CC_PATH="/deps/tink_cc"
-  cat <<EOF > env_variables.txt
+if [[ "${USE_LOCAL_TINK_CC}" == "true" ]]; then
+  if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
+    RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
+    # Absolute path in the container.
+    export TINK_PYTHON_SETUPTOOLS_LOCAL_TINK_CC_PATH="/deps/tink_cc"
+    cat <<EOF > env_variables.txt
 TINK_PYTHON_SETUPTOOLS_LOCAL_TINK_CC_PATH
 EOF
-  RUN_COMMAND_ARGS+=( -e env_variables.txt )
-else
-  export TINK_PYTHON_SETUPTOOLS_LOCAL_TINK_CC_PATH="${TINK_BASE_DIR}/tink_cc"
+    RUN_COMMAND_ARGS+=( -e env_variables.txt )
+  else
+    export TINK_PYTHON_SETUPTOOLS_LOCAL_TINK_CC_PATH="${TINK_BASE_DIR}/tink_cc"
+  fi
 fi
 readonly RUN_COMMAND_ARGS
 

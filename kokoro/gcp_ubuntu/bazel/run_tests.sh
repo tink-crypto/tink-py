@@ -26,14 +26,13 @@
 #   CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
 #     sh ./kokoro/gcp_ubuntu/bazel/run_tests.sh
 #
-# - USE_LOCAL_TINK_CC("true" by default): If true, the script  uses a local
+# - USE_LOCAL_TINK_CC ("true" by default): If true, the script  uses a local
 #   version of tink_cc located at TINK_BASE_DIR (see below).
 #   NOTE: tink_cc is fetched from GitHub if not found.
 #
-# - TINK_BASE_DIR(../ by default): This is the folder where to look for
+# - TINK_BASE_DIR (../ by default): This is the folder where to look for
 #   tink-py and its dependencies. That is ${TINK_BASE_DIR}/tink_py and
 #   optionally ${TINK_BASE_DIR}/tink_cc.
-#
 set -eEuo pipefail
 
 IS_KOKORO="false"
@@ -43,7 +42,8 @@ fi
 readonly IS_KOKORO
 
 if [[ -z "${USE_LOCAL_TINK_CC:-}" ]]; then
-  if [[ "${KOKORO_JOB_NAME:-}" =~ .*/(bazel|pip)_no_deps_override/.* ]]; then
+  if [[ "${KOKORO_JOB_NAME:-}" =~ .*/(bazel|pip)_no_deps_override/.* \
+        || "${KOKORO_PARENT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
     USE_LOCAL_TINK_CC="false"
   else
     USE_LOCAL_TINK_CC="true"
