@@ -18,7 +18,7 @@ set -euo pipefail
 
 # Fail if RELEASE_VERSION is not set.
 if [[ -z "${RELEASE_VERSION:-}" ]]; then
-  echo "RELEASE_VERSION must be set" >&2
+  echo "InvalidArgumentError: RELEASE_VERSION must be set" >&2
   exit 1
 fi
 
@@ -36,16 +36,16 @@ readonly IS_KOKORO
 : "${DO_MAKE_RELEASE:="false"}"
 
 if [[ ! "${DO_MAKE_RELEASE}" =~ ^(false|true)$ ]]; then
-  echo "DO_MAKE_RELEASE must be either \"true\" or \"false\"" >&2
+  echo -n "InvalidArgumentError: DO_MAKE_RELEASE must be either \"true\" " >&2
+  echo "or \"false\"" >&2
   exit 1
 fi
 
 GITHUB_RELEASE_UTIL_OPTS=()
 if [[ "${IS_KOKORO}" == "true" ]] ; then
-  # Note: KOKORO_GIT_COMMIT_tink_py and GITHUB_ACCESS_TOKEN are populated
-  # by Kokoro.
+  # Note: KOKORO_GIT_COMMIT and GITHUB_ACCESS_TOKEN are populated by Kokoro.
   GITHUB_RELEASE_UTIL_OPTS+=(
-    -c "${KOKORO_GIT_COMMIT_tink_py}"
+    -c "${KOKORO_GIT_COMMIT}"
     -t "${GITHUB_ACCESS_TOKEN}"
   )
   readonly TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
@@ -60,7 +60,7 @@ readonly GITHUB_RELEASE_UTIL_OPTS
 readonly TMP_FOLDER="$(mktemp -d "${TMPDIR}/release_XXXXXX")"
 readonly RELEASE_UTIL_SCRIPT="$(pwd)/kokoro/testutils/github_release_util.sh"
 if [[ ! -f "${RELEASE_UTIL_SCRIPT}" ]]; then
-  echo "${RELEASE_UTIL_SCRIPT} not found." >&2
+  echo "FileNotFoundError: ${RELEASE_UTIL_SCRIPT} not found." >&2
   echo "Make sure you run this script from the root of tink-py." >&2
   exit 1
 fi
