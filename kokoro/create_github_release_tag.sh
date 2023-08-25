@@ -53,7 +53,7 @@ if [[ "${IS_KOKORO}" == "true" ]] ; then
 fi
 
 readonly VERSION_VALUE_IN_VERSION_FILE="$(cat VERSION)"
-if [[ ! "${VERSION_VALUE_IN_VERSION_FILE}" == "${RELEASE_VERSION}"]]; then
+if [[ ! "${VERSION_VALUE_IN_VERSION_FILE}" == "${RELEASE_VERSION}" ]]; then
   echo "InvalidArgumentError: RELEASE_VERSION must coincide with VERSION" >&2
   echo "Found:" >&2
   echo "  RELEASE_VERSION: ${RELEASE_VERSION}" >&2
