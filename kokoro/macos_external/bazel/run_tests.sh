@@ -42,7 +42,7 @@ fi
 readonly BAZEL_CMD
 
 if [[ -z "${USE_LOCAL_TINK_CC:-}" ]]; then
-  if [[ "${KOKORO_ROOT_JOB_NAME:-}" =~ tink/github/py/.*_release ]]; then
+  if [[ "${KOKORO_JOB_NAME:-}" =~ tink/github/py/.*/release ]]; then
     USE_LOCAL_TINK_CC="false"
   else
     USE_LOCAL_TINK_CC="true"
