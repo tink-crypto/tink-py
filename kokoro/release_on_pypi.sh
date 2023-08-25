@@ -31,7 +31,7 @@
 
 # Fail if RELEASE_VERSION is not set.
 if [[ -z "${RELEASE_VERSION:-}" ]]; then
-  echo "ERROR: RELEASE_VERSION must be set" >&2
+  echo "InvalidArgumentError: RELEASE_VERSION must be set" >&2
   exit 1
 fi
 
@@ -49,7 +49,8 @@ readonly IS_KOKORO
 # to actually perform a release.
 : "${DO_MAKE_RELEASE:=false}"
 if [[ ! "${DO_MAKE_RELEASE}" =~ ^(false|true)$ ]]; then
-  echo "ERROR: DO_MAKE_RELEASE must be either \"true\" or \"false\"" >&2
+  echo -n "InvalidArgumentError: DO_MAKE_RELEASE must be either \"true\" " >&2
+  echo "or \"false\"" >&2
   exit 1
 fi
 
@@ -57,7 +58,8 @@ fi
 # to upload the generated wheels to PyPi.
 : "${RELEASE_ON_PYPI:=false}"
 if [[ ! "${RELEASE_ON_PYPI}" =~ ^(false|true)$ ]]; then
-  echo "ERROR: RELEASE_ON_PYPI must be either \"true\" or \"false\"" >&2
+  echo -n "InvalidArgumentError: RELEASE_ON_PYPI must be either \"true\" " >&2
+  echo "or \"false\"" >&2
   exit 1
 fi
 
@@ -65,7 +67,8 @@ fi
 # to upload the generated wheels to Test PyPi.
 : "${RELEASE_ON_TEST_PYPI:=false}"
 if [[ ! "${RELEASE_ON_TEST_PYPI}" =~ ^(false|true)$ ]]; then
-  echo "ERROR: RELEASE_ON_TEST_PYPI must be either \"true\" or \"false\"" >&2
+  echo -n "InvalidArgumentError: RELEASE_ON_TEST_PYPI must be either " >&2
+  echo "\"true\" or \"false\"" >&2
   exit 1
 fi
 
@@ -79,6 +82,7 @@ fi
 #
 #######################################
 run_if_do_make_release() {
+  echo "+ $@"
   if [[ "${DO_MAKE_RELEASE}" == "false" ]]; then
     echo "  *** Dry run, command not executed. ***"
     return 0
@@ -95,19 +99,20 @@ main() {
 
   local -r version_value_in_version_file="$(cat VERSION)"
   if [[ "${version_value_in_version_file}" != "${RELEASE_VERSION}" ]]; then
-    echo "ERROR: Values in RELEASE_VERSION and VERSION file must coincide!" >&2
+    echo "InvalidArgumentError: RELEASE_VERSION must coincide with VERSION" >&2
     echo "Found:" >&2
-    echo "  RELEASE_VERSION=${RELEASE_VERSION}" >&2
-    echo "  Value in VERSION file=${version_value_in_version_file}" >&2
+    echo "  RELEASE_VERSION: ${RELEASE_VERSION}" >&2
+    echo "  Value in VERSION file: ${version_value_in_version_file}" >&2
     exit 1
   fi
 
-  # Generate source distribution and binary wheels **without** editing the
-  # WORSPACE file, and test them. The generated artifacts are going to be placed
-  # in release/.
-  ./tools/distribution/create_sdist.sh
-  ./tools/distribution/create_bdist.sh
-
+  # TODO(b/277898793): When running on Kokoro, copy inherited artifacts into
+  # release/.
+  # Make sure release/ exists.
+  if [[ ! -d release ]]; then
+    echo "FileNotFoundError: No release/ folder found" >&2
+    exit 1
+  fi
 
   if [[ "${IS_KOKORO}" == "true" ]]; then
     # See https://packaging.python.org/en/latest/specifications/pypirc/#using-a-pypi-token.
@@ -121,15 +126,22 @@ password = ${TINK_PYPI_API_TOKEN}
 username = __token__
 password = ${TINK_TEST_PYPI_API_TOKEN}
 EOF
-    run_if_do_make_release pip3 install --require-hashes \
-      -r kokoro/release_requirements.txt
-    if [[ "${RELEASE_ON_TEST_PYPI}" == "true" ]]; then
-      run_if_do_make_release python3 -m twine upload --repository testpypi \
-        --skip-existing release/*
-    fi
-    if [[ "${RELEASE_ON_PYPI}" == "true" ]]; then
-      run_if_do_make_release python3 -m twine upload --skip-existing release/*
-    fi
+  fi
+
+  run_if_do_make_release pip3 install --require-hashes \
+    -r kokoro/release_requirements.txt
+
+  if [[ "${RELEASE_ON_TEST_PYPI}" == "true" ]]; then
+    run_if_do_make_release python3 -m twine upload --repository testpypi \
+      --skip-existing release/*.whl
+    run_if_do_make_release python3 -m twine upload --repository testpypi \
+      --skip-existing release/*.tar.gz
+  fi
+  if [[ "${RELEASE_ON_PYPI}" == "true" ]]; then
+    run_if_do_make_release python3 -m twine upload --skip-existing \
+      release/*.whl
+    run_if_do_make_release python3 -m twine upload --skip-existing \
+      release/*.tar.gz
   fi
 }
 
