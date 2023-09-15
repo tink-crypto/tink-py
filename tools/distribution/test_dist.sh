@@ -65,8 +65,8 @@ install_dist_and_run_tests() {
     echo "InvalidArgumentError: Invalid dist path '${dist}'." >&2
     exit 1
   fi
-  python3 -m pip install --require-hashes -r requirements.txt
-  python3 -m pip install --no-deps --no-index "${dist}"
+  python3 -m pip install --require-hashes -r requirements_all.txt
+  python3 -m pip install --no-deps --no-index "${dist}[all]"
   find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
     | xargs -0 -n1 python3
 }

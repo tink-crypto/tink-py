@@ -50,6 +50,12 @@ if [[ -z "${USE_LOCAL_TINK_CC:-}" ]]; then
 fi
 readonly USE_LOCAL_TINK_CC
 
+TEST_WITH_KMS="false"
+if [[ "${KOKORO_JOB_NAME:-}" =~ .*/pip_kms/.* ]]; then
+  TEST_WITH_KMS="true"
+fi
+readonly TEST_WITH_KMS
+
 # If we are running on Kokoro cd into the repository.
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
   TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
@@ -64,9 +70,6 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 ./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
   "${GITHUB_ORG}/tink-cc"
 
-./kokoro/testutils/copy_credentials.sh "testdata" "all"
-./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
-
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_protoc.sh
 
@@ -78,39 +81,36 @@ local_repository(\
 )~' WORKSPACE
 fi
 
-./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
-
-if [[ -f "WORKSPACE.bak" ]]; then
-  mv "WORKSPACE.bak" "WORKSPACE"
-fi
-
 # testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
 export TINK_PYTHON_ROOT_PATH="$(pwd)"
-# Run Python tests directly so the package is used.
-# We exclude tests in tink/cc/pybind: they are implementation details and may
-# depend on a testonly shared object.
-find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
+TEST_EXCLUDE=( -not -path "*cc/pybind*" )
+if [[ "${TEST_WITH_KMS}" == "true" ]]; then
+  ./kokoro/testutils/install_tink_via_pip.sh -a "$(pwd)"
+  ./kokoro/testutils/copy_credentials.sh "testdata" "all"
+else
+  ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
+  TEST_EXCLUDE+=( -not -path "*integration/*" )
+fi
+readonly TEST_EXCLUDE
+find tink/ "${TEST_EXCLUDE}" -type f -name "*_test.py" -print0 \
   | xargs -0 -n1 python3
 
 # Install requirements for examples.
 python3 -m pip install --require-hashes -r examples/requirements.txt
-
-if [[ "${KOKORO_JOB_NAME:-}" =~ .*/pip_kms/.* ]]; then
-  # Get root certificates for gRPC
+if [[ "${TEST_WITH_KMS}" == "true" ]]; then
+  # Get root certificates for gRPC.
   curl -OLsS https://raw.githubusercontent.com/grpc/grpc/master/etc/roots.pem
   export GRPC_DEFAULT_SSL_ROOTS_FILE_PATH="$(pwd)/roots.pem"
-  # Run all the *test_package targets, including manual ones that interact with
-  # a KMS.
+  ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
+  # All *test_package targets, including manual ones.
   TARGETS="$(cd examples && "${BAZEL_CMD}" query 'filter(.*test_package, ...)')"
 else
-  # *test_package targets excluding manual ones.
-  TARGETS="$(cd examples \
-    && "${BAZEL_CMD}" query \
+  # All non-manual *test_package targets.
+  TARGETS="$(cd examples && "${BAZEL_CMD}" query \
     'filter(.*test_package, ...) except attr(tags, manual, ...)')"
 fi
 readonly TARGETS
 
 IFS=' ' read -a TARGETS_ARRAY <<< "$(tr '\n' ' ' <<< "${TARGETS}")"
 readonly TARGETS_ARRAY
-
 ./kokoro/testutils/run_bazel_tests.sh -m "examples" "${TARGETS_ARRAY[@]}"

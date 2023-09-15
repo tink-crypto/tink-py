@@ -68,7 +68,7 @@ readonly GITHUB_ORG="https://github.com/tink-crypto"
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
 # TODO(b/276277854) It is not clear why this is needed.
-python3 -m pip install --require-hashes -r requirements.txt
+python3 -m pip install --require-hashes -r requirements_all.txt
 
 if [[ "${USE_LOCAL_TINK_CC}" == "true" ]]; then
   sed -i '.bak' 's~# Placeholder for tink-cc override.~\

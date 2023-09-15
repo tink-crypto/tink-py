@@ -1,9 +1,9 @@
 """Initialization of tink-py dependencies."""
 
+load("@pybind11_bazel//:python_configure.bzl", "python_configure")
+load("@rules_python//python:pip.bzl", "pip_parse")
 load("@tink_cc//:tink_cc_deps.bzl", "tink_cc_deps")
 load("@tink_cc//:tink_cc_deps_init.bzl", "tink_cc_deps_init")
-load("@rules_python//python:pip.bzl", "pip_parse")
-load("@pybind11_bazel//:python_configure.bzl", "python_configure")
 
 def tink_py_deps_init(workspace_name):
     tink_cc_deps()
@@ -13,7 +13,7 @@ def tink_py_deps_init(workspace_name):
     pip_parse(
         name = "tink_py_pip_deps",
         quiet = False,
-        requirements_lock = "@" + workspace_name + "//:requirements.txt",
+        requirements_lock = "@" + workspace_name + "//:requirements_all.txt",
     )
 
     # Use `which python3` by default [1] unless PYTHON_BIN_PATH is specified [2].

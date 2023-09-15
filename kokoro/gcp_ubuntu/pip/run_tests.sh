@@ -63,36 +63,40 @@ if command -v "bazelisk" &> /dev/null; then
 fi
 readonly BAZEL_CMD
 
-./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
+TEST_WITH_KMS="false"
+if [[ "${KOKORO_JOB_NAME:-}" =~ .*/pip_kms/.* ]]; then
+  TEST_WITH_KMS="true"
+fi
+readonly TEST_WITH_KMS
 
 # testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
 export TINK_PYTHON_ROOT_PATH="$(pwd)"
-# Run Python tests directly so the package is used.
-# We exclude tests in tink/cc/pybind: they are implementation details and may
-# depend on a testonly shared object.
-find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
-  | xargs -0 -n1 python3
 
-# Run examples that rely on the tink pip package to be installed.
+TEST_EXCLUDE=( -not -path "*cc/pybind*" )
+if [[ "${TEST_WITH_KMS}" == "true" ]]; then
+  ./kokoro/testutils/install_tink_via_pip.sh -a "$(pwd)"
+else
+  ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
+  TEST_EXCLUDE+=( -not -path "*integration/*" )
+fi
+readonly TEST_EXCLUDE
+find tink/ "${TEST_EXCLUDE}" -type f -name "*_test.py" -print0 \
+  | xargs -0 -n1 python3
 
 # Install requirements for examples.
 python3 -m pip install --require-hashes -r examples/requirements.txt
-
-if [[ "${KOKORO_JOB_NAME:-}" =~ .*/pip_kms/.* ]]; then
-  # Run all the *test_package targets, including manual ones that interact with
-  # a KMS.
+if [[ "${TEST_WITH_KMS}" == "true" ]]; then
+  # All *test_package targets, including manual ones.
   TARGETS="$(cd examples && "${BAZEL_CMD}" query 'filter(.*test_package, ...)')"
 else
-  # *test_package targets excluding manual ones.
-  TARGETS="$(cd examples \
-  && "${BAZEL_CMD}" query \
+  # All non-manual *test_package targets.
+  TARGETS="$(cd examples && "${BAZEL_CMD}" query \
     'filter(.*test_package, ...) except attr(tags, manual, ...)')"
 fi
 readonly TARGETS
 
 IFS=' ' read -a TARGETS_ARRAY <<< "$(tr '\n' ' ' <<< "${TARGETS}")"
 readonly TARGETS_ARRAY
-
 ./kokoro/testutils/run_bazel_tests.sh -m "examples" "${TARGETS_ARRAY[@]}"
 EOF
 

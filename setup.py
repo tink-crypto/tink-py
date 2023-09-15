@@ -208,13 +208,18 @@ def main() -> None:
   for proto_file in glob.glob('tink/proto/*.proto'):
     _generate_proto(protoc_command, proto_file)
 
+  gcpkms_extra_requirements = _parse_requirements('requirements_gcpkms.in')
+  awskms_extra_requirements = _parse_requirements('requirements_awskms.in')
+
   setuptools.setup(
       name='tink',
       version=_get_tink_version(),
       url=f'{_TINK_CRYPTO_GITHUB_ORG_URL}/tink-py',
-      description='A multi-language, cross-platform library that provides '
-      'cryptographic APIs that are secure, easy to use correctly, and hard(er) '
-      'to misuse.',
+      description=(
+          'A multi-language, cross-platform library that provides cryptographic'
+          ' APIs that are secure, easy to use correctly, and hard(er) to'
+          ' misuse.'
+      ),
       author='Tink Developers',
       author_email='tink-users@googlegroups.com',
       long_description=open('README.md').read(),
@@ -222,6 +227,11 @@ def main() -> None:
       # Contained modules and scripts.
       packages=setuptools.find_packages(),
       install_requires=_parse_requirements('requirements.in'),
+      extras_require={
+          'gcpkms': gcpkms_extra_requirements,
+          'awskms': awskms_extra_requirements,
+          'all': gcpkms_extra_requirements + awskms_extra_requirements,
+      },
       cmdclass=dict(build_ext=BuildBazelExtension),
       ext_modules=[
           BazelExtension('//tink/cc/pybind:tink_bindings'),
