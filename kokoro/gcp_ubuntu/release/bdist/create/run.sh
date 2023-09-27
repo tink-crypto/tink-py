@@ -15,17 +15,6 @@
 ################################################################################
 
 # Creates and tests a binary wheel distribution.
-#
-# The behavior of this script can be modified using the following optional env
-# variables:
-#
-# - USE_LOCAL_TINK_CC ("true" by default): If true, the script  uses a local
-#   version of tink_cc located at TINK_BASE_DIR (see below).
-#   NOTE: tink_cc is fetched from GitHub if not found.
-#
-# - TINK_BASE_DIR (../ by default): This is the folder where to look for
-#   tink-py and its dependencies. That is ${TINK_BASE_DIR}/tink_py and
-#   optionally ${TINK_BASE_DIR}/tink_cc.
 set -eEuo pipefail
 
 IS_KOKORO="false"
@@ -34,28 +23,10 @@ if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
 fi
 readonly IS_KOKORO
 
-if [[ -z "${USE_LOCAL_TINK_CC:-}" ]]; then
-  if [[ "${KOKORO_JOB_NAME:-}" =~ tink/github/py/.*/release ]]; then
-    USE_LOCAL_TINK_CC="false"
-  else
-    USE_LOCAL_TINK_CC="true"
-  fi
-fi
-readonly USE_LOCAL_TINK_CC
-
 if [[ "${IS_KOKORO}" == "true" ]]; then
-  TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
+  readonly TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
+  cd "${TINK_BASE_DIR}/tink_py"
 fi
-: "${TINK_BASE_DIR:=$(cd .. && pwd)}"
-readonly TINK_BASE_DIR
-
-cd "${TINK_BASE_DIR}/tink_py"
-
-# Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
-# downloaded.
-readonly GITHUB_ORG="https://github.com/tink-crypto"
-./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
-  "${GITHUB_ORG}/tink-cc"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
@@ -64,18 +35,6 @@ if [[ "${KOKORO_JOB_NAME:-}" =~ tink/github/py/.*/release ]]; then
   CREATE_DIST_OPTIONS+=( -t release )
 fi
 readonly CREATE_DIST_OPTIONS
-
-if [[ "${USE_LOCAL_TINK_CC}" == "true" ]]; then
-  sed -i'.bak' 's~# Placeholder for tink-cc override.~\
-local_repository(\
-  name = "tink_cc",\
-  path = "../tink_cc",\
-)~' WORKSPACE
-  _cleanup() {
-    mv "WORKSPACE.bak" "WORKSPACE"
-  }
-  trap _cleanup EXIT
-fi
 
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
 ./tools/distribution/test_dist.sh release

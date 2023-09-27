@@ -2,14 +2,10 @@ workspace(name = "examples_python")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# Placeholder for tink-cc override.
-
 local_repository(
     name = "tink_py",
     path = "..",
 )
-
-# Load Tink dependencies.
 
 load("@tink_py//:tink_py_deps.bzl", "tink_py_deps")
 
@@ -30,6 +26,7 @@ pip_parse(
     quiet = False,
     requirements_lock = "@examples_python//:requirements.txt",
 )
+
 load("@pip_deps//:requirements.bzl", tink_py_example_install_pypi_deps="install_deps")
 
 tink_py_example_install_pypi_deps()

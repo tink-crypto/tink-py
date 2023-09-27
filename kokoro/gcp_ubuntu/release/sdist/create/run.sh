@@ -26,11 +26,6 @@
 #   CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
 #     sh ./kokoro/gcp_ubuntu/release/sdist/create/run.sh
 #
-# - TINK_BASE_DIR (../ by default): This is the folder where to look for
-#   tink-py and its dependencies. That is ${TINK_BASE_DIR}/tink_py and
-#   optionally ${TINK_BASE_DIR}/tink_cc.
-set -eEuo pipefail
-
 IS_KOKORO="false"
 if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
   IS_KOKORO="true"
@@ -39,28 +34,18 @@ readonly IS_KOKORO
 
 RUN_COMMAND_ARGS=()
 if [[ "${IS_KOKORO}" == "true" ]]; then
-  TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
-    source \
-      "${TINK_BASE_DIR}/tink_py/kokoro/testutils/py_test_container_images.sh"
-    CONTAINER_IMAGE="${TINK_PY_BASE_IMAGE}"
+  readonly TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
+  cd "${TINK_BASE_DIR}/tink_py"
+  source ./kokoro/testutils/py_test_container_images.sh
+  CONTAINER_IMAGE="${TINK_PY_BASE_IMAGE}"
   RUN_COMMAND_ARGS+=( -k "${TINK_GCR_SERVICE_KEY}" )
 fi
-: "${TINK_BASE_DIR:=$(cd .. && pwd)}"
-readonly TINK_BASE_DIR
 readonly CONTAINER_IMAGE
 
 if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
   RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
 fi
 readonly RUN_COMMAND_ARGS
-
-cd "${TINK_BASE_DIR}/tink_py"
-
-# Check for dependencies in TINK_BASE_DIR. Any that aren't present will be
-# downloaded.
-readonly GITHUB_ORG="https://github.com/tink-crypto"
-./kokoro/testutils/fetch_git_repo_if_not_present.sh "${TINK_BASE_DIR}" \
-  "${GITHUB_ORG}/tink-cc"
 
 CREATE_DIST_OPTIONS=()
 if [[ "${KOKORO_JOB_NAME:-}" =~ tink/github/py/.*/release ]]; then

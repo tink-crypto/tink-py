@@ -2,8 +2,6 @@ workspace(name = "tink_py")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# Placeholder for tink-cc override.
-
 load("@tink_py//:tink_py_deps.bzl", "tink_py_deps")
 
 tink_py_deps()

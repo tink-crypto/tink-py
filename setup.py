@@ -27,7 +27,6 @@ import posixpath
 import re
 import shutil
 import subprocess
-import textwrap
 from typing import List
 
 import setuptools
@@ -100,37 +99,6 @@ def _parse_requirements(requirements_filename: str) -> List[str]:
     ]
 
 
-def _patch_workspace(workspace_file_path: str):
-  """Update WORKSPACE with local Bazel dependencies based on an env variable.
-
-  If TINK_PYTHON_SETUPTOOLS_LOCAL_TINK_CC_PATH is set, override the default
-  tink-cc dependency with a local_repository pointing to
-  TINK_PYTHON_SETUPTOOLS_LOCAL_TINK_CC_PATH.
-
-  NOTE: This is for testing only!
-
-  Args:
-    workspace_file_path: The WORKSPACE file path.
-  """
-  if 'TINK_PYTHON_SETUPTOOLS_LOCAL_TINK_CC_PATH' not in os.environ:
-    # Do nothing.
-    return
-
-  with open(workspace_file_path, 'r') as f:
-    workspace_content = f.read()
-  tink_cc_path = os.environ['TINK_PYTHON_SETUPTOOLS_LOCAL_TINK_CC_PATH']
-  before = '# Placeholder for tink-cc override.'
-  after = textwrap.dedent(f"""\
-      # Modified by setup.py
-      local_repository(
-          name = "tink_cc",
-          path = "{tink_cc_path}",
-      )""")
-  workspace_content = workspace_content.replace(before, after)
-  with open(workspace_file_path, 'w') as f:
-    f.write(workspace_content)
-
-
 class BazelExtension(setuptools.Extension):
   """A C/C++ extension that is defined as a Bazel BUILD target."""
 
@@ -160,8 +128,6 @@ class BuildBazelExtension(build_ext.build_ext):
   def bazel_build(self, ext: str) -> None:
     if not os.path.exists(self.build_temp):
       os.makedirs(self.build_temp)
-
-    _patch_workspace('WORKSPACE')
 
     # Ensure no artifacts from previous builds are reused (i.e. from builds
     # using a different Python version).
