@@ -79,7 +79,7 @@ main() {
   # Required to fix https://github.com/pypa/manylinux/issues/357.
   export LD_LIBRARY_PATH="/usr/local/lib"
 
-  python3 -m pip install --require-hashes -r requirements_all.txt
+  python3 -m pip install --require-hashes --no-deps -r requirements_all.txt
   python3 -m pip install --no-deps --no-index "${BINARY_WHEEL_FILE}[all]"
   find tink/ "${test_ignore_paths[@]}" -type f -name "*_test.py" -print0 \
     | xargs -0 -n1 python3

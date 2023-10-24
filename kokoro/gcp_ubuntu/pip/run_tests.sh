@@ -65,7 +65,7 @@ find tink/ "${TEST_EXCLUDE}" -type f -name "*_test.py" -print0 \
   | xargs -0 -n1 python3
 
 # Install requirements for examples.
-python3 -m pip install --require-hashes -r examples/requirements.txt
+python3 -m pip install --require-hashes --no-deps -r examples/requirements.txt
 if [[ "${TEST_WITH_KMS}" == "true" ]]; then
   # All *test_package targets, including manual ones.
   TARGETS="$(cd examples && "${BAZEL_CMD}" query 'filter(.*test_package, ...)')"

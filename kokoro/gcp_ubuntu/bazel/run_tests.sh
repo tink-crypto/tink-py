@@ -61,7 +61,7 @@ if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
   # interact with a KMS.
 
   #TODO(b/276277854) It is not clear why this is needed.
-  python3 -m pip install --require-hashes -r examples/requirements.txt
+  python3 -m pip install --require-hashes --no-deps -r examples/requirements.txt
 
   TARGETS="$(cd examples && "${BAZEL_CMD}" query \
     'kind(.*_test, ...) except filter(.*test_package, ...)')"

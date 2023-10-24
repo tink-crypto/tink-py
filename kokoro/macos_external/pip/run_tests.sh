@@ -53,7 +53,7 @@ find tink/ "${TEST_EXCLUDE}" -type f -name "*_test.py" -print0 \
   | xargs -0 -n1 python3
 
 # Install requirements for examples.
-python3 -m pip install --require-hashes -r examples/requirements.txt
+python3 -m pip install --require-hashes --no-deps -r examples/requirements.txt
 if [[ "${TEST_WITH_KMS}" == "true" ]]; then
   # Get root certificates for gRPC.
   curl -OLsS https://raw.githubusercontent.com/grpc/grpc/master/etc/roots.pem

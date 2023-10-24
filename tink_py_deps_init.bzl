@@ -12,6 +12,7 @@ def tink_py_deps_init(workspace_name):
 
     pip_parse(
         name = "tink_py_pip_deps",
+        extra_pip_args = ["--no-deps"],
         quiet = False,
         requirements_lock = "@" + workspace_name + "//:requirements_all.txt",
     )

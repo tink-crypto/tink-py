@@ -33,7 +33,7 @@ fi
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
 # TODO(b/276277854) It is not clear why this is needed.
-python3 -m pip install --require-hashes -r requirements_all.txt
+python3 -m pip install --require-hashes --no-deps -r requirements_all.txt
 
 ./kokoro/testutils/run_bazel_tests.sh .
 if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
