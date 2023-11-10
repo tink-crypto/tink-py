@@ -57,8 +57,10 @@ def _get_bazel_command() -> str:
     return 'bazelisk'
   elif shutil.which('bazel'):
     return 'bazel'
-  raise FileNotFoundError('Could not find bazel executable. Please install '
-                          'bazel to compile the Tink Python package.')
+  raise FileNotFoundError(
+      'Could not find bazel executable. Please install '
+      'bazel to compile the Tink Python package.'
+  )
 
 
 def _get_protoc_command() -> str:
@@ -67,8 +69,10 @@ def _get_protoc_command() -> str:
     return os.environ['PROTOC']
   protoc_path = shutil.which('protoc')
   if protoc_path is None:
-    raise FileNotFoundError('Could not find protoc executable. Please install '
-                            'protoc to compile the Tink Python package.')
+    raise FileNotFoundError(
+        'Could not find protoc executable. Please install '
+        'protoc to compile the Tink Python package.'
+    )
   return protoc_path
 
 
@@ -79,8 +83,9 @@ def _generate_proto(protoc: str, source: str) -> None:
 
   output = source.replace('.proto', '_pb2.py')
 
-  if (os.path.exists(output) and
-      os.path.getmtime(source) < os.path.getmtime(output)):
+  if os.path.exists(output) and os.path.getmtime(source) < os.path.getmtime(
+      output
+  ):
     # No need to regenerate if output is newer than source.
     return
 
@@ -104,12 +109,14 @@ class BazelExtension(setuptools.Extension):
 
   def __init__(self, bazel_target: str, target_name: str = '') -> None:
     self.bazel_target = bazel_target
-    self.relpath, self.target_name = (
-        posixpath.relpath(bazel_target, '//').split(':'))
+    self.relpath, self.target_name = posixpath.relpath(
+        bazel_target, '//'
+    ).split(':')
     if target_name:
       self.target_name = target_name
     ext_name = os.path.join(
-        self.relpath.replace(posixpath.sep, os.path.sep), self.target_name)
+        self.relpath.replace(posixpath.sep, os.path.sep), self.target_name
+    )
     setuptools.Extension.__init__(self, ext_name, sources=[])
 
 
@@ -135,8 +142,10 @@ class BuildBazelExtension(build_ext.build_ext):
     self.spawn(bazel_clean_argv)
 
     bazel_argv = [
-        self.bazel_command, 'build', ext.bazel_target,
-        '--compilation_mode=' + ('dbg' if self.debug else 'opt')
+        self.bazel_command,
+        'build',
+        ext.bazel_target,
+        '--compilation_mode=' + ('dbg' if self.debug else 'opt'),
     ]
 
     if platform.system() == 'Darwin':
@@ -159,8 +168,9 @@ class BuildBazelExtension(build_ext.build_ext):
         bazel_argv += ['--cpu=darwin_arm64', '--macos_cpus=arm64']
 
     self.spawn(bazel_argv)
-    ext_bazel_bin_path = os.path.join('bazel-bin', ext.relpath,
-                                      ext.target_name + '.so')
+    ext_bazel_bin_path = os.path.join(
+        'bazel-bin', ext.relpath, ext.target_name + '.so'
+    )
     ext_dest_path = self.get_ext_fullpath(ext.name)
     ext_dest_dir = os.path.dirname(ext_dest_path)
     if not os.path.exists(ext_dest_dir):
@@ -205,14 +215,17 @@ def main() -> None:
       zip_safe=False,
       # PyPI package information.
       classifiers=[
-          'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python',
+          'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.8',
           'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3.10',
+          'Programming Language :: Python :: 3.11',
           'Topic :: Software Development :: Libraries',
       ],
       license='Apache 2.0',
       keywords='tink cryptography',
+      python_requires='>=3.8',
   )
 
 

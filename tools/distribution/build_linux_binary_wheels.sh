@@ -23,11 +23,10 @@ set -euo pipefail
 # The following assoicative array contains:
 #   ["<Python version>"]="<python tag>-<abi tag>"
 # where:
-#   <Python version> = language version, e.g "3.7"
+#   <Python version> = language version, e.g "3.8"
 #   <python tag>, <abi tag> = as defined at
-#       https://packaging.python.org/en/latest/specifications/, e.g. "cp37-37m"
+#       https://packaging.python.org/en/latest/specifications/, e.g. "cp38-cp38"
 declare -A PYTHON_VERSIONS
-PYTHON_VERSIONS["3.7"]="cp37-cp37m"
 PYTHON_VERSIONS["3.8"]="cp38-cp38"
 PYTHON_VERSIONS["3.9"]="cp39-cp39"
 PYTHON_VERSIONS["3.10"]="cp310-cp310"
@@ -39,10 +38,11 @@ export ARCH="$(uname -m)"
 
 # Install Bazelisk 1.17.0.
 readonly BAZELISK_VERSION="1.17.0"
-BAZELISK_URL="https://github.com/bazelbuild/bazelisk/releases/download/v${BAZELISK_VERSION}/bazelisk-linux-amd64"
+readonly BAZELISK_DOWNLOAD_URL="https://github.com/bazelbuild/bazelisk/releases/download"
+BAZELISK_URL="${BAZELISK_DOWNLOAD_URL}/v${BAZELISK_VERSION}/bazelisk-linux-amd64"
 BAZELISK_SHA256="61699e22abb2a26304edfa1376f65ad24191f94a4ffed68a58d42b6fee01e124"
 if [[ "${ARCH}" == "aarch64" || "${ARCH}" == "arm64" ]]; then
-  BAZELISK_URL="https://github.com/bazelbuild/bazelisk/releases/download/v${BAZELISK_VERSION}/bazelisk-linux-arm64"
+  BAZELISK_URL="${BAZELISK_DOWNLOAD_URL}/v${BAZELISK_VERSION}/bazelisk-linux-arm64"
   BAZELISK_SHA256="a836972b8a7c34970fb9ecc44768ece172f184c5f7e2972c80033fcdcf8c1870"
 fi
 readonly BAZELISK_URL
@@ -53,11 +53,12 @@ chmod +x /usr/local/bin/bazelisk
 
 # Install protoc 21.12 (python version 4.21.12). Needed for protocol buffer
 # compilation.
+readonly PROTOC_DOWNLOAD_URL="https://github.com/protocolbuffers/protobuf/releases/download"
 readonly PROTOC_RELEASE_TAG="21.12"
-PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_RELEASE_TAG}/protoc-${PROTOC_RELEASE_TAG}-linux-x86_64.zip"
+PROTOC_URL="${PROTOC_DOWNLOAD_URL}/v${PROTOC_RELEASE_TAG}/protoc-${PROTOC_RELEASE_TAG}-linux-x86_64.zip"
 PROTOC_SHA256="3a4c1e5f2516c639d3079b1586e703fc7bcfa2136d58bda24d1d54f949c315e8"
 if [[ "${ARCH}" == "aarch64" || "${ARCH}" == "arm64" ]]; then
-  PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_RELEASE_TAG}/protoc-${PROTOC_RELEASE_TAG}-linux-aarch_64.zip"
+  PROTOC_URL="${PROTOC_DOWNLOAD_URL}/v${PROTOC_RELEASE_TAG}/protoc-${PROTOC_RELEASE_TAG}-linux-aarch_64.zip"
   PROTOC_SHA256="2dd17f75d66a682640b136e31848da9fb2eefe68d55303baf8b32617374f6711"
 fi
 readonly PROTOC_URL
