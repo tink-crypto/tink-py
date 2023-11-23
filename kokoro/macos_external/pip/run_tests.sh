@@ -36,7 +36,7 @@ if [[ -n "${KOKORO_ROOT:-}" ]]; then
 fi
 
 # Sourcing required to update callers environment.
-source ./kokoro/testutils/install_protoc.sh
+source ./kokoro/testutils/install_protoc.sh "25.1"
 
 # testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
 export TINK_PYTHON_ROOT_PATH="$(pwd)"

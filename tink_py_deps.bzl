@@ -8,27 +8,27 @@ def tink_py_deps():
         http_file(
             name = "google_root_pem",
             executable = 0,
-            urls = ["https://pki.goog/roots.pem"],
             sha256 = "1acf0d4780541758be2c0f998e1e0275232626ed3f8793d8e2fe8e2753750613",
+            urls = ["https://pki.goog/roots.pem"],
         )
 
     if not native.existing_rule("bazel_skylib"):
         http_archive(
             name = "bazel_skylib",
-            sha256 = "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
+            sha256 = "cd55a062e763b9349921f0f5db8c3933288dc8ba4f76dd9416aac68acee3cb94",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
-                "https://github.com/bazelbuild/bazel-skylib/releases/download/1.4.2/bazel-skylib-1.4.2.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.5.0/bazel-skylib-1.5.0.tar.gz",
+                "https://github.com/bazelbuild/bazel-skylib/releases/download/1.5.0/bazel-skylib-1.5.0.tar.gz",
             ],
         )
 
     if not native.existing_rule("com_google_protobuf"):
-        # Release X.21.9 from 2022-10-26.
+        # Release X.25.1 from 2023-11-15.
         http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-21.9",
-            urls = ["https://github.com/protocolbuffers/protobuf/archive/refs/tags/v21.9.zip"],
-            sha256 = "5babb8571f1cceafe0c18e13ddb3be556e87e12ceea3463d6b0d0064e6cc1ac3",
+            sha256 = "5c86c077b0794c3e9bb30cac872cf883043febfb0f992137f0a8b1c3d534617c",
+            strip_prefix = "protobuf-25.1",
+            urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protobuf-25.1.zip"],
         )
 
     if not native.existing_rule("rules_python"):
@@ -62,7 +62,7 @@ def tink_py_deps():
     if not native.existing_rule("tink_cc"):
         http_archive(
             name = "tink_cc",
-            urls = ["https://github.com/tink-crypto/tink-cc/archive/refs/tags/v2.0.0.zip"],
-            strip_prefix = "tink-cc-2.0.0",
-            sha256 = "103ddfce800e77f3b3b6b2c808a8611bc734b31ddb12fbcfd8bebc1b96a7e963",
+            urls = ["https://github.com/tink-crypto/tink-cc/releases/download/v2.1.0/tink-cc-2.1.0.zip"],
+            strip_prefix = "tink-cc-2.1.0",
+            sha256 = "3804afecbe7096d3786b660e9cd5f365f064743eec52d76984abb9da38dd0fb3",
         )

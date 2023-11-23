@@ -23,7 +23,7 @@ _image_prefix() {
 
 # Linux container images for Tink Python libraries.
 readonly TINK_PY_BASE_IMAGE_NAME="linux-tink-py-base"
-readonly TINK_PY_BASE_IMAGE_HASH="40e85b6d48bd843ec19c7fa35671f3bca81259a92d569d724d1c64955f00fffe"
+readonly TINK_PY_BASE_IMAGE_HASH="905ce5a967ffb088453b501189c7fba9d3d4ff5fb4b209d6eac72e5c3dbe2752"
 readonly TINK_PY_BASE_IMAGE="$(_image_prefix)/${TINK_PY_BASE_IMAGE_NAME}@sha256:${TINK_PY_BASE_IMAGE_HASH}"
 
 unset -f _image_prefix
