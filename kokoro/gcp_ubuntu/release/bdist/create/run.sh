@@ -22,11 +22,25 @@ if [[ -n "${KOKORO_ARTIFACTS_DIR:-}" ]]; then
   IS_KOKORO="true"
 fi
 readonly IS_KOKORO
+readonly ARCH="$(uname -m)"
 
+RUN_COMMAND_ARGS=()
 if [[ "${IS_KOKORO}" == "true" ]]; then
   readonly TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
   cd "${TINK_BASE_DIR}/tink_py"
+  source ./kokoro/testutils/py_test_container_images.sh
+  CONTAINER_IMAGE="${TINK_PY_BASE_IMAGE}"
+  if [[ "${ARCH}" == "aarch64" || "${ARCH}" == "arm64" ]]; then
+    CONTAINER_IMAGE="${TINK_PY_BASE_ARM64_IMAGE}"
+  fi
+  RUN_COMMAND_ARGS+=( -k "${TINK_GCR_SERVICE_KEY}" )
 fi
+readonly CONTAINER_IMAGE
+
+if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
+  RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
+fi
+readonly RUN_COMMAND_ARGS
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
@@ -37,4 +51,5 @@ fi
 readonly CREATE_DIST_OPTIONS
 
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
-./tools/distribution/test_dist.sh release
+./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \
+  ./tools/distribution/test_dist.sh release
