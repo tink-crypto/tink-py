@@ -21,9 +21,16 @@ _image_prefix() {
   echo "${artifact_registry_url}/${test_project}/${artifact_registry_repo}"
 }
 
-# Linux container images for Tink Python libraries.
+# Images for tink-py testing.
+
+# Linux x86_64 container image.
 readonly TINK_PY_BASE_IMAGE_NAME="linux-tink-py-base"
 readonly TINK_PY_BASE_IMAGE_HASH="905ce5a967ffb088453b501189c7fba9d3d4ff5fb4b209d6eac72e5c3dbe2752"
 readonly TINK_PY_BASE_IMAGE="$(_image_prefix)/${TINK_PY_BASE_IMAGE_NAME}@sha256:${TINK_PY_BASE_IMAGE_HASH}"
+
+# Linux arm64 container image.
+readonly TINK_PY_BASE_ARM64_IMAGE_NAME="linux-tink-py-base-arm64"
+readonly TINK_PY_BASE_ARM64_IMAGE_HASH="3a8569713397871c4d1d1690b777fcc189a66f23c84d07628cf7d65439e4fad8"
+readonly TINK_PY_BASE_ARM64_IMAGE="$(_image_prefix)/${TINK_PY_BASE_ARM64_IMAGE_NAME}@sha256:${TINK_PY_BASE_ARM64_IMAGE_HASH}"
 
 unset -f _image_prefix
