@@ -233,19 +233,9 @@ enable_py_version() {
     echo "InvalidArgumentError: Partial version must be specified" >&2
     exit 1
   fi
-
-  # The latest installed Python version that matches the partial version number
-  # (e.g. "3.9.5").
-  local version="$(pyenv versions --bare | grep "${partial_version}" | tail -1)"
-  if [[ -z "${version}" ]]; then
-    # Install the latest available.
-    version="$(pyenv install --list | grep "  ${partial_version}" | tail -1 \
-      | xargs)"
-    pyenv install "${version}"
-  fi
-  readonly version
+  pyenv install "${partial_version}"
   # Set current Python version via environment variable.
-  pyenv shell "${version}"
+  pyenv shell "${partial_version}"
   # Update environment.
   python3 -m pip install --require-hashes -r \
     "${TINK_PYTHON_ROOT_PATH}/tools/distribution/requirements.txt"

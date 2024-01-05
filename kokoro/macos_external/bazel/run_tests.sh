@@ -29,6 +29,11 @@ if [[ -n "${KOKORO_ROOT:-}" ]]; then
   cd "${TINK_BASE_DIR}/tink_py"
 fi
 
+# Make sure we use the latest Python 3.11.
+eval "$(pyenv init -)"
+pyenv install "3.11"
+pyenv global "3.11"
+
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
