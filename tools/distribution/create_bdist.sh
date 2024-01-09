@@ -116,45 +116,6 @@ create_bdist_for_linux() {
 }
 
 #######################################
-# Creates a binary wheel for Tink Python on macOS.
-#
-# This function must be called from within the Tink Python's root folder.
-#
-# Arguments:
-#   min_macos_version: Target minimum macOS version.
-#   arch: Target arch (x86_64 or arm64).
-#   out_dir: Path where to store the generated wheels.
-#######################################
-_build_wheel_for_macos() {
-  local -r min_macos_version="${1:-}"
-  local -r arch="${2:-}"
-  local -r out_dir="${3:-}"
-
-  if [[ ! "${min_macos_version}" =~ ^[0-9]+.[0-9]+$ ]]; then
-    echo "InvalidArgumentError: Invalid macOS version ${min_macos_version}" >&2
-    exit 1
-  fi
-
-  if [[ "${arch}" != "x86_64" && "${arch}" != "arm64" ]]; then
-    echo -n "InvalidArgumentError: Unsupported architecture ${arch}, " >&2
-    echo "only x86_64 and arm64 are supported" >&2
-    exit 1
-  fi
-
-  if [[ ! -d "${out_dir}" ]]; then
-    echo "InvalidArgumentError: Output folder ${out_dir} does not exist" >&2
-    exit 1
-  fi
-
-  (
-    export MACOSX_DEPLOYMENT_TARGET="${min_macos_version}"
-    export _PYTHON_HOST_PLATFORM="macosx-${min_macos_version}-${arch}"
-    export ARCHFLAGS="-arch ${arch}"
-    time python3 -m pip wheel -w "${out_dir}" .
-  )
-}
-
-#######################################
 # Creates a universal2 wheel from an x86_64 wheel and an arm64 wheel.
 #
 # The function uses delocate (https://pypi.org/project/delocate/) to combine
@@ -208,16 +169,22 @@ create_bdist_for_macos() {
     tmp_build_dir="$(mktemp -d -t tmp_build_dir)"
 
     # Build binary wheel for arm64.
-    _build_wheel_for_macos 11.0 arm64 "${tmp_build_dir}"
+    (
+      export ARCHFLAGS="-arch arm64"
+      time python3 -m pip wheel -w "${tmp_build_dir}" .
+    )
     arm64_whl="$(echo ${tmp_build_dir}/tink-*arm64.whl)"
-    time python3 -m delocate.cmd.delocate_wheel \
-      --require-archs arm64 -v "${arm64_whl}"
+    time python3 -m delocate.cmd.delocate_wheel --require-archs arm64 \
+      -v "${arm64_whl}"
 
     # Build binary wheel for x86.
-    _build_wheel_for_macos 10.9 x86_64 "${tmp_build_dir}"
+    (
+      export ARCHFLAGS="-arch x86_64"
+      time python3 -m pip wheel -w "${tmp_build_dir}" .
+    )
     x86_64_whl="$(echo ${tmp_build_dir}/tink-*x86_64.whl)"
-    time python3 -m delocate.cmd.delocate_wheel \
-      --require-archs x86_64 -v "${x86_64_whl}"
+    time python3 -m delocate.cmd.delocate_wheel --require-archs x86_64 \
+      -v "${x86_64_whl}"
 
     _create_universal2_macos_wheel "${arm64_whl}" "${x86_64_whl}" "release"
 

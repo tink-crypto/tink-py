@@ -34,6 +34,7 @@ from setuptools.command import build_ext
 
 _PROJECT_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 _TINK_CRYPTO_GITHUB_ORG_URL = 'https://github.com/tink-crypto'
+_MIN_MACOS_TARGET = {'arm64': '11.0', 'x86_64': '10.9'}
 
 
 def _get_tink_version() -> str:
@@ -104,6 +105,18 @@ def _parse_requirements(requirements_filename: str) -> List[str]:
     ]
 
 
+def _get_target_apple_arch() -> str:
+  """Returns the target Apple arch."""
+  archflags = os.getenv('ARCHFLAGS', '')
+  current_platform = platform.machine()
+  # Check if we are cross-compiling first.
+  if 'arm64' in archflags and current_platform == 'x86_64':
+    return 'arm64'
+  if 'x86_64' in archflags and current_platform == 'arm64':
+    return 'x86_64'
+  return current_platform
+
+
 class BazelExtension(setuptools.Extension):
   """A C/C++ extension that is defined as a Bazel BUILD target."""
 
@@ -149,23 +162,14 @@ class BuildBazelExtension(build_ext.build_ext):
     ]
 
     if platform.system() == 'Darwin':
-      # Set the minimum macOS version to support based on
-      # MACOSX_DEPLOYMENT_TARGET. This mimics the CMake behavior: when
-      # MACOSX_DEPLOYMENT_TARGET is set, use its value to determine the minimum
-      # OS version.
-      #
-      # See https://github.com/bazelbuild/bazel/issues/16932.
-      # NOTE: If macos_minimum_os is unspecified, Bazel uses the default value
-      # of macos_sdk_version which is taken from the default system Xcode:
-      # https://bazel.build/reference/command-line-reference#flag--macos_minimum_os.
-      deployment_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
-      if deployment_target:
-        bazel_argv += [f'--macos_minimum_os={deployment_target}']
-
-      archflags = os.getenv('ARCHFLAGS', '')
-      if platform.machine() == 'x86_64' and 'arm64' in archflags:
-        # We are cross compiling for arm64; set the correct CPU params.
-        bazel_argv += ['--cpu=darwin_arm64', '--macos_cpus=arm64']
+      target_arch = _get_target_apple_arch()
+      min_macos_target = _MIN_MACOS_TARGET[target_arch]
+      # This is needed to correctly name the generated wheel.
+      os.environ['_PYTHON_HOST_PLATFORM'] = (
+          f'macosx-{min_macos_target}-{target_arch}'
+      )
+      os.environ['MACOSX_DEPLOYMENT_TARGET'] = min_macos_target
+      bazel_argv += [f'--config=macos_{target_arch}']
 
     self.spawn(bazel_argv)
     ext_bazel_bin_path = os.path.join(
