@@ -1,10 +1,19 @@
 workspace(name = "examples_python")
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 local_repository(
     name = "tink_py",
     path = "..",
+)
+
+maybe(
+    http_file,
+    name = "google_root_pem",
+    executable = 0,
+    sha256 = "1acf0d4780541758be2c0f998e1e0275232626ed3f8793d8e2fe8e2753750613",
+    urls = ["https://pki.goog/roots.pem"],
 )
 
 load("@tink_py//:tink_py_deps.bzl", "tink_py_deps")
