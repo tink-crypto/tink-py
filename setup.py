@@ -27,6 +27,7 @@ import posixpath
 import re
 import shutil
 import subprocess
+import sys
 from typing import List
 
 import setuptools
@@ -151,16 +152,16 @@ class BuildBazelExtension(build_ext.build_ext):
 
     # Ensure no artifacts from previous builds are reused (i.e. from builds
     # using a different Python version).
-    bazel_clean_argv = [self.bazel_command, 'clean', '--expunge']
-    self.spawn(bazel_clean_argv)
+    self.spawn([self.bazel_command, 'clean', '--expunge'])
 
-    bazel_argv = [
-        self.bazel_command,
+    bazel_startup_args = []
+    bazel_build_args = [
         'build',
         ext.bazel_target,
         '--compilation_mode=' + ('dbg' if self.debug else 'opt'),
     ]
 
+    lib_extension = '.so'
     if platform.system() == 'Darwin':
       target_arch = _get_target_apple_arch()
       min_macos_target = _MIN_MACOS_TARGET[target_arch]
@@ -169,11 +170,21 @@ class BuildBazelExtension(build_ext.build_ext):
           f'macosx-{min_macos_target}-{target_arch}'
       )
       os.environ['MACOSX_DEPLOYMENT_TARGET'] = min_macos_target
-      bazel_argv += [f'--config=macos_{target_arch}']
+      bazel_build_args += [f'--config=macos_{target_arch}']
+    elif platform.system() == 'Windows':
+      # Required to build protobuf. See
+      # https://github.com/protocolbuffers/protobuf/issues/12947
+      bazel_startup_args += [r'--output_base=C:\O']
+      # Needed by pybind11_bazel.
+      os.environ['PYTHON_BIN_PATH'] = sys.executable
+      os.environ['PYTHON_LIB_PATH'] = os.path.join(sys.exec_prefix, 'lib')
+      lib_extension = '.pyd'
 
-    self.spawn(bazel_argv)
+    # Run build command.
+    self.spawn([self.bazel_command] + bazel_startup_args + bazel_build_args)
+
     ext_bazel_bin_path = os.path.join(
-        'bazel-bin', ext.relpath, ext.target_name + '.so'
+        'bazel-bin', ext.relpath, ext.target_name + lib_extension
     )
     ext_dest_path = self.get_ext_fullpath(ext.name)
     ext_dest_dir = os.path.dirname(ext_dest_path)
