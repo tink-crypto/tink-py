@@ -28,14 +28,13 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import List
+from typing import Any, List, Mapping
 
 import setuptools
 from setuptools.command import build_ext
 
 _PROJECT_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 _TINK_CRYPTO_GITHUB_ORG_URL = 'https://github.com/tink-crypto'
-_MIN_MACOS_TARGET = {'arm64': '11.0', 'x86_64': '10.9'}
 
 
 def _get_tink_version() -> str:
@@ -106,18 +105,6 @@ def _parse_requirements(requirements_filename: str) -> List[str]:
     ]
 
 
-def _get_target_apple_arch() -> str:
-  """Returns the target Apple arch."""
-  archflags = os.getenv('ARCHFLAGS', '')
-  current_platform = platform.machine()
-  # Check if we are cross-compiling first.
-  if 'arm64' in archflags and current_platform == 'x86_64':
-    return 'arm64'
-  if 'x86_64' in archflags and current_platform == 'arm64':
-    return 'x86_64'
-  return current_platform
-
-
 class BazelExtension(setuptools.Extension):
   """A C/C++ extension that is defined as a Bazel BUILD target."""
 
@@ -161,17 +148,13 @@ class BuildBazelExtension(build_ext.build_ext):
         '--compilation_mode=' + ('dbg' if self.debug else 'opt'),
     ]
 
+    target_arch = os.getenv('TARGET_ARCH', '')
+    target_os = os.getenv('TARGET_OS', '')
+    if target_arch and target_os:
+      bazel_build_args += [f'--config={target_os}_{target_arch}']
+
     lib_extension = '.so'
-    if platform.system() == 'Darwin':
-      target_arch = _get_target_apple_arch()
-      min_macos_target = _MIN_MACOS_TARGET[target_arch]
-      # This is needed to correctly name the generated wheel.
-      os.environ['_PYTHON_HOST_PLATFORM'] = (
-          f'macosx-{min_macos_target}-{target_arch}'
-      )
-      os.environ['MACOSX_DEPLOYMENT_TARGET'] = min_macos_target
-      bazel_build_args += [f'--config=macos_{target_arch}']
-    elif platform.system() == 'Windows':
+    if platform.system() == 'Windows':
       # Required to build protobuf. See
       # https://github.com/protocolbuffers/protobuf/issues/12947
       bazel_startup_args += [r'--output_base=C:\O']
@@ -191,6 +174,13 @@ class BuildBazelExtension(build_ext.build_ext):
     if not os.path.exists(ext_dest_dir):
       os.makedirs(ext_dest_dir)
     shutil.copyfile(ext_bazel_bin_path, ext_dest_path)
+
+
+def options() -> Mapping[str, Any]:
+  bdist_wheel = {}
+  if 'PLAT_NAME' in os.environ:
+    bdist_wheel['plat_name'] = os.environ['PLAT_NAME']
+  return {'bdist_wheel': bdist_wheel}
 
 
 def main() -> None:
@@ -238,6 +228,7 @@ def main() -> None:
           'Programming Language :: Python :: 3.11',
           'Topic :: Software Development :: Libraries',
       ],
+      options=options(),
       license='Apache 2.0',
       keywords='tink cryptography',
       python_requires='>=3.8',

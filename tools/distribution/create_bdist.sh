@@ -170,7 +170,9 @@ create_bdist_for_macos() {
 
     # Build binary wheel for arm64.
     (
-      export ARCHFLAGS="-arch arm64"
+      export TARGET_ARCH="arm64"
+      export TARGET_OS="macos"
+      export PLAT_NAME="macosx-11.0-${TARGET_ARCH}"
       time python3 -m pip wheel -w "${tmp_build_dir}" .
     )
     arm64_whl="$(echo ${tmp_build_dir}/tink-*arm64.whl)"
@@ -179,7 +181,9 @@ create_bdist_for_macos() {
 
     # Build binary wheel for x86.
     (
-      export ARCHFLAGS="-arch x86_64"
+      export TARGET_ARCH="x86_64"
+      export TARGET_OS="macos"
+      export PLAT_NAME="macosx-10.9-${TARGET_ARCH}"
       time python3 -m pip wheel -w "${tmp_build_dir}" .
     )
     x86_64_whl="$(echo ${tmp_build_dir}/tink-*x86_64.whl)"
