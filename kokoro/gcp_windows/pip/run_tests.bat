@@ -31,13 +31,12 @@ python -m pip install .
 ECHO Install completed at %TIME%
 
 ECHO Tests started at %TIME%
-FOR /F %x in ('DIR /s/b tink\*_test.py') DO (
-  : Skip KMS and pybind tests.
-  ECHO %x | FINDSTR "integration pybind" 1>nul
+FOR /F %%x in ('DIR /s/b tink\*_test.py') DO (
+  ECHO %%x | FINDSTR "integration pybind" 1>nul
   IF errorlevel 1 (
-    python %x
+    python %%x
   ) ELSE (
-    ECHO "Skip test file %x"
+    ECHO "Skip test file %%x"
   )
 )
 ECHO Test completed at %TIME%
