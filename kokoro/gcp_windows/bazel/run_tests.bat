@@ -24,21 +24,21 @@ IF %errorlevel% neq 0 EXIT /B 1
 
 ECHO Build started at %TIME%
 : We have to set PYTHON_BIN_PATH because pybind11_bazel tries `which python3`
-: [1], but there is no python3.exe in out test config (the bin is python.exe).
+: [1], but there is no python3.exe in our test config (the bin is python.exe).
 : [1] https://github.com/pybind/pybind11_bazel/blob/8889d39b2b925b2a47519ae09402a96f00ccf2b4/python_configure.bzl#L169C62-L169C62
 : TODO(b/217559572): Investigate if this is intended (and fix our config) or a
 : bug.
 bazel --output_base=C:\O build ^
-  --action_env PYTHON_BIN_PATH=C:/Python311/python.exe ^
-  --action_env PYTHON_LIB_PATH=C:/Python311/libs -- ...
+  --action_env PYTHON_BIN_PATH=C:/Python38/python.exe ^
+  --action_env PYTHON_LIB_PATH=C:/Python38/libs -- ...
 IF %errorlevel% neq 0 EXIT /B 1
 ECHO Build completed at %TIME%
 
 ECHO Test started at %TIME%
 bazel --output_base=C:\O test --strategy=TestRunner=standalone ^
   --test_output=errors ^
-  --action_env PYTHON_BIN_PATH=C:/Python311/python.exe ^
-  --action_env PYTHON_LIB_PATH=C:/Python311/libs -- ...
+  --action_env PYTHON_BIN_PATH=C:/Python38/python.exe ^
+  --action_env PYTHON_LIB_PATH=C:/Python38/libs -- ...
 IF %errorlevel% neq 0 EXIT /B 1
 ECHO Test completed at %TIME%
 

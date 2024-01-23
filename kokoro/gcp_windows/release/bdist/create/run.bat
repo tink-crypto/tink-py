@@ -24,31 +24,32 @@ IF %errorlevel% neq 0 EXIT /B 1
 
 @REM Install protoc.
 choco install -y --no-progress protoc --version=25.2.0
-set OLD_PATH=%PATH%
+SET OLD_PATH=%PATH%
 
-set /p TINK_VERSION=<VERSION
-ECHO %%KOKORO_JOB_NAME%% | FINDSTR "release"
-IF errorlevel 1 (
-  set TINK_VERSION=%TINK_VERSION%.dev0
+SET /p TINK_VERSION=<VERSION
+ECHO %KOKORO_JOB_NAME% | FINDSTR "github" | FINDSTR "release"
+IF %errorlevel% NEQ 0 (
+  SET TINK_VERSION=%TINK_VERSION%.dev0
 )
-set TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION=%TINK_VERSION%
+SET TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION=%TINK_VERSION%
+SET TINK_PYTHON_ROOT_PATH=%cd%
 
-call :UsePython "3.8.10" "38"
-call :BuildAndInstallWheel
-call :RunTests
+CALL :UsePython "3.8.10" "38" || GOTO :Error
+CALL :BuildAndInstallWheel || GOTO :Error
+CALL :RunTests || GOTO :Error
 @REM Build wheels for 3.9 and 3.10 only on release jobs.
-ECHO %%KOKORO_JOB_NAME%% | FINDSTR "release"
-IF errorlevel 0 (
-  call :UsePython "3.9.13" "39"
-  call :BuildAndInstallWheel
-  call :RunTests
-  call :UsePython "3.10.11" "310"
-  call :BuildAndInstallWheel
-  call :RunTests
+ECHO %KOKORO_JOB_NAME% | FINDSTR "github" | FINDSTR "release"
+IF %errorlevel% EQU 0 (
+  CALL :UsePython "3.9.13" "39" || GOTO :Error
+  CALL :BuildAndInstallWheel || GOTO :Error
+  CALL :RunTests || GOTO :Error
+  CALL :UsePython "3.10.11" "310" || GOTO :Error
+  CALL :BuildAndInstallWheel || GOTO :Error
+  CALL :RunTests || GOTO :Error
 )
-call :UsePython "3.11.7" "311"
-call :BuildAndInstallWheel
-call :RunTests
+CALL :UsePython "3.11.7" "311" || GOTO :Error
+CALL :BuildAndInstallWheel || GOTO :Error
+CALL :RunTests || GOTO :Error
 
 GOTO :End
 
@@ -60,33 +61,41 @@ GOTO :End
 @REM
 @REM TODO(b/265261481): Derive cp from version.
 :UsePython
-  choco install -my --no-progress --allow-downgrade python --version=%~1%
-  set PATH=C:\Python%~2\;C:\Python%~2\Scripts;%OLD_PATH%
+  choco install -my --no-progress --allow-downgrade python ^
+    --version=%~1% || EXIT /B %errorlevel%
+  SET PATH=C:\Python%~2\;C:\Python%~2\Scripts;%OLD_PATH%
   python -m pip install --no-deps --require-hashes -r ^
-    tools\distribution\requirements.txt
-  python -m pip install --upgrade delvewheel
-  set OUT_WHEEL=tink-%TINK_VERSION%-cp%~2-cp%~2-win_amd64.whl
+    tools\distribution\requirements.txt || EXIT /B %errorlevel%
+  python -m pip install --no-deps --require-hashes ^
+    -r requirements.txt || EXIT /B %errorlevel%
+  python -m pip install --upgrade delvewheel || EXIT /B %errorlevel%
+  SET OUT_WHEEL=tink-%TINK_VERSION%-cp%~2-cp%~2-win_amd64.whl
   EXIT /B 0
 
+@REM Builds and repairs the binary wheel, and places it in release/.
 :BuildAndInstallWheel
-  python -m pip wheel .
-  @REM Repair the wheel and place it in release/.
-  python -m delvewheel repair %OUT_WHEEL% -w release
-  python -m pip install release/%OUT_WHEEL%
+  python -m pip wheel . || EXIT /B %errorlevel%
+  python -m delvewheel repair %OUT_WHEEL% -w release || EXIT /B %errorlevel%
+  python -m pip install --no-deps release/%OUT_WHEEL% || EXIT /B %errorlevel%
   EXIT /B 0
 
 :RunTests
+  SET RET_VALUE=0
   FOR /F %%x in ('DIR /s/b tink\*_test.py') DO (
-  ECHO %%x | FINDSTR "integration pybind" 1>nul
-    IF errorlevel 1 (
-      python %%x
-    ) ELSE (
-      ECHO "Skip test file %%x"
+    ECHO %%x | FINDSTR "integration pybind" 1>nul
+      IF errorlevel 1 (
+        python %%x
+        IF errorlevel 1 SET RET_VALUE=1
+      ) ELSE (
+        ECHO "Skip test file %%x"
+      )
     )
-  )
-  EXIT /B 0
+  EXIT /B %RET_VALUE%
+
+:Error
+  EXIT /B 1
 
 :End
-EXIT /B 0
+  EXIT /B 0
 
 

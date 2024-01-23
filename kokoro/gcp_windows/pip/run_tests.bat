@@ -22,23 +22,40 @@ IF EXIST %KOKORO_ARTIFACTS_DIR%\git\tink_py (
 CD !WORKSPACE_DIR!
 IF %errorlevel% neq 0 EXIT /B 1
 
-ECHO Install started at %TIME%
-choco install -y --no-progress protoc --version=25.2.0
-python -m pip install --upgrade pip
-python -m pip install --upgrade setuptools
-: Build and install Tink.
-python -m pip install .
-ECHO Install completed at %TIME%
+SET TINK_PYTHON_ROOT_PATH=%cd%
 
-ECHO Tests started at %TIME%
-FOR /F %%x in ('DIR /s/b tink\*_test.py') DO (
-  ECHO %%x | FINDSTR "integration pybind" 1>nul
-  IF errorlevel 1 (
-    python %%x
-  ) ELSE (
-    ECHO "Skip test file %%x"
+CALL :InstallTink || GOTO :Error
+CALL :RunTests || GOTO :Error
+GOTO :Exit
+
+:InstallTink
+  ECHO Install started at %TIME%
+  choco install -y --no-progress protoc --version=25.2.0 || EXIT /B %errorlevel%
+  python -m pip install --upgrade pip
+  python -m pip install --upgrade setuptools
+  python -m pip install --require-hashes --no-deps ^
+    -r requirements.txt || EXIT /B %errorlevel%
+  python -m pip install --no-deps . || EXIT /B %errorlevel%
+  ECHO Install completed at %TIME%
+  EXIT /B 0
+
+:RunTests
+  ECHO Tests started at %TIME%
+  SET RET_VALUE=0
+  FOR /F %%x in ('DIR /s/b tink\*_test.py') DO (
+    ECHO %%x | FINDSTR "integration pybind" 1>nul
+    IF errorlevel 1 (
+      python %%x
+      IF errorlevel 1 SET RET_VALUE=1
+    ) ELSE (
+      ECHO "Skip test file %%x"
+    )
   )
-)
-ECHO Test completed at %TIME%
+  ECHO Test completed at %TIME%
+  EXIT /B %RET_VALUE%
 
-EXIT /B 0
+:Error
+  EXIT /B 1
+
+:Exit
+  EXIT /B 0
