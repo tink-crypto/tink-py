@@ -2,35 +2,41 @@
 
 <!-- GCP Ubuntu --->
 
-[tink_py_bazel_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-gcp-ubuntu.svg
-[tink_py_bazel_kms_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-kms-gcp-ubuntu.svg
-[tink_py_pip_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-gcp-ubuntu.svg
-[tink_py_pip_kms_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-kms-gcp-ubuntu.svg
-[tink_py_bdist_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-bdist-create-gcp-ubuntu.svg
-[tink_py_sdist_create_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-sdist-create-gcp-ubuntu.svg
-[tink_py_sdist_test_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-sdist-test-gcp-ubuntu.svg
+[bazel_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-gcp-ubuntu.svg
+[bazel_kms_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-kms-gcp-ubuntu.svg
+[pip_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-gcp-ubuntu.svg
+[pip_kms_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-kms-gcp-ubuntu.svg
+[bdist_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-bdist-create-gcp-ubuntu.svg
+[sdist_create_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-sdist-create-gcp-ubuntu.svg
+[sdist_test_badge_gcp_ubuntu]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-sdist-test-gcp-ubuntu.svg
 
 <!-- GCP Ubuntu (aarch64) --->
 
-[tink_py_bdist_create_badge_gcp_ubuntu_aarch64]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-bdist-create-gcp_ubuntu-arm64-external.svg
+[bdist_create_badge_gcp_ubuntu_aarch64]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-bdist-create-gcp_ubuntu-arm64-external.svg
+
+<!-- GCP Windows --->
+
+[bazel_badge_gcp_windows]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-gcp-windows.svg
+[pip_badge_gcp_windows]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-gcp-windows.svg
+[bdist_badge_gcp_windows]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-bdist-create-gcp-windows.svg
 
 <!-- MacOS --->
 
-[tink_py_bazel_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-macos-external.svg
-[tink_py_bazel_kms_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-kms-macos-external.svg
-[tink_py_pip_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-macos-external.svg
-[tink_py_pip_kms_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-kms-macos-external.svg
-[tink_py_bdist_create_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-bdist-create-macos-external.svg
+[bazel_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-macos-external.svg
+[bazel_kms_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-bazel-kms-macos-external.svg
+[pip_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-macos-external.svg
+[pip_kms_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-pip-kms-macos-external.svg
+[bdist_create_badge_macos]: https://storage.googleapis.com/tink-kokoro-build-badges/tink-py-release-bdist-create-macos-external.svg
 
-**Test**              | **GCP Ubuntu**                                                        | **GCP Ubuntu (aarch64)**                                                       | **MacOS**
---------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------
-Bazel                 | [![Bazel_GcpUbuntu][tink_py_bazel_badge_gcp_ubuntu]](#)               | N/A                                                                            | [![Bazel_MacOs][tink_py_bazel_badge_macos]](#)
-Bazel (with KMS)      | [![Bazel_Kms_GcpUbuntu][tink_py_bazel_kms_badge_gcp_ubuntu]](#)       | N/A                                                                            | [![Bazel_Kms_MacOs][tink_py_bazel_kms_badge_macos]](#)
-Pip                   | [![Pip_MacOs][tink_py_pip_badge_gcp_ubuntu]](#)                       | N/A                                                                            | [![Pip_MacOs][tink_py_pip_badge_macos]](#)
-Pip (with KMS)        | [![Pip_Kms_GcpUbuntu][tink_py_pip_kms_badge_gcp_ubuntu]](#)           | N/A                                                                            | [![Pip_Kms_MacOs][tink_py_pip_kms_badge_macos]](#)
-Bdist (Create + Test) | [![Bdist_GcpUbuntu][tink_py_bdist_badge_gcp_ubuntu]](#)               | [![Bdist_GcpUbuntu_Aarch64][tink_py_bdist_create_badge_gcp_ubuntu_aarch64]](#) | [![Bdist_MacOs][tink_py_bdist_create_badge_macos]](#)
-Sdist (Create)        | [![Sdist_Create_GcpUbuntu][tink_py_sdist_create_badge_gcp_ubuntu]](#) | N/A                                                                            | N/A
-Sdist (Test)          | [![Sdist_Test_GcpUbuntu][tink_py_sdist_test_badge_gcp_ubuntu]](#)     | N/A                                                                            | N/A
+**Test**              | **GCP Ubuntu**                                                | **GCP Ubuntu (aarch64)**                                               | **MacOS**                                      | **GCP Windows**
+--------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------- | ---------------
+Bazel                 | [![Bazel_GcpUbuntu][bazel_badge_gcp_ubuntu]](#)               | N/A                                                                    | [![Bazel_MacOs][bazel_badge_macos]](#)         | [![Bazel_GcpWindows][bazel_badge_gcp_windows]](#)
+Bazel (with KMS)      | [![Bazel_Kms_GcpUbuntu][bazel_kms_badge_gcp_ubuntu]](#)       | N/A                                                                    | [![Bazel_Kms_MacOs][bazel_kms_badge_macos]](#) | N/A
+Pip                   | [![Pip_GcpUbuntu][pip_badge_gcp_ubuntu]](#)                   | N/A                                                                    | [![Pip_MacOs][pip_badge_macos]](#)             | [![Pip_GcpWindows][pip_badge_gcp_windows]](#)
+Pip (with KMS)        | [![Pip_Kms_GcpUbuntu][pip_kms_badge_gcp_ubuntu]](#)           | N/A                                                                    | [![Pip_Kms_MacOs][pip_kms_badge_macos]](#)     | N/A
+Bdist (Create + Test) | [![Bdist_GcpUbuntu][bdist_badge_gcp_ubuntu]](#)               | [![Bdist_GcpUbuntu_Aarch64][bdist_create_badge_gcp_ubuntu_aarch64]](#) | [![Bdist_MacOs][bdist_create_badge_macos]](#)  | [![Bdist_GcpWindows][bdist_badge_gcp_windows]](#)
+Sdist (Create)        | [![Sdist_Create_GcpUbuntu][sdist_create_badge_gcp_ubuntu]](#) | N/A                                                                    | N/A                                            | N/A
+Sdist (Test)          | [![Sdist_Test_GcpUbuntu][sdist_test_badge_gcp_ubuntu]](#)     | N/A                                                                    | N/A                                            | N/A
 
 
 Using crypto in your application [shouldn't have to][devs_are_users_too_slides]
