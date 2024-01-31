@@ -4,6 +4,7 @@
 include requirements.in
 include requirements_awskms.in
 include requirements_gcpkms.in
+include requirements_hcvault.in
 # Required by tink_py_deps_init.bzl.
 include requirements_all.txt
 include .bazelrc

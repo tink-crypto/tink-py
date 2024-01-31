@@ -49,6 +49,9 @@ TEST_EXCLUDE=( -not -path "*cc/pybind*" )
 if [[ "${TEST_WITH_KMS}" == "true" ]]; then
   ./kokoro/testutils/install_tink_via_pip.sh -a "$(pwd)"
   ./kokoro/testutils/copy_credentials.sh "testdata" "all"
+  source ./kokoro/testutils/install_vault.sh
+  source ./kokoro/testutils/run_hcvault_test_server.sh
+  vault write -f transit/keys/key-1
 else
   ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
   TEST_EXCLUDE+=( -not -path "*integration/*" )

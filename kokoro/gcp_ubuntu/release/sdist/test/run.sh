@@ -63,5 +63,21 @@ fi
 readonly RUN_COMMAND_ARGS
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
-./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \
-  ./tools/distribution/test_dist.sh "release"
+
+cat <<'EOF' > _do_test_dist.sh
+set -euo pipefail
+
+source ./kokoro/testutils/install_vault.sh
+source ./kokoro/testutils/run_hcvault_test_server.sh
+vault write -f transit/keys/key-1
+./tools/distribution/test_dist.sh release
+EOF
+chmod +x _do_test_dist.sh
+
+trap cleanup EXIT
+
+cleanup() {
+  rm -rf _do_test_dist.sh
+}
+
+./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" ./_do_test_dist.sh

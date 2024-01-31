@@ -47,12 +47,22 @@ readonly BAZEL_CMD
 # Build tink-py and run unit tests.
 ./kokoro/testutils/run_bazel_tests.sh .
 if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
+  source ./kokoro/testutils/install_vault.sh
+  source ./kokoro/testutils/run_hcvault_test_server.sh
+  vault write -f transit/keys/key-1
+
   readonly MANUAL_TARGETS="$(
     "${BAZEL_CMD}" query 'attr(tags, manual, kind(.*_test, ...))')"
   IFS=' ' read -a MANUAL_TARGETS_ARRAY <<< "$(tr '\n' ' ' \
     <<< "${MANUAL_TARGETS}")"
   readonly MANUAL_TARGETS_ARRAY
-  ./kokoro/testutils/run_bazel_tests.sh -m . "${MANUAL_TARGETS_ARRAY[@]}"
+
+  # Make sure VAULT_ADDR and VAULT_TOKEN are available to the Bazel tests.
+  MANUAL_TARGETS_TEST_ARGS="--test_env=VAULT_ADDR=${VAULT_ADDR}"
+  MANUAL_TARGETS_TEST_ARGS+=",--test_env=VAULT_TOKEN=${VAULT_TOKEN}"
+  readonly MANUAL_TARGETS_TEST_ARGS
+  ./kokoro/testutils/run_bazel_tests.sh -m -t  "${MANUAL_TARGETS_TEST_ARGS}" . \
+    "${MANUAL_TARGETS_ARRAY[@]}"
 fi
 
 # Run examples tests.
@@ -116,7 +126,6 @@ KOKORO_JOB_NAME
 EOF
   run_command_args+=( -e env_variables.txt )
   readonly run_command_args
-
   ./kokoro/testutils/run_command.sh "${run_command_args[@]}" ./_do_run_test.sh
 }
 

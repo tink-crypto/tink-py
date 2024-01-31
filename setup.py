@@ -17,7 +17,6 @@
 The behavior of this script can be modified using two enviroment variables:
 
   - TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION: To change the version that is used.
-  - TINK_PYTHON_SETUPTOOLS_LOCAL_TINK_CC_PATH: Local tink-cc to use.
 """
 
 import glob
@@ -189,8 +188,9 @@ def main() -> None:
   for proto_file in glob.glob('tink/proto/*.proto'):
     _generate_proto(protoc_command, proto_file)
 
-  gcpkms_extra_requirements = _parse_requirements('requirements_gcpkms.in')
   awskms_extra_requirements = _parse_requirements('requirements_awskms.in')
+  gcpkms_extra_requirements = _parse_requirements('requirements_gcpkms.in')
+  hcvault_extra_requirements = _parse_requirements('requirements_hcvault.in')
 
   setuptools.setup(
       name='tink',
@@ -211,7 +211,12 @@ def main() -> None:
       extras_require={
           'gcpkms': gcpkms_extra_requirements,
           'awskms': awskms_extra_requirements,
-          'all': gcpkms_extra_requirements + awskms_extra_requirements,
+          'hcvault': hcvault_extra_requirements,
+          'all': (
+              gcpkms_extra_requirements
+              + awskms_extra_requirements
+              + hcvault_extra_requirements
+          ),
       },
       cmdclass=dict(build_ext=BuildBazelExtension),
       ext_modules=[

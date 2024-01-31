@@ -39,4 +39,9 @@ fi
 readonly CREATE_DIST_OPTIONS
 
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
+
+source ./kokoro/testutils/install_vault.sh
+source ./kokoro/testutils/run_hcvault_test_server.sh
+vault write -f transit/keys/key-1
+
 ./tools/distribution/test_dist.sh release
