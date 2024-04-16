@@ -35,10 +35,10 @@ if [[ -n "${KOKORO_ROOT:-}" ]]; then
   cd "${TINK_BASE_DIR}/tink_py"
 fi
 
-# Make sure we use the latest Python 3.11.
+# Make sure we use the latest Python 3.12 available with pyenv.
 eval "$(pyenv init -)"
-pyenv install "3.11"
-pyenv global "3.11"
+pyenv install -s "3.12"
+pyenv global "3.12"
 
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_protoc.sh "25.1"
