@@ -16,7 +16,7 @@ def tink_py_deps():
         ],
     )
 
-    # Release X.25.1 from 2023-11-15.
+    # Release from 2023-11-15
     maybe(
         http_archive,
         name = "com_google_protobuf",
@@ -25,13 +25,13 @@ def tink_py_deps():
         urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protobuf-25.1.zip"],
     )
 
-    # Release from 2023-07-12
+    # Release from 2024-02-13
     maybe(
         http_archive,
         name = "rules_python",
-        sha256 = "0a8003b044294d7840ac7d9d73eef05d6ceb682d7516781a4ec62eeb34702578",
-        strip_prefix = "rules_python-0.24.0",
-        url = "https://github.com/bazelbuild/rules_python/releases/download/0.24.0/rules_python-0.24.0.tar.gz",
+        sha256 = "c68bdc4fbec25de5b5493b8819cfc877c4ea299c0dcb15c244c5a00208cde311",
+        strip_prefix = "rules_python-0.31.0",
+        url = "https://github.com/bazelbuild/rules_python/releases/download/0.31.0/rules_python-0.31.0.tar.gz",
     )
 
     # Release from 2023-07-17
@@ -53,7 +53,7 @@ def tink_py_deps():
         url = "https://github.com/pybind/pybind11_bazel/archive/refs/tags/v2.11.1.tar.gz",
     )
 
-    # Release from 2023-09-18.
+    # Release from 2023-09-18
     maybe(
         http_archive,
         name = "com_google_absl",
@@ -62,7 +62,7 @@ def tink_py_deps():
         urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20230802.1.zip"],
     )
 
-    # Release from 2024-04-05.
+    # Release from 2024-04-05
     maybe(
         http_archive,
         name = "tink_cc",
@@ -82,7 +82,7 @@ def tink_py_testonly_deps():
         urls = ["https://pki.goog/roots.pem"],
     )
 
-    # Release from 2023-08-02.
+    # Release from 2023-08-02
     maybe(
         http_archive,
         name = "com_google_googletest",
