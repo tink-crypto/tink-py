@@ -82,9 +82,6 @@ enable_py_version() {
   readonly version
   # Set current Python version via environment variable.
   pyenv shell "${version}"
-  # Update environment.
-  python3 -m pip install --require-hashes -r \
-    "${TINK_PYTHON_ROOT_PATH}/tools/distribution/requirements.txt"
 }
 
 is_sdist() {
@@ -108,6 +105,9 @@ main() {
         | sed 's/cp3/3./')"
       enable_py_version "${python_version}"
     fi
+    # Update environment.
+    python3 -m pip install --require-hashes -r \
+      "${TINK_PYTHON_ROOT_PATH}/tools/distribution/requirements.txt"
     install_dist_and_run_tests "${dist}"
   done
 }
