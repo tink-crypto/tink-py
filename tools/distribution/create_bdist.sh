@@ -18,7 +18,7 @@
 
 set -eEuox pipefail
 
-readonly PYTHON_VERSIONS=( "3.8" "3.9" "3.10" "3.11" )
+readonly PYTHON_VERSIONS=( "3.8" "3.9" "3.10" "3.11" "3.12" )
 
 readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 

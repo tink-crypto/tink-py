@@ -74,8 +74,8 @@ enable_py_version() {
   # (e.g. "3.9.5").
   local version="$(pyenv versions --bare | grep "${partial_version}" | tail -1)"
   if [[ -z "${version}" ]]; then
-    # Install the latest available.
-    version="$(pyenv install --list | grep "  ${partial_version}" | tail -1 \
+    # Install the latest available non-dev version.
+    version="$(pyenv install --list | grep "  ${partial_version}\." | tail -1 \
       | xargs)"
     pyenv install "${version}"
   fi
