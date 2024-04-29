@@ -204,7 +204,7 @@ enable_py_version() {
     echo "InvalidArgumentError: Partial version must be specified" >&2
     exit 1
   fi
-  pyenv install "${partial_version}"
+  pyenv install -s "${partial_version}"
   # Set current Python version via environment variable.
   pyenv shell "${partial_version}"
   # Update environment.
