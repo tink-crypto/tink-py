@@ -74,11 +74,13 @@ def tink_py_deps():
 def tink_py_testonly_deps():
     """Test only dependencies."""
 
+    # Note: sha256 is intentionally omitted as this is not a static resource.
+    # Whenever updated, clients should fetch the latest revision provided at
+    # this URL.
     maybe(
         http_file,
         name = "google_root_pem",
         executable = 0,
-        sha256 = "1acf0d4780541758be2c0f998e1e0275232626ed3f8793d8e2fe8e2753750613",
         urls = ["https://pki.goog/roots.pem"],
     )
 
