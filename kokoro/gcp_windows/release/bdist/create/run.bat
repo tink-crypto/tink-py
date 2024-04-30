@@ -37,17 +37,20 @@ SET TINK_PYTHON_ROOT_PATH=%cd%
 CALL :UsePython "3.8.10" "38" || GOTO :Error
 CALL :BuildAndInstallWheel || GOTO :Error
 CALL :RunTests || GOTO :Error
-@REM Build wheels for 3.9 and 3.10 only on release jobs.
-ECHO %KOKORO_JOB_NAME% | FINDSTR "github" | FINDSTR "release"
-IF %errorlevel% EQU 0 (
-  CALL :UsePython "3.9.13" "39" || GOTO :Error
-  CALL :BuildAndInstallWheel || GOTO :Error
-  CALL :RunTests || GOTO :Error
-  CALL :UsePython "3.10.11" "310" || GOTO :Error
-  CALL :BuildAndInstallWheel || GOTO :Error
-  CALL :RunTests || GOTO :Error
-)
-CALL :UsePython "3.11.7" "311" || GOTO :Error
+
+CALL :UsePython "3.9.13" "39" || GOTO :Error
+CALL :BuildAndInstallWheel || GOTO :Error
+CALL :RunTests || GOTO :Error
+
+CALL :UsePython "3.10.11" "310" || GOTO :Error
+CALL :BuildAndInstallWheel || GOTO :Error
+CALL :RunTests || GOTO :Error
+
+CALL :UsePython "3.11.9" "311" || GOTO :Error
+CALL :BuildAndInstallWheel || GOTO :Error
+CALL :RunTests || GOTO :Error
+
+CALL :UsePython "3.12.3" "312" || GOTO :Error
 CALL :BuildAndInstallWheel || GOTO :Error
 CALL :RunTests || GOTO :Error
 
@@ -61,23 +64,33 @@ GOTO :End
 @REM
 @REM TODO(b/265261481): Derive cp from version.
 :UsePython
-  choco install -my --no-progress --allow-downgrade python ^
-    --version=%~1% || EXIT /B %errorlevel%
+  choco install -my --no-progress --allow-downgrade python --version=%~1%
+  IF %errorlevel% neq 0 EXIT /B %errorlevel%
+
   SET PATH=C:\Python%~2\;C:\Python%~2\Scripts;%OLD_PATH%
   python -m pip install --no-deps --require-hashes -r ^
-    tools\distribution\requirements.txt || EXIT /B %errorlevel%
-  python -m pip install --no-deps --require-hashes ^
-    -r requirements.txt || EXIT /B %errorlevel%
-  python -m pip install --upgrade delvewheel || EXIT /B %errorlevel%
+    tools\distribution\requirements.txt
+  IF %errorlevel% neq 0 EXIT /B %errorlevel%
+
+  python -m pip install --no-deps --require-hashes -r requirements.txt
+  IF %errorlevel% neq 0 EXIT /B %errorlevel%
+
+  python -m pip install --upgrade delvewheel
+  IF %errorlevel% neq 0 EXIT /B %errorlevel%
+
   SET OUT_WHEEL=tink-%TINK_VERSION%-cp%~2-cp%~2-win_amd64.whl
   EXIT /B 0
 
-@REM Builds and repairs the binary wheel, and places it in release/.
+@REM Builds repairs and installs the binary wheel, and places it in release/.
 :BuildAndInstallWheel
-  python -m pip wheel . || EXIT /B %errorlevel%
-  python -m delvewheel repair %OUT_WHEEL% -w release || EXIT /B %errorlevel%
-  python -m pip install --no-deps release/%OUT_WHEEL% || EXIT /B %errorlevel%
-  EXIT /B 0
+  python -m pip wheel .
+  IF %errorlevel% neq 0 EXIT /B %errorlevel%
+
+  python -m delvewheel repair %OUT_WHEEL% -w release
+  IF %errorlevel% neq 0 EXIT /B %errorlevel%
+
+  python -m pip install --no-deps release/%OUT_WHEEL%
+  EXIT /B %errorlevel%
 
 :RunTests
   SET RET_VALUE=0
