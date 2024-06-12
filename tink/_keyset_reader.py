@@ -15,7 +15,6 @@
 """Reads Keysets from file."""
 
 import abc
-import warnings
 
 from google.protobuf import json_format
 from google.protobuf import message
@@ -43,7 +42,6 @@ class JsonKeysetReader(KeysetReader):
   """Reads a JSON Keyset."""
 
   def __init__(self, serialized_keyset: str):
-    warnings.warn('JsonKeysetReader is deprecated.', DeprecationWarning, 2)
     self._serialized_keyset = serialized_keyset
 
   def read(self) -> tink_pb2.Keyset:
@@ -65,7 +63,6 @@ class BinaryKeysetReader(KeysetReader):
   """Reads a binary Keyset."""
 
   def __init__(self, serialized_keyset: bytes):
-    warnings.warn('BinaryKeysetReader is deprecated.', DeprecationWarning, 2)
     self._serialized_keyset = serialized_keyset
 
   def read(self) -> tink_pb2.Keyset:
