@@ -64,13 +64,21 @@ readonly RUN_COMMAND_ARGS
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 
-cat <<'EOF' > _do_test_dist.sh
+CACHE_OPTIONS=()
+if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
+  cp "${TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY}" cache_key
+  CACHE_OPTIONS+=( -c "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET}/bazel/${TINK_PY_BASE_IMAGE_HASH}" )
+fi
+readonly CACHE_OPTIONS
+
+cat <<EOF > _do_test_dist.sh
 set -euo pipefail
 
 source ./kokoro/testutils/install_vault.sh
 source ./kokoro/testutils/run_hcvault_test_server.sh
 vault write -f transit/keys/key-1
-./tools/distribution/test_dist.sh release
+
+./tools/distribution/test_dist.sh ${CACHE_OPTIONS[@]} release
 EOF
 chmod +x _do_test_dist.sh
 

@@ -19,24 +19,32 @@
 set -euox pipefail
 
 readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
-
+readonly GCS_URL="https://storage.googleapis.com"
 export TINK_PYTHON_ROOT_PATH="${PWD}"
 
 usage() {
-  echo "Usage:  $0 <sdists/bdists dir>"
-  echo "  -h: Help. Print this usage information."
+  cat <<EOF
+Usage:  $0 [-c Bazel cache name] <sdists/bdists dir>
+  -c: [Optional] Bazel cache to use; credentials are expected to be in a
+      cache_key file.
+  -h: Help. Print this usage information.
+EOF
   exit 1
 }
 
 RELEASE_ARTIFACTS_DIR=
+BAZEL_CACHE_NAME=
+
 parse_args() {
   # Parse options.
-  while getopts "h" opt; do
+  while getopts "hc:" opt; do
     case "${opt}" in
+      c) BAZEL_CACHE_NAME="${OPTARG}" ;;
       *) usage ;;
     esac
   done
   shift $((OPTIND - 1))
+  readonly BAZEL_CACHE_NAME
   RELEASE_ARTIFACTS_DIR="$1"
   if [[ ! -d "${RELEASE_ARTIFACTS_DIR:-}" ]]; then
     echo -n "InvalidArgumentError: Invalid release folder " >&2
@@ -94,6 +102,11 @@ is_sdist() {
 
 main() {
   parse_args "$@"
+
+  if [[ -n "${BAZEL_CACHE_NAME:-}" ]]; then
+    export TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL="${GCS_URL}/${BAZEL_CACHE_NAME}"
+    export TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH="$(realpath cache_key)"
+  fi
 
   eval "$(pyenv init -)"
 
