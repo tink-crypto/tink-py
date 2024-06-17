@@ -36,6 +36,10 @@ if [[ "${KOKORO_JOB_NAME:-}" =~ tink/github/py/.*/release ]]; then
 else
   CREATE_DIST_OPTIONS+=( -t dev )
 fi
+if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
+  cp "${TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY}" /tmp/cache_key
+  CREATE_DIST_OPTIONS+=( -c "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET}/bazel/macos_tink_py" )
+fi
 readonly CREATE_DIST_OPTIONS
 
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"

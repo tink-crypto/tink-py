@@ -18,6 +18,8 @@
 
 set -eEuox pipefail
 
+readonly GCS_URL="https://storage.googleapis.com"
+
 readonly PYTHON_VERSIONS=( "3.8" "3.9" "3.10" "3.11" "3.12" )
 
 readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
@@ -36,8 +38,11 @@ readonly ARCH="$(uname -m)"
 
 usage() {
   cat <<EOF
-Usage:  $0 [-t <release type (dev|release)>]
-  -t: [Optional] Type of release; if "dev", the genereted wheels use <version from VERSION>-dev0; if "release", <version from VERSION> (default=dev).
+Usage:  $0 [-c Bazel cache name] [-t <release type (dev|release)>]
+  -t: [Optional] Type of release; if "dev", the genereted wheels use <version
+      from VERSION>-dev0; if "release", <version from VERSION> (default=dev).
+  -c: [Optional] Bazel cache to use; credentials are expected to be in a
+      /tmp/cache_key file.
   -h: Help. Print this usage information.
 EOF
   exit 1
@@ -45,18 +50,20 @@ EOF
 
 RELEASE_TYPE="dev"
 TINK_VERSION=
+BAZEL_CACHE_NAME=
 
 parse_args() {
   # Parse options.
-  while getopts "ht:" opt; do
+  while getopts "ht:c:" opt; do
     case "${opt}" in
       t) RELEASE_TYPE="${OPTARG}" ;;
+      c) BAZEL_CACHE_NAME="${OPTARG}" ;;
       *) usage ;;
     esac
   done
   shift $((OPTIND - 1))
   readonly RELEASE_TYPE
-
+  readonly BAZEL_CACHE_NAME
   TINK_VERSION="$(cat VERSION)"
   case "${RELEASE_TYPE}" in
     dev) TINK_VERSION="${TINK_VERSION}.dev0" ;;
@@ -86,15 +93,15 @@ create_bdist_for_linux() {
   # https://docs.docker.com/engine/security/trust/content_trust/).
   export DOCKER_CONTENT_TRUST=1
 
-  # Base directory in the container image.
-  local -r tink_deps_container_dir="/tmp/tink"
-  local -r tink_py_relative_path="${PWD##*/}"
-  # Path to tink-py within the container.
-  local -r tink_py_container_dir="${tink_deps_container_dir}/${tink_py_relative_path}"
-
   local env_variables=(
     -e TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
   )
+  if [[ -n "${BAZEL_CACHE_NAME:-}" ]]; then
+    env_variables+=(
+      -e TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL="${GCS_URL}/${BAZEL_CACHE_NAME}"
+      -e TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH="/tmp/cache_key"
+    )
+  fi
   readonly env_variables
 
   local manylinux_image="${MANYLINUX_X86_64_IMAGE}"
@@ -103,13 +110,11 @@ create_bdist_for_linux() {
   fi
   readonly manylinux_image
 
-  # Build binary wheels.
+  # Build binary wheels. Mount the tink python root folder and the tmp folder.
   docker run \
-    --volume "${TINK_PYTHON_ROOT_PATH}/..:${tink_deps_container_dir}" \
-    --workdir "${tink_py_container_dir}" \
-    "${env_variables[@]}" \
-    "${manylinux_image}" \
-    "${tink_py_container_dir}/tools/distribution/build_linux_binary_wheels.sh"
+    --volume "${TINK_PYTHON_ROOT_PATH}:/tink" --volume "/tmp:/tmp" \
+    --workdir "/tink" "${env_variables[@]}" "${manylinux_image}" \
+    "tools/distribution/build_linux_binary_wheels.sh"
 
   # Docker runs as root so we transfer ownership to the non-root user.
   sudo chown -R "$(id -un):$(id -gn)" "${TINK_PYTHON_ROOT_PATH}"
@@ -162,6 +167,11 @@ create_bdist_for_macos() {
   echo "### Building macOS binary wheels ###"
 
   export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
+  if [[ -n "${BAZEL_CACHE_NAME:-}" ]]; then
+    export TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL="${GCS_URL}/${BAZEL_CACHE_NAME}"
+    export TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH="/tmp/cache_key"
+  fi
+
   rm -rf release && mkdir -p release
   for python_version in "${PYTHON_VERSIONS[@]}"; do
     enable_py_version "${python_version}"
