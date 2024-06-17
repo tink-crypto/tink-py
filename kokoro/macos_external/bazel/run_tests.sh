@@ -37,44 +37,17 @@ pyenv global "3.12"
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
-# TODO(b/276277854) It is not clear why this is needed.
-python3 -m pip install --require-hashes --no-deps -r requirements_all.txt
-
-./kokoro/testutils/run_bazel_tests.sh .
+# Fill in TEST_SCRIPT_ARGS with arguments to pass to the test script.
+TEST_SCRIPT_ARGS=()
 if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
-  source ./kokoro/testutils/install_vault.sh
-  source ./kokoro/testutils/run_hcvault_test_server.sh
-  vault write -f transit/keys/key-1
-
-  readonly MANUAL_TARGETS="$(
-    "${BAZEL_CMD}" query 'attr(tags, manual, kind(.*_test, ...))')"
-  IFS=' ' read -a MANUAL_TARGETS_ARRAY <<< "$(tr '\n' ' ' \
-    <<< "${MANUAL_TARGETS}")"
-  readonly MANUAL_TARGETS_ARRAYs
-  # Make sure VAULT_ADDR and VAULT_TOKEN are available to the Bazel tests.
-  MANUAL_TARGETS_TEST_ARGS="--test_env=VAULT_ADDR=${VAULT_ADDR}"
-  MANUAL_TARGETS_TEST_ARGS+=",--test_env=VAULT_TOKEN=${VAULT_TOKEN}"
-  readonly MANUAL_TARGETS_TEST_ARGS
-  ./kokoro/testutils/run_bazel_tests.sh -m -t  "${MANUAL_TARGETS_TEST_ARGS}" . \
-    "${MANUAL_TARGETS_ARRAY[@]}"
+  TEST_SCRIPT_ARGS+=( -k )
 fi
-
-if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
-  # Run all the test targets excluding *test_package, including manual ones that
-  # interact with a KMS.
-  python3 -m pip install --require-hashes -r examples/requirements.txt
-
-  TARGETS="$(cd examples && "${BAZEL_CMD}" query \
-    'kind(.*_test, ...) except filter(.*test_package, ...)')"
-else
-  # Run all the test targets excluding *test_package, exclude manual ones.
-  TARGETS="$(cd examples \
-    && "${BAZEL_CMD}" query \
-      'kind(.*_test, ...) except filter(.*test_package, ...) except attr(tags, manual, ...)')"
+if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
+  cp "${TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY}" ./cache_key
+  TEST_SCRIPT_ARGS+=(
+    -c "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET}/bazel/macos_tink_py"
+  )
 fi
-readonly TARGETS
+readonly TEST_SCRIPT_ARGS
 
-IFS=' ' read -a TARGETS_ARRAY <<< "$(tr '\n' ' ' <<< "${TARGETS}")"
-readonly TARGETS_ARRAY
-
-./kokoro/testutils/run_bazel_tests.sh -m "examples" "${TARGETS_ARRAY[@]}"
+./kokoro/gcp_ubuntu/pip/test_script.sh "${TEST_SCRIPT_ARGS[@]}"

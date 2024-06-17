@@ -43,39 +43,20 @@ pyenv global "3.12"
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_protoc.sh "25.1"
 
-# testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
-export TINK_PYTHON_ROOT_PATH="$(pwd)"
-TEST_EXCLUDE=( -not -path "*cc/pybind*" )
-if [[ "${TEST_WITH_KMS}" == "true" ]]; then
-  ./kokoro/testutils/install_tink_via_pip.sh -a "$(pwd)"
-  ./kokoro/testutils/copy_credentials.sh "testdata" "all"
-  source ./kokoro/testutils/install_vault.sh
-  source ./kokoro/testutils/run_hcvault_test_server.sh
-  vault write -f transit/keys/key-1
-else
-  ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
-  TEST_EXCLUDE+=( -not -path "*integration/*" )
-fi
-readonly TEST_EXCLUDE
-find tink/ "${TEST_EXCLUDE}" -type f -name "*_test.py" -print0 \
-  | xargs -0 -n1 python3
+./kokoro/testutils/copy_credentials.sh "testdata" "all"
+./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
-# Install requirements for examples.
-python3 -m pip install --require-hashes --no-deps -r examples/requirements.txt
-if [[ "${TEST_WITH_KMS}" == "true" ]]; then
-  # Get root certificates for gRPC.
-  curl -OLsS https://raw.githubusercontent.com/grpc/grpc/master/etc/roots.pem
-  export GRPC_DEFAULT_SSL_ROOTS_FILE_PATH="$(pwd)/roots.pem"
-  ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
-  # All *test_package targets, including manual ones.
-  TARGETS="$(cd examples && "${BAZEL_CMD}" query 'filter(.*test_package, ...)')"
-else
-  # All non-manual *test_package targets.
-  TARGETS="$(cd examples && "${BAZEL_CMD}" query \
-    'filter(.*test_package, ...) except attr(tags, manual, ...)')"
+# Fill in TEST_SCRIPT_ARGS with arguments to pass to the test script.
+TEST_SCRIPT_ARGS=()
+if [[ "${KOKORO_JOB_NAME:-}" =~ .*/bazel_kms/.* ]]; then
+  TEST_SCRIPT_ARGS+=( -k )
 fi
-readonly TARGETS
+if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
+  cp "${TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY}" ./cache_key
+  TEST_SCRIPT_ARGS+=(
+    -c "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET}/bazel/macos_tink_py"
+  )
+fi
+readonly TEST_SCRIPT_ARGS
 
-IFS=' ' read -a TARGETS_ARRAY <<< "$(tr '\n' ' ' <<< "${TARGETS}")"
-readonly TARGETS_ARRAY
-./kokoro/testutils/run_bazel_tests.sh -m "examples" "${TARGETS_ARRAY[@]}"
+./kokoro/gcp_ubuntu/pip/test_script.sh "${TEST_SCRIPT_ARGS[@]}"
