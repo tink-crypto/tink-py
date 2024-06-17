@@ -17,6 +17,10 @@
 The behavior of this script can be modified using two enviroment variables:
 
   - TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION: To change the version that is used.
+  - TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL: If set, Bazel Remote Caching
+  is used to build the package.
+  - TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH: Service key to use for
+  Bazel Remote Caching.
 """
 
 import glob
@@ -161,6 +165,22 @@ class BuildBazelExtension(build_ext.build_ext):
       os.environ['PYTHON_BIN_PATH'] = sys.executable
       os.environ['PYTHON_LIB_PATH'] = os.path.join(sys.exec_prefix, 'lib')
       lib_extension = '.pyd'
+
+    if 'TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL' in os.environ:
+      if 'TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH' not in os.environ:
+        raise ValueError(
+            'TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH must be set.'
+        )
+      remote_cache_gcs_bucket_url = os.environ[
+          'TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL'
+      ]
+      remote_cache_gcs_service_key_path = os.path.abspath(
+          os.environ['TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH']
+      )
+      bazel_build_args += [
+          f'--remote_cache={remote_cache_gcs_bucket_url}',
+          f'--google_credentials={remote_cache_gcs_service_key_path}',
+      ]
 
     # Run build command.
     self.spawn([self.bazel_command] + bazel_startup_args + bazel_build_args)
