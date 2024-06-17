@@ -24,18 +24,22 @@ fi
 readonly IS_KOKORO
 readonly ARCH="$(uname -m)"
 
+CONTAINER_IMAGE_HASH=
 RUN_COMMAND_ARGS=()
 if [[ "${IS_KOKORO}" == "true" ]]; then
   readonly TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
   cd "${TINK_BASE_DIR}/tink_py"
   source ./kokoro/testutils/py_test_container_images.sh
   CONTAINER_IMAGE="${TINK_PY_BASE_IMAGE}"
+  CONTAINER_IMAGE_HASH="${TINK_PY_BASE_IMAGE_HASH}"
   if [[ "${ARCH}" == "aarch64" || "${ARCH}" == "arm64" ]]; then
     CONTAINER_IMAGE="${TINK_PY_BASE_ARM64_IMAGE}"
+    CONTAINER_IMAGE_HASH="${TINK_PY_BASE_ARM64_IMAGE_HASH}"
   fi
   RUN_COMMAND_ARGS+=( -k "${TINK_GCR_SERVICE_KEY}" )
 fi
 readonly CONTAINER_IMAGE
+readonly CONTAINER_IMAGE_HASH
 
 if [[ -n "${CONTAINER_IMAGE:-}" ]]; then
   RUN_COMMAND_ARGS+=( -c "${CONTAINER_IMAGE}" )
@@ -51,7 +55,9 @@ fi
 
 if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
   cp "${TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY}" /tmp/cache_key
-  CREATE_DIST_OPTIONS+=( -c "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET}/bazel/${TINK_PY_BASE_IMAGE_HASH}" )
+  CREATE_DIST_OPTIONS+=(
+    -c "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET}/bazel/${CONTAINER_IMAGE_HASH}"
+  )
 fi
 readonly CREATE_DIST_OPTIONS
 
