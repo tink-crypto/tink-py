@@ -138,8 +138,6 @@ def create_kms_aead_key_template(key_uri: str) -> tink_pb2.KeyTemplate:
   Returns:
     A KMS Aead KeyTemplate.
   """
-  warnings.warn('The "create_kms_aead_key_template" function is deprecated.',
-                DeprecationWarning, 2)
   key_format = kms_aead_pb2.KmsAeadKeyFormat(key_uri=key_uri)
   key_template = tink_pb2.KeyTemplate(
       value=key_format.SerializeToString(),
@@ -175,9 +173,6 @@ def create_kms_envelope_aead_key_template(
   Returns:
       the resulting key template
   """
-  warnings.warn(
-      'The "create_kms_envelope_aead_key_template" function is deprecated.',
-      DeprecationWarning, 2)
   key_format = kms_envelope_pb2.KmsEnvelopeAeadKeyFormat(
       kek_uri=kek_uri, dek_template=dek_template
   )

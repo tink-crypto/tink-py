@@ -30,10 +30,9 @@ from tink import aead
 class AeadKeyTemplatesTest(parameterized.TestCase):
 
   def test_create_kms_aead_key_template(self):
-    template = None
-    with self.assertWarns(DeprecationWarning):
-      template = aead.aead_key_templates.create_kms_aead_key_template(
-          key_uri='fake://kek/uri')
+    template = aead.aead_key_templates.create_kms_aead_key_template(
+        key_uri='fake://kek/uri'
+    )
     self.assertEqual(template.type_url,
                      'type.googleapis.com/google.crypto.tink.KmsAeadKey')
     self.assertEqual(template.output_prefix_type, tink_pb2.RAW)
@@ -41,11 +40,9 @@ class AeadKeyTemplatesTest(parameterized.TestCase):
     self.assertEqual(key_format.key_uri, 'fake://kek/uri')
 
   def test_create_kms_envelope_aead_key_template(self):
-    template = None
-    with self.assertWarns(DeprecationWarning):
-      template = aead.aead_key_templates.create_kms_envelope_aead_key_template(
-          kek_uri='fake://kek/uri',
-          dek_template=aead.aead_key_templates.AES128_GCM)
+    template = aead.aead_key_templates.create_kms_envelope_aead_key_template(
+        kek_uri='fake://kek/uri',
+        dek_template=aead.aead_key_templates.AES128_GCM)
     self.assertEqual(
         template.type_url,
         'type.googleapis.com/google.crypto.tink.KmsEnvelopeAeadKey')
