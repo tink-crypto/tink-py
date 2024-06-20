@@ -50,4 +50,4 @@ if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
 fi
 readonly TEST_SCRIPT_ARGS
 
-./kokoro/gcp_ubuntu/pip/test_script.sh "${TEST_SCRIPT_ARGS[@]}"
+./kokoro/gcp_ubuntu/bazel/test_script.sh "${TEST_SCRIPT_ARGS[@]}"
