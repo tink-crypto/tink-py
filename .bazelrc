@@ -1,4 +1,5 @@
 build --enable_platform_specific_config=true
+
 # Minumum C++ version. Override it building this project with
 # `bazel build --cxxopt='-std=c++<XY>' --host_cxxopt='c++<XY>' ...`
 # (Both -std and --host_cxxopt must be set to force the desired version.)
@@ -28,3 +29,10 @@ build:macos_x86_64 --macos_minimum_os=10.9
 build:macos_arm64 --cpu=darwin_arm64
 build:macos_arm64 --macos_cpus=arm64
 build:macos_arm64 --macos_minimum_os=11.0
+
+# Silence all C/C++ warnings in external code.
+#
+# Note that this will not silence warnings from external headers included
+# in project code.
+build --per_file_copt=external/.*@-w
+build --host_per_file_copt=external/.*@-w
