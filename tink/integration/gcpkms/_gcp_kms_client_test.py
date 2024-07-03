@@ -28,6 +28,7 @@ from tink.testing import helper
 
 KEY_URI1 = 'gcp-kms://projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck1'
 KEY_URI2 = 'gcp-kms://projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck2'
+KEY_URI3 = 'gcp-kms://projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck3/cryptoKeyVersions/1'
 AWS_KEY_URI = 'aws-kms://arn:aws:kms:us-west-2:acc:other/key3'
 PLAINTEXT = b'plaintext'
 CIPHERTEXT = b'ciphertext'
@@ -88,7 +89,6 @@ class GcpKmsClientTest(parameterized.TestCase):
       '',
       AWS_KEY_URI,
       KEY_URI1 + '/',
-      KEY_URI1 + '/cryptoKeyVersions/1',
       'projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck1',
       'gcp-kms:/projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck1',
   )
@@ -116,21 +116,31 @@ class GcpKmsClientTest(parameterized.TestCase):
     with self.assertRaises(core.TinkError):
       gcp_aead.decrypt(PLAINTEXT, ASSOCIATED_DATA)
 
-  def test_aead_encryption_works(self):
+  @parameterized.parameters(
+      KEY_URI1,
+      KEY_URI2,
+      KEY_URI3,
+  )
+  def test_aead_encryption_works(self, key_uri):
     kms_v1.KeyManagementServiceClient().encrypt.return_value = (
         kms_v1.types.EncryptResponse(ciphertext=CIPHERTEXT)
     )
-    gcp_client = gcpkms.GcpKmsClient(KEY_URI1, CREDENTIAL_PATH)
-    gcp_aead = gcp_client.get_aead(KEY_URI1)
+    gcp_client = gcpkms.GcpKmsClient(key_uri, CREDENTIAL_PATH)
+    gcp_aead = gcp_client.get_aead(key_uri)
     ciphertext = gcp_aead.encrypt(PLAINTEXT, ASSOCIATED_DATA)
     self.assertEqual(ciphertext, CIPHERTEXT)
 
-  def test_aead_decryption_works(self):
+  @parameterized.parameters(
+      KEY_URI1,
+      KEY_URI2,
+      KEY_URI3,
+  )
+  def test_aead_decryption_works(self, key_uri):
     kms_v1.KeyManagementServiceClient().decrypt.return_value = (
         kms_v1.types.DecryptResponse(plaintext=PLAINTEXT)
     )
-    gcp_client = gcpkms.GcpKmsClient(KEY_URI1, CREDENTIAL_PATH)
-    gcp_aead = gcp_client.get_aead(KEY_URI1)
+    gcp_client = gcpkms.GcpKmsClient(key_uri, CREDENTIAL_PATH)
+    gcp_aead = gcp_client.get_aead(key_uri)
     plaintext = gcp_aead.decrypt(CIPHERTEXT, ASSOCIATED_DATA)
     self.assertEqual(plaintext, PLAINTEXT)
 

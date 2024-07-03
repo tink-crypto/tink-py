@@ -62,7 +62,6 @@ class GcpKmsAeadTest(parameterized.TestCase):
       'projects/p1/locations/' + STRING_64 + '/keyRings/kr1/cryptoKeys/ck1',
       'projects/p1/locations/global/keyRings/' + STRING_64 + '/cryptoKeys/ck1',
       'projects/p1/locations/global/keyRings/kr1/cryptoKeys/' + STRING_64,
-      'projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck1/cryptoKeyVersions/1',
       'gcprojects://projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck1',
   )
   def test_key_name_format_wrong(self, key_name):

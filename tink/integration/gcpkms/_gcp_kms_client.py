@@ -30,6 +30,13 @@ _KMS_KEY_REGEX = re.compile(
     'keyRings/([a-zA-Z0-9_-]{1,63})/'
     'cryptoKeys/([a-zA-Z0-9_-]{1,63})$'
 )
+_KMS_KEY_VERSION_REGEX = re.compile(
+    'projects/([^/]+)/'
+    'locations/([a-zA-Z0-9_-]{1,63})/'
+    'keyRings/([a-zA-Z0-9_-]{1,63})/'
+    'cryptoKeys/([a-zA-Z0-9_-]{1,63})/'
+    'cryptoKeyVersions/([a-zA-Z0-9_-]{1,63})$'
+)
 
 
 class _GcpKmsAead(aead.Aead):
@@ -40,7 +47,9 @@ class _GcpKmsAead(aead.Aead):
   ) -> None:
     if not key_name:
       raise tink.TinkError('key_name cannot be null.')
-    if not _KMS_KEY_REGEX.match(key_name):
+    if not (
+        _KMS_KEY_REGEX.match(key_name) or _KMS_KEY_VERSION_REGEX.match(key_name)
+    ):
       raise tink.TinkError(
           'Invalid key_name format: {}.\nKMS keys should follow the format: '
           '"projects/<project-id>/locations/<location>/keyRings/<keyring>/'
