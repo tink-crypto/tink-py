@@ -66,9 +66,9 @@ def tink_py_deps():
     maybe(
         http_archive,
         name = "tink_cc",
-        sha256 = "14a3f64a56d7e9296889d7eba7a3b8787c3281e5bc5791033c54baf810a0b6ef",
-        strip_prefix = "tink-cc-2.1.3",
-        urls = ["https://github.com/tink-crypto/tink-cc/releases/download/v2.1.3/tink-cc-2.1.3.zip"],
+        sha256 = "88e1442182452caa16d0954ceaf73e17b0aa30837ee6c0cc16bf0112313ce753",
+        strip_prefix = "tink-cc-2.2.0",
+        urls = ["https://github.com/tink-crypto/tink-cc/releases/download/v2.2.0/tink-cc-2.2.0.zip"],
     )
 
 def tink_py_testonly_deps():
