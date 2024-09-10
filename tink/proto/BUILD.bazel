@@ -128,6 +128,14 @@ py_proto_library(
 )
 
 py_proto_library(
+    name = "x_aes_gcm_py_pb2",
+    srcs = [
+        "x_aes_gcm.proto",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+py_proto_library(
     name = "aes_gcm_siv_py_pb2",
     srcs = [
         "aes_gcm_siv.proto",
