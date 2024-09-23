@@ -27,6 +27,8 @@ _SUPPORTED_DEK_KEY_TYPES = frozenset({
     'type.googleapis.com/google.crypto.tink.AesGcmSivKey',
 })
 
+_MAX_ENCRYPTED_DEK_LEN = 4096
+
 
 def is_supported_dek_key_type(type_url: str) -> bool:
   return type_url in _SUPPORTED_DEK_KEY_TYPES
@@ -84,6 +86,9 @@ class KmsEnvelopeAead(_aead.Aead):
     # Wrap DEK key values with remote
     encrypted_dek = self.remote_aead.encrypt(dek.value, b'')
 
+    if len(encrypted_dek) > _MAX_ENCRYPTED_DEK_LEN:
+      raise core.TinkError('length of encrypted DEK too large')
+
     # Construct ciphertext, DEK length encoded as big endian
     enc_dek_len = struct.pack('>I', len(encrypted_dek))
     return enc_dek_len + encrypted_dek + ciphertext
@@ -91,15 +96,17 @@ class KmsEnvelopeAead(_aead.Aead):
   def decrypt(self, ciphertext: bytes, associated_data: bytes) -> bytes:
     ct_len = len(ciphertext)
 
-    # Recover DEK length
     if ct_len < self.DEK_LEN_BYTES:
       raise core.TinkError
 
+    # Parse first 4 bytes as big endian unsigned int
     dek_len = struct.unpack('>I', ciphertext[0:self.DEK_LEN_BYTES])[0]
-
-    # Basic check if DEK length can be valid.
-    if dek_len > (ct_len - self.DEK_LEN_BYTES) or dek_len < 0:
-      raise core.TinkError
+    if (
+        dek_len < 0
+        or dek_len > _MAX_ENCRYPTED_DEK_LEN
+        or dek_len > (ct_len - self.DEK_LEN_BYTES)
+    ):
+      raise core.TinkError('length of encrypted DEK too large')
 
     # Decrypt DEK with remote AEAD
     encrypted_dek_bytes = ciphertext[self.DEK_LEN_BYTES:self.DEK_LEN_BYTES +

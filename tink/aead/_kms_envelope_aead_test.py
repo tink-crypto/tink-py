@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests for tink.python.tink.aead.aead."""
 
 import struct
 
@@ -105,6 +104,16 @@ class KmsEnvelopeAeadTest(parameterized.TestCase):
     with self.assertRaises(core.TinkError):
       _ = env_aead.decrypt(b'foo', b'some ad')
 
+  def test_encrypted_dek_size_too_large(self):
+    dek_template = aead.aead_key_templates.AES256_GCM
+    env_aead = aead.KmsEnvelopeAead(dek_template, self.remote_aead())
+
+    ciphertext = b'\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88'
+    with self.assertRaisesRegex(
+        core.TinkError, 'length of encrypted DEK too large'
+    ):
+      _ = env_aead.decrypt(ciphertext, b'')
+
   def test_malformed_dek_length(self):
     dek_template = aead.aead_key_templates.AES256_GCM
     env_aead = aead.KmsEnvelopeAead(dek_template, self.remote_aead())
@@ -145,7 +154,10 @@ class KmsEnvelopeAeadTest(parameterized.TestCase):
     self.assertLen(key.key_value, 32)
 
   def test_compatible_with_kms_envelope_aead_key(self):
-    kms_uri = 'fake-kms://CM2b3_MDElQKSAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5cHRvLnRpbmsuQWVzR2NtS2V5EhIaEIK75t5L-adlUwVhWvRuWUwYARABGM2b3_MDIAE'
+    kms_uri = (
+        'fake-kms://CM2b3_MDElQKSAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5'
+        'cHRvLnRpbmsuQWVzR2NtS2V5EhIaEIK75t5L-adlUwVhWvRuWUwYARABGM2b3_MDIAE'
+    )
     dek_template = aead.aead_key_templates.AES256_GCM
 
     # Register kmsClient, and use create_kms_envelope_aead_key_template,
