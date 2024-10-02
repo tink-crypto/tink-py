@@ -73,7 +73,8 @@ class RawEncryptingStream(io.RawIOBase):
   def readinto(self, b: bytearray) -> Optional[int]:
     raise io.UnsupportedOperation()
 
-  def write(self, b: bytes) -> int:  # pytype: disable=signature-mismatch
+  # b has type "Buffer", which is not yet supported by pytype.
+  def write(self, b) -> Optional[int]:
     """Write the given buffer to the IO stream.
 
     Args:

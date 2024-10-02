@@ -24,6 +24,13 @@ from tink.cc.pybind import tink_bindings
 from tink.streaming_aead import _file_object_adapter
 
 
+@core.use_tink_errors
+def _get_input_stream_adapter(cc_primitive, aad, source):
+  """Implemented as a separate method to ensure correct error transform."""
+  return tink_bindings.new_cc_decrypting_stream(
+      cc_primitive, aad, source)
+
+
 class RawDecryptingStream(io.RawIOBase):
   """A file-like object which decrypts reads from an underlying object.
 
@@ -51,15 +58,8 @@ class RawDecryptingStream(io.RawIOBase):
       raise ValueError('ciphertext_source must be readable')
     cc_ciphertext_source = _file_object_adapter.FileObjectAdapter(
         ciphertext_source)
-    self._input_stream_adapter = self._get_input_stream_adapter(
+    self._input_stream_adapter = _get_input_stream_adapter(
         stream_aead, associated_data, cc_ciphertext_source)
-
-  @staticmethod
-  @core.use_tink_errors
-  def _get_input_stream_adapter(cc_primitive, aad, source):
-    """Implemented as a separate method to ensure correct error transform."""
-    return tink_bindings.new_cc_decrypting_stream(
-        cc_primitive, aad, source)
 
   @core.use_tink_errors
   def _read_from_input_stream_adapter(self, size: int) -> bytes:
@@ -131,5 +131,6 @@ class RawDecryptingStream(io.RawIOBase):
     """Return True if the stream can be read from."""
     return True
 
-  def write(self, b: bytes) -> int:  # pytype: disable=signature-mismatch
+  # b has type "Buffer", which is not yet supported by pytype.
+  def write(self, b) -> Optional[int]:
     raise io.UnsupportedOperation()
