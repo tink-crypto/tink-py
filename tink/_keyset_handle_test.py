@@ -350,6 +350,12 @@ class KeysetHandleTest(absltest.TestCase):
     with self.assertRaises(tink.TinkError):
       _ = pickle.dumps(handle)
 
+  def test_key_template_with_invalid_output_prefix_type_fails(self):
+    template = aead.aead_key_templates.XAES_256_GCM_160_BIT_NONCE_NO_PREFIX
+    template.output_prefix_type = tink_pb2.LEGACY
+    with self.assertRaises(tink.TinkError):
+      tink.new_keyset_handle(template)
+
 
 if __name__ == '__main__':
   absltest.main()

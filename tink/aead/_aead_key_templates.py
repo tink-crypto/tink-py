@@ -30,9 +30,12 @@ from tink.proto import common_pb2
 from tink.proto import kms_aead_pb2
 from tink.proto import kms_envelope_pb2
 from tink.proto import tink_pb2
+from tink.proto import x_aes_gcm_pb2
+
 
 _AES_EAX_KEY_TYPE_URL = 'type.googleapis.com/google.crypto.tink.AesEaxKey'
 _AES_GCM_KEY_TYPE_URL = 'type.googleapis.com/google.crypto.tink.AesGcmKey'
+_XAES_GCM_KEY_TYPE_URL = 'type.googleapis.com/google.crypto.tink.XAesGcmKey'
 _AES_GCM_SIV_KEY_TYPE_URL = (
     'type.googleapis.com/google.crypto.tink.AesGcmSivKey')
 _AES_CTR_HMAC_AEAD_KEY_TYPE_URL = (
@@ -71,6 +74,22 @@ def _create_aes_gcm_key_template(
   key_template = tink_pb2.KeyTemplate(
       value=key_format.SerializeToString(),
       type_url=_AES_GCM_KEY_TYPE_URL,
+      output_prefix_type=output_prefix_type,
+  )
+  return key_template
+
+
+def _create_xaes_gcm_key_template(
+    salt_size: int,
+    output_prefix_type: tink_pb2.OutputPrefixType = tink_pb2.TINK,
+) -> tink_pb2.KeyTemplate:
+  """Creates an XAES GCM KeyTemplate, and fills in its values."""
+  key_format = x_aes_gcm_pb2.XAesGcmKeyFormat(
+      params=x_aes_gcm_pb2.XAesGcmParams(salt_size=salt_size)
+  )
+  key_template = tink_pb2.KeyTemplate(
+      value=key_format.SerializeToString(),
+      type_url=_XAES_GCM_KEY_TYPE_URL,
       output_prefix_type=output_prefix_type,
   )
   return key_template
@@ -233,6 +252,15 @@ XCHACHA20_POLY1305 = tink_pb2.KeyTemplate(
     output_prefix_type=tink_pb2.TINK)
 XCHACHA20_POLY1305_RAW = tink_pb2.KeyTemplate(
     type_url=_XCHACHA20_POLY1305_KEY_TYPE_URL, output_prefix_type=tink_pb2.RAW)
+XAES_256_GCM_192_BIT_NONCE = _create_xaes_gcm_key_template(
+    salt_size=12, output_prefix_type=tink_pb2.OutputPrefixType.TINK
+)
+XAES_256_GCM_192_BIT_NONCE_NO_PREFIX = _create_xaes_gcm_key_template(
+    salt_size=12, output_prefix_type=tink_pb2.OutputPrefixType.RAW
+)
+XAES_256_GCM_160_BIT_NONCE_NO_PREFIX = _create_xaes_gcm_key_template(
+    salt_size=8, output_prefix_type=tink_pb2.OutputPrefixType.RAW
+)
 
 
 # Deprecated. Use the predefined constant templates above instead.

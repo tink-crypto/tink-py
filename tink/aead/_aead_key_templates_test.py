@@ -16,6 +16,7 @@
 
 from absl.testing import absltest
 from absl.testing import parameterized
+
 from tink.proto import aes_ctr_hmac_aead_pb2
 from tink.proto import aes_eax_pb2
 from tink.proto import aes_gcm_pb2
@@ -24,6 +25,7 @@ from tink.proto import common_pb2
 from tink.proto import kms_aead_pb2
 from tink.proto import kms_envelope_pb2
 from tink.proto import tink_pb2
+from tink.proto import x_aes_gcm_pb2
 from tink import aead
 
 
@@ -113,6 +115,29 @@ class AeadKeyTemplatesTest(parameterized.TestCase):
     self.assertEqual(99, key_format.hmac_key_format.params.tag_size)
     self.assertEqual(46, key_format.hmac_key_format.key_size)
 
+  def test_create_x_aes_gcm_key_template(self):
+
+    for tc in [
+        (aead.aead_key_templates.XAES_256_GCM_192_BIT_NONCE, 12, tink_pb2.TINK),
+        (
+            aead.aead_key_templates.XAES_256_GCM_192_BIT_NONCE_NO_PREFIX,
+            12,
+            tink_pb2.RAW,
+        ),
+        (
+            aead.aead_key_templates.XAES_256_GCM_160_BIT_NONCE_NO_PREFIX,
+            8,
+            tink_pb2.RAW,
+        ),
+    ]:
+      template = tc[0]
+      self.assertEqual(
+          'type.googleapis.com/google.crypto.tink.XAesGcmKey',
+          template.type_url,
+      )
+      self.assertEqual(template.output_prefix_type, tc[2])
+      key_format = x_aes_gcm_pb2.XAesGcmKeyFormat.FromString(template.value)
+      self.assertEqual(tc[1], key_format.params.salt_size)
 
 if __name__ == '__main__':
   absltest.main()

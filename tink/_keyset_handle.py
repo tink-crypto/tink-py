@@ -42,6 +42,22 @@ def has_secret_key_access(token: core.KeyAccess) -> bool:
   return isinstance(token, _secret_key_access.SecretKeyAccess)
 
 
+def _validate_output_prefix(
+    type_url: str, output_prefix_type: tink_pb2.OutputPrefixType
+) -> None:
+  """Validates the output prefix type for the given key type."""
+  if type_url == 'type.googleapis.com/google.crypto.tink.XAesGcmKey':
+    if output_prefix_type not in [
+        tink_pb2.TINK,
+        tink_pb2.RAW,
+    ]:
+      raise core.TinkError(
+          'invalid output prefix type for XAesGcmKey: {}'.format(
+              output_prefix_type
+          )
+      )
+
+
 class KeysetHandle:
   """A KeysetHandle provides abstracted access to Keyset.
 
@@ -82,6 +98,9 @@ class KeysetHandle:
     Returns:
       A new KeysetHandle.
     """
+    _validate_output_prefix(
+        key_template.type_url, key_template.output_prefix_type
+    )
     keyset = tink_pb2.Keyset()
     key_data = core.Registry.new_key_data(key_template)
     key_id = _generate_unused_key_id(keyset)
@@ -198,6 +217,9 @@ class KeysetHandle:
     pset = core.PrimitiveSet(input_primitive_class)
     for key in self._keyset.key:
       if key.status == tink_pb2.ENABLED:
+        _validate_output_prefix(
+            key.key_data.type_url, key.output_prefix_type
+        )
         primitive = core.Registry.primitive(key.key_data, input_primitive_class)
         entry = pset.add_primitive(primitive, key)
         if key.key_id == self._keyset.primary_key_id:

@@ -54,6 +54,7 @@ py_test(
         "//tink/proto:aes_gcm_siv_py_pb2",
         "//tink/proto:common_py_pb2",
         "//tink/proto:tink_py_pb2",
+        "//tink/proto:x_aes_gcm_py_pb2",
         "//tink/proto:xchacha20_poly1305_py_pb2",
         "//tink/testing:fake_kms",
     ],
@@ -95,6 +96,7 @@ py_library(
         "//tink/proto:kms_aead_py_pb2",
         "//tink/proto:kms_envelope_py_pb2",
         "//tink/proto:tink_py_pb2",
+        "//tink/proto:x_aes_gcm_py_pb2",
     ],
 )
 
@@ -113,6 +115,7 @@ py_test(
         "//tink/proto:kms_aead_py_pb2",
         "//tink/proto:kms_envelope_py_pb2",
         "//tink/proto:tink_py_pb2",
+        "//tink/proto:x_aes_gcm_py_pb2",
     ],
 )
 

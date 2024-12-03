@@ -45,6 +45,7 @@ def register() -> None:
       'AesGcmSivKey',
       'AesEaxKey',
       'XChaCha20Poly1305Key',
+      'XAesGcmKey',
   ):
     type_url = 'type.googleapis.com/google.crypto.tink.{}'.format(ident)
     key_manager = core.KeyManagerCcToPyWrapper(

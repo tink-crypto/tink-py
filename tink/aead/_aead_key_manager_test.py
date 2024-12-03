@@ -16,12 +16,14 @@
 
 from absl.testing import absltest
 from absl.testing import parameterized
+
 from tink.proto import aes_ctr_hmac_aead_pb2
 from tink.proto import aes_eax_pb2
 from tink.proto import aes_gcm_pb2
 from tink.proto import aes_gcm_siv_pb2
 from tink.proto import common_pb2
 from tink.proto import tink_pb2
+from tink.proto import x_aes_gcm_pb2
 from tink.proto import xchacha20_poly1305_pb2
 import tink
 from tink import aead
@@ -105,6 +107,16 @@ class AeadKeyManagerTest(parameterized.TestCase):
     self.assertEqual(key.version, 0)
     self.assertLen(key.key_value, 32)
 
+  def test_new_key_data_x_aes_gcm(self):
+    template = aead.aead_key_templates.XAES_256_GCM_192_BIT_NONCE
+    key_manager = core.Registry.key_manager(template.type_url)
+    key_data = key_manager.new_key_data(template)
+    self.assertEqual(key_data.type_url, template.type_url)
+    self.assertEqual(key_data.key_material_type, tink_pb2.KeyData.SYMMETRIC)
+    key = x_aes_gcm_pb2.XAesGcmKey.FromString(key_data.value)
+    self.assertEqual(key.version, 0)
+    self.assertEqual(key.params.salt_size, 12)
+
   def test_invalid_params_throw_exception_aes_eax(self):
     template = aead.aead_key_templates.create_aes_eax_key_template(
         key_size=16, iv_size=9)
@@ -136,7 +148,11 @@ class AeadKeyManagerTest(parameterized.TestCase):
       aead.aead_key_templates.AES256_GCM_SIV,
       aead.aead_key_templates.AES128_CTR_HMAC_SHA256,
       aead.aead_key_templates.AES256_CTR_HMAC_SHA256,
-      aead.aead_key_templates.XCHACHA20_POLY1305])
+      aead.aead_key_templates.XCHACHA20_POLY1305,
+      aead.aead_key_templates.XAES_256_GCM_192_BIT_NONCE,
+      aead.aead_key_templates.XAES_256_GCM_192_BIT_NONCE_NO_PREFIX,
+      aead.aead_key_templates.XAES_256_GCM_160_BIT_NONCE_NO_PREFIX,
+  ])
   def test_encrypt_decrypt_success(self, template):
     keyset_handle = tink.new_keyset_handle(template)
     primitive = keyset_handle.primitive(aead.Aead)
@@ -255,7 +271,9 @@ class AeadKeyManagerTest(parameterized.TestCase):
       aead.aead_key_templates.AES256_GCM_SIV,
       aead.aead_key_templates.AES128_CTR_HMAC_SHA256,
       aead.aead_key_templates.AES256_CTR_HMAC_SHA256,
-      aead.aead_key_templates.XCHACHA20_POLY1305])
+      aead.aead_key_templates.XCHACHA20_POLY1305,
+      aead.aead_key_templates.XAES_256_GCM_192_BIT_NONCE,
+  ])
   def test_invalid_decrypt_raises_error(self, template):
     keyset_handle = tink.new_keyset_handle(template)
     primitive = keyset_handle.primitive(aead.Aead)
