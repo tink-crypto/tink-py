@@ -64,7 +64,7 @@ def tink_py_deps():
         ],
     )
 
-    # Release from 2024-11-20
+    # Release from 2024-11-20.
     maybe(
         http_archive,
         name = "tink_cc",
