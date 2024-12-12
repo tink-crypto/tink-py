@@ -39,7 +39,7 @@ namespace tink {
 // Taking a raw pointer signals to pybind that the object is borrowed -
 // ownership is not taken, and the value is not copied.
 util::StatusOr<std::unique_ptr<OutputStreamAdapter>> NewCcEncryptingStream(
-    StreamingAead* streaming_aead, const absl::string_view aad,
+    StreamingAead* streaming_aead, absl::string_view aad,
     std::shared_ptr<PythonFileObjectAdapter> ciphertext_destination);
 
 // Wrapper function for StreamingAead.NewDecryptingStream
@@ -50,7 +50,7 @@ util::StatusOr<std::unique_ptr<OutputStreamAdapter>> NewCcEncryptingStream(
 // Taking a raw pointer signals to pybind that the object is borrowed -
 // ownership is not taken, and the value is not copied.
 util::StatusOr<std::unique_ptr<InputStreamAdapter>> NewCcDecryptingStream(
-    StreamingAead* streaming_aead, const absl::string_view aad,
+    StreamingAead* streaming_aead, absl::string_view aad,
     std::shared_ptr<PythonFileObjectAdapter> ciphertext_source);
 
 }  // namespace tink
