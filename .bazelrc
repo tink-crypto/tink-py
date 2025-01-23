@@ -3,12 +3,12 @@ build --enable_platform_specific_config=true
 # Minumum C++ version. Override it building this project with
 # `bazel build --cxxopt='-std=c++<XY>' --host_cxxopt='c++<XY>' ...`
 # (Both -std and --host_cxxopt must be set to force the desired version.)
-build:linux --cxxopt=-std=c++14
-build:linux --host_cxxopt=-std=c++14
-build:macos --cxxopt=-std=c++14
-build:macos --host_cxxopt=-std=c++14
-build:windows --cxxopt='/std:c++14'
-build:windows --host_cxxopt='/std:c++14'
+build:linux --cxxopt=-std=c++17
+build:linux --host_cxxopt=-std=c++17
+build:macos --cxxopt=-std=c++17
+build:macos --host_cxxopt=-std=c++17
+build:windows --cxxopt='/std:c++17'
+build:windows --host_cxxopt='/std:c++17'
 
 # Solve various length limits. See e.g., https://github.com/bazelbuild/bazel/issues/17068.
 build:windows --features=archive_param_file
