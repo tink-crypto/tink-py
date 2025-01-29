@@ -23,9 +23,9 @@ build:macos_x86_64 --cpu=darwin
 # MACOSX_DEPLOYMENT_TARGET is set [2].
 # [1] https://bazel.build/reference/command-line-reference#flag--macos_minimum_os
 # [2] https://github.com/bazelbuild/bazel/issues/16932
-build:macos_x86_64 --macos_minimum_os=10.9
+build:macos_x86_64 --macos_minimum_os=11.0
 
-# Configs for cmacOS on ARM64.
+# Configs for macOS on ARM64.
 build:macos_arm64 --cpu=darwin_arm64
 build:macos_arm64 --macos_cpus=arm64
 build:macos_arm64 --macos_minimum_os=11.0
