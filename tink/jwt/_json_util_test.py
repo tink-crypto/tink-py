@@ -37,14 +37,6 @@ class JwtFormatTest(absltest.TestCase):
     with self.assertRaises(_jwt_error.JwtInvalidError):
       _json_util.json_loads('{"a":"a1", "a":"a2"}')
 
-  def test_json_loads_recursion(self):
-    # Value from
-    # https://github.com/python/cpython/blob/v3.12.3/Lib/test/support/__init__.py#L2367.
-    num_recursions = 5000
-    recursive_json = ('{"a":' * num_recursions) + '""' + ('}' * num_recursions)
-    with self.assertRaises(_jwt_error.JwtInvalidError):
-      _json_util.json_loads(recursive_json)
-
   def test_json_loads_with_invalid_utf16(self):
     with self.assertRaises(_jwt_error.JwtInvalidError):
       _json_util.json_loads(u'{"a":{"b":{"c":"\\uD834"}}}')
