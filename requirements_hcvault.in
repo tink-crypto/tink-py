@@ -1,2 +1,2 @@
 # Hashicorp Vault KMS extension.
-hvac>=1.1.1
+hvac>=2.3.0
