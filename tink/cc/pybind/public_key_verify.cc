@@ -50,7 +50,7 @@ void PybindRegisterPublicKeyVerify(pybind11::module* module) {
           [](const PublicKeyVerify& self, const py::bytes& signature,
              const py::bytes& data) -> void {
             // TODO(b/145925674)
-            util::Status result =
+            absl::Status result =
                 self.Verify(std::string(signature), std::string(data));
             if (!result.ok()) {
               throw TinkException(result);

@@ -28,7 +28,7 @@ namespace google_tink {
 
 class TinkException : public std::exception {
  public:
-  explicit TinkException(const crypto::tink::util::Status& status)
+  explicit TinkException(const absl::Status& status)
       : error_code_(static_cast<int>(status.code())),
         what_(status.ToString()) {}
 

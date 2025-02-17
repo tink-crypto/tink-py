@@ -31,7 +31,7 @@ void PybindRegisterCcHpkeConfig(pybind11::module* module) {
   namespace py = pybind11;
   py::module& m = *module;
   m.def("register_hpke", []() -> void {
-    crypto::tink::util::Status result = CcHpkeConfigRegister();
+    absl::Status result = CcHpkeConfigRegister();
     if (!result.ok()) {
       throw TinkException(result);
     }

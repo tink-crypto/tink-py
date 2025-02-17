@@ -44,31 +44,31 @@ class Pybind11PythonFileObjectAdapter : public PythonFileObjectAdapter {
       pybind11::function overload = pybind11::get_overload(
           static_cast<const PythonFileObjectAdapter *>(this), "write");
       if (!overload) {
-        return util::Status(absl::StatusCode::kUnimplemented,
+        return absl::Status(absl::StatusCode::kUnimplemented,
                             "No Python overload is defined for write.");
       }
       auto o = overload(pybind11::bytes(std::string(data)));
       return o.cast<int>();
     } catch (const std::exception &e) {
-      return util::Status(absl::StatusCode::kUnknown, e.what());
+      return absl::Status(absl::StatusCode::kUnknown, e.what());
     } catch (...) {
       std::abort();
     }
   }
 
-  util::Status Close() override {
+  absl::Status Close() override {
     try {
       pybind11::gil_scoped_acquire gil;
       pybind11::function overload = pybind11::get_overload(
           static_cast<const PythonFileObjectAdapter *>(this), "close");
       if (!overload) {
-        return util::Status(absl::StatusCode::kUnimplemented,
+        return absl::Status(absl::StatusCode::kUnimplemented,
                             "No Python overload is defined for close.");
       }
       overload(); /* Ignoring return value. */
-      return util::Status();
+      return absl::Status();
     } catch (const std::exception &e) {
-      return util::Status(absl::StatusCode::kUnknown, e.what());
+      return absl::Status(absl::StatusCode::kUnknown, e.what());
     } catch (...) {
       std::abort();
     }
@@ -80,13 +80,13 @@ class Pybind11PythonFileObjectAdapter : public PythonFileObjectAdapter {
       pybind11::function overload = pybind11::get_overload(
           static_cast<const PythonFileObjectAdapter *>(this), "read");
       if (!overload) {
-        return util::Status(absl::StatusCode::kUnimplemented,
+        return absl::Status(absl::StatusCode::kUnimplemented,
                             "No Python overload is defined for read.");
       }
       auto o = overload(size);
       return o.cast<std::string>();
     } catch (const std::exception &e) {
-      return util::Status(absl::StatusCode::kUnknown, e.what());
+      return absl::Status(absl::StatusCode::kUnknown, e.what());
     } catch (...) {
       std::abort();
     }

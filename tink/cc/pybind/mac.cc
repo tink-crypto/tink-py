@@ -60,7 +60,7 @@ void PybindRegisterMac(pybind11::module* module) {
           "verify_mac",
           [](const Mac& self, const py::bytes& mac,
              const py::bytes& data) -> void {
-            util::Status result =
+            absl::Status result =
                 self.VerifyMac(std::string(mac), std::string(data));
             if (!result.ok()) {
               throw TinkException(result);

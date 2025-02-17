@@ -45,7 +45,7 @@ void PybindRegisterOutputStreamAdapter(pybind11::module* module) {
           },
           py::arg("data"))
       .def("close", [](OutputStreamAdapter* self) -> void {
-        util::Status result = self->Close();
+        absl::Status result = self->Close();
         if (!result.ok()) {
           throw TinkException(result);
         }

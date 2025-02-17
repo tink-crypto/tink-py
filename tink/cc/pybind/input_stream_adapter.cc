@@ -30,7 +30,7 @@ namespace {
 
 class TinkStreamFinishedException : public std::exception {
  public:
-  explicit TinkStreamFinishedException(const crypto::tink::util::Status& status)
+  explicit TinkStreamFinishedException(const absl::Status& status)
       : error_code_(static_cast<int>(status.code())),
         what_(status.ToString()) {}
 

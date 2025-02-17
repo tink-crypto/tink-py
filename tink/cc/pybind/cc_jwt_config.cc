@@ -31,7 +31,7 @@ void PybindRegisterCcJwtConfig(pybind11::module* module) {
   namespace py = pybind11;
   py::module& m = *module;
   m.def("register_jwt", []() -> void {
-    util::Status result = CcJwtConfigRegister();
+    absl::Status result = CcJwtConfigRegister();
     if (!result.ok()) {
       throw TinkException(result);
     }
