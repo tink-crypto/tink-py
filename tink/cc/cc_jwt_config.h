@@ -23,7 +23,7 @@
 namespace crypto {
 namespace tink {
 
-crypto::tink::util::Status CcJwtConfigRegister();
+absl::Status CcJwtConfigRegister();
 
 }  // namespace tink
 }  // namespace crypto

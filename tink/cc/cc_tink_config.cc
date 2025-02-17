@@ -26,7 +26,7 @@ namespace crypto {
 namespace tink {
 
 void CcTinkConfigRegister() {
-  util::Status result = TinkConfig::Register();
+  absl::Status result = TinkConfig::Register();
   if (!result.ok()) {
     throw pybind11::google_tink::TinkException(result);
   }

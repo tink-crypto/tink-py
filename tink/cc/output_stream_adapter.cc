@@ -41,7 +41,7 @@ util::StatusOr<int64_t> OutputStreamAdapter::Write(absl::string_view data) {
   return written;
 }
 
-util::Status OutputStreamAdapter::Close() { return stream_->Close(); }
+absl::Status OutputStreamAdapter::Close() { return stream_->Close(); }
 
 }  // namespace tink
 }  // namespace crypto

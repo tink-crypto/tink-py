@@ -22,7 +22,7 @@
 namespace crypto {
 namespace tink {
 
-util::Status CcHpkeConfigRegister();
+absl::Status CcHpkeConfigRegister();
 
 }  // namespace tink
 }  // namespace crypto

@@ -27,8 +27,8 @@
 namespace crypto {
 namespace tink {
 
-util::Status CcJwtConfigRegister() {
-  util::Status status = Registry::RegisterKeyTypeManager(
+absl::Status CcJwtConfigRegister() {
+  absl::Status status = Registry::RegisterKeyTypeManager(
       absl::make_unique<jwt_internal::RawJwtHmacKeyManager>(), true);
   if (!status.ok()) {
     return status;

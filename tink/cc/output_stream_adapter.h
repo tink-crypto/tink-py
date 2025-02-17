@@ -42,7 +42,7 @@ class OutputStreamAdapter {
   util::StatusOr<int64_t> Write(absl::string_view data);
 
   // Closes the underlying OutputStream.
-  util::Status Close();
+  absl::Status Close();
 
  private:
   std::unique_ptr<OutputStream> stream_;

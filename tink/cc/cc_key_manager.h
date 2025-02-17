@@ -50,7 +50,7 @@ class CcKeyManager {
     auto key_manager_result = Registry::get_key_manager<P>(type_url);
     if (!key_manager_result.ok()) {
       throw TinkException(
-          util::Status(absl::StatusCode::kFailedPrecondition,
+          absl::Status(absl::StatusCode::kFailedPrecondition,
                        absl::StrCat("No manager for key type '", type_url,
                                     "' found in the registry.")));
     }
@@ -79,7 +79,7 @@ class CcKeyManager {
     key_template.ParseFromString(serialized_key_template);
     if (key_manager_->get_key_type() != key_template.type_url()) {
       throw TinkException(
-          util::Status(absl::StatusCode::kInvalidArgument,
+          absl::Status(absl::StatusCode::kInvalidArgument,
                        absl::StrCat("Key type '", key_template.type_url(),
                                     "' is not supported by this manager.")));
     }
@@ -98,7 +98,7 @@ class CcKeyManager {
     const PrivateKeyFactory* factory = dynamic_cast<const PrivateKeyFactory*>(
         &key_manager_->get_key_factory());
     if (factory == nullptr) {
-      throw TinkException(util::Status(
+      throw TinkException(absl::Status(
           absl::StatusCode::kInvalidArgument,
           absl::StrCat("KeyManager for type '", key_manager_->get_key_type(),
                        "' does not have "

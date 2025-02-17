@@ -23,9 +23,7 @@
 namespace crypto {
 namespace tink {
 
-util::Status CcHpkeConfigRegister() {
-  return RegisterHpke();
-}
+absl::Status CcHpkeConfigRegister() { return RegisterHpke(); }
 
 }  // namespace tink
 }  // namespace crypto
