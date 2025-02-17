@@ -34,7 +34,7 @@ namespace tink {
 
 namespace {
 
-bool is_eof(const util::Status& status) {
+bool is_eof(const absl::Status& status) {
   return status.code() == absl::StatusCode::kUnknown &&
          absl::StrContains(status.message(), "EOFError");
 }
@@ -50,7 +50,7 @@ PythonInputStream::PythonInputStream(
   position_ = 0;
   subtle::ResizeStringUninitialized(&buffer_, buffer_size);
   buffer_offset_ = 0;
-  status_ = util::OkStatus();
+  status_ = absl::OkStatus();
 }
 
 util::StatusOr<int> PythonInputStream::Next(const void** data) {
@@ -68,11 +68,11 @@ util::StatusOr<int> PythonInputStream::Next(const void** data) {
   // Read new bytes to buffer_.
   auto read_result = adapter_->Read(buffer_.size());
   if (is_eof(read_result.status())) {
-    return status_ = util::Status(absl::StatusCode::kOutOfRange, "EOF");
+    return status_ = absl::Status(absl::StatusCode::kOutOfRange, "EOF");
   } else if (read_result.status().code() == absl::StatusCode::kOutOfRange) {
     // We need to change the error code because for InputStream OUT_OF_RANGE
     // status always means EOF.
-    return status_ = util::Status(absl::StatusCode::kUnknown,
+    return status_ = absl::Status(absl::StatusCode::kUnknown,
                                   read_result.status().message());
   } else if (!read_result.ok()) {
     return status_ = read_result.status();

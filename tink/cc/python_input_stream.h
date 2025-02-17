@@ -46,7 +46,7 @@ class PythonInputStream : public InputStream {
   int64_t Position() const override;
 
  private:
-  util::Status status_;
+  absl::Status status_;
   std::shared_ptr<PythonFileObjectAdapter> adapter_;
   std::string buffer_;
   int64_t position_;  // current position in the file object (from the

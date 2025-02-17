@@ -35,7 +35,7 @@ class PythonFileObjectAdapter {
   virtual util::StatusOr<int> Write(absl::string_view data) = 0;
 
   // Closes the underlying Python file object.
-  virtual util::Status Close() = 0;
+  virtual absl::Status Close() = 0;
 
   // Reads at most 'size' bytes from the underlying Python file object. Returns
   // UNKNOWN status with error message that contains "EOFError" if the file

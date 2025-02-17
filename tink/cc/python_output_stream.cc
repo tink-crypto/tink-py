@@ -39,7 +39,7 @@ PythonOutputStream::PythonOutputStream(
   position_ = 0;
   count_in_buffer_ = 0;
   buffer_offset_ = 0;
-  status_ = util::OkStatus();
+  status_ = absl::OkStatus();
 }
 
 crypto::tink::util::StatusOr<int> PythonOutputStream::Next(void** data) {
@@ -94,7 +94,7 @@ void PythonOutputStream::BackUp(int count) {
 
 PythonOutputStream::~PythonOutputStream() { Close().IgnoreError(); }
 
-util::Status PythonOutputStream::Close() {
+absl::Status PythonOutputStream::Close() {
   if (!status_.ok()) return status_;
   if (count_in_buffer_ > 0) {
     // Try to write the remaining bytes.
@@ -109,8 +109,8 @@ util::Status PythonOutputStream::Close() {
   status_ = adapter_->Close();
   if (!status_.ok()) return status_;
   status_ =
-      util::Status(absl::StatusCode::kFailedPrecondition, "Stream closed");
-  return util::OkStatus();
+      absl::Status(absl::StatusCode::kFailedPrecondition, "Stream closed");
+  return absl::OkStatus();
 }
 
 int64_t PythonOutputStream::Position() const { return position_; }

@@ -43,12 +43,12 @@ class PythonOutputStream : public OutputStream {
 
   void BackUp(int count) override;
 
-  crypto::tink::util::Status Close() override;
+  absl::Status Close() override;
 
   int64_t Position() const override;
 
  private:
-  util::Status status_;
+  absl::Status status_;
   std::shared_ptr<PythonFileObjectAdapter> adapter_;
   std::string buffer_;
   bool is_first_call_;

@@ -37,7 +37,7 @@ namespace {
 // Writes 'contents' to the specified 'output_stream', and closes the stream.
 // Returns the status of output_stream->Close()-operation, or a non-OK status
 // of a prior output_stream->Next()-operation, if any.
-util::Status WriteToStream(PythonOutputStream* output_stream,
+absl::Status WriteToStream(PythonOutputStream* output_stream,
                            absl::string_view contents) {
   void* buffer;
   int pos = 0;
