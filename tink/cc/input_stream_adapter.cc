@@ -27,7 +27,7 @@
 namespace crypto {
 namespace tink {
 
-util::StatusOr<std::string> InputStreamAdapter::Read(int64_t size) {
+absl::StatusOr<std::string> InputStreamAdapter::Read(int64_t size) {
   const void* buffer;
   auto next_result = stream_->Next(&buffer);
   if (!next_result.ok()) return next_result.status();

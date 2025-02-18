@@ -37,7 +37,7 @@ class InputStreamAdapter {
   // call to Next().
   // If size is negative, all bytes that Next() gives are returned.
   // Returns OUT_OF_RANGE status if the stream is already at EOF.
-  util::StatusOr<std::string> Read(int64_t size);
+  absl::StatusOr<std::string> Read(int64_t size);
 
  private:
   std::unique_ptr<InputStream> stream_;

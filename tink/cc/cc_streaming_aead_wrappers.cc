@@ -24,7 +24,7 @@
 namespace crypto {
 namespace tink {
 
-util::StatusOr<std::unique_ptr<OutputStreamAdapter>> NewCcEncryptingStream(
+absl::StatusOr<std::unique_ptr<OutputStreamAdapter>> NewCcEncryptingStream(
     StreamingAead* streaming_aead, absl::string_view aad,
     std::shared_ptr<PythonFileObjectAdapter> ciphertext_destination) {
   // Get a destination OutputStream from the destination
@@ -43,7 +43,7 @@ util::StatusOr<std::unique_ptr<OutputStreamAdapter>> NewCcEncryptingStream(
   return absl::make_unique<OutputStreamAdapter>(std::move(result.value()));
 }
 
-util::StatusOr<std::unique_ptr<InputStreamAdapter>> NewCcDecryptingStream(
+absl::StatusOr<std::unique_ptr<InputStreamAdapter>> NewCcDecryptingStream(
     StreamingAead* streaming_aead, absl::string_view aad,
     std::shared_ptr<PythonFileObjectAdapter> ciphertext_source) {
   // Get a source InputStream from the source PythonFileObjectAdapter.
