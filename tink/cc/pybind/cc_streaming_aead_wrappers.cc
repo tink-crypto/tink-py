@@ -40,7 +40,7 @@ void PybindRegisterCcStreamingAeadWrappers(pybind11::module* module) {
       [](StreamingAead* streaming_aead, const py::bytes& aad,
          std::shared_ptr<PythonFileObjectAdapter> ciphertext_destination)
           -> std::unique_ptr<OutputStreamAdapter> {
-        util::StatusOr<std::unique_ptr<OutputStreamAdapter>> result_stream =
+        absl::StatusOr<std::unique_ptr<OutputStreamAdapter>> result_stream =
             NewCcEncryptingStream(streaming_aead, std::string(aad),
                                   ciphertext_destination);
         if (!result_stream.ok()) {
@@ -58,7 +58,7 @@ void PybindRegisterCcStreamingAeadWrappers(pybind11::module* module) {
       [](StreamingAead* streaming_aead, const py::bytes& aad,
          std::shared_ptr<PythonFileObjectAdapter> ciphertext_source)
           -> std::unique_ptr<InputStreamAdapter> {
-        util::StatusOr<std::unique_ptr<InputStreamAdapter>> result_stream =
+        absl::StatusOr<std::unique_ptr<InputStreamAdapter>> result_stream =
             NewCcDecryptingStream(streaming_aead, std::string(aad),
                                   ciphertext_source);
         if (!result_stream.ok()) {

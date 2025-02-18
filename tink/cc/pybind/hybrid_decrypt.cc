@@ -41,7 +41,7 @@ void PybindRegisterHybridDecrypt(pybind11::module* module) {
           [](const HybridDecrypt& self, const py::bytes& ciphertext,
              const py::bytes& context_info) -> py::bytes {
             // TODO(b/145925674)
-            util::StatusOr<std::string> decrypt_result = self.Decrypt(
+            absl::StatusOr<std::string> decrypt_result = self.Decrypt(
                 std::string(ciphertext), std::string(context_info));
             if (!decrypt_result.ok()) {
               throw TinkException(decrypt_result.status());

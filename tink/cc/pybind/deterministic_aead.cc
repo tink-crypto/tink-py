@@ -60,7 +60,7 @@ void PybindRegisterDeterministicAead(pybind11::module* module) {
           [](const DeterministicAead& self, const py::bytes& plaintext,
              const py::bytes& associated_data) -> py::bytes {
             // TODO(b/145925674)
-            util::StatusOr<std::string> encrypt_result =
+            absl::StatusOr<std::string> encrypt_result =
                 self.EncryptDeterministically(std::string(plaintext),
                                               std::string(associated_data));
             if (!encrypt_result.ok()) {
@@ -74,7 +74,7 @@ void PybindRegisterDeterministicAead(pybind11::module* module) {
           [](const DeterministicAead& self, const py::bytes& ciphertext,
              const py::bytes& associated_data) -> py::bytes {
             // TODO(b/145925674)
-            util::StatusOr<std::string> decrypt_result =
+            absl::StatusOr<std::string> decrypt_result =
                 self.DecryptDeterministically(std::string(ciphertext),
                                               std::string(associated_data));
             if (!decrypt_result.ok()) {

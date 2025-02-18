@@ -46,7 +46,7 @@ void PybindRegisterAead(pybind11::module* module) {
           "encrypt",
           [](const Aead &self, const py::bytes &plaintext,
              const py::bytes &associated_data) -> py::bytes {
-            util::StatusOr<std::string> result = self.Encrypt(
+            absl::StatusOr<std::string> result = self.Encrypt(
                 std::string(plaintext), std::string(associated_data));
             if (!result.ok()) {
               throw TinkException(result.status());
@@ -63,7 +63,7 @@ void PybindRegisterAead(pybind11::module* module) {
           [](const Aead &self, const py::bytes &ciphertext,
              const py::bytes &associated_data) -> py::bytes {
             // TODO(b/145925674)
-            util::StatusOr<std::string> result = self.Decrypt(
+            absl::StatusOr<std::string> result = self.Decrypt(
                 std::string(ciphertext), std::string(associated_data));
             if (!result.ok()) {
               throw TinkException(result.status());

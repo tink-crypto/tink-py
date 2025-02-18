@@ -42,7 +42,7 @@ void PybindRegisterPrf(pybind11::module* module) {
           [](const Prf& self, const py::bytes& input_data,
              size_t output_length) -> py::bytes {
             // TODO(b/145925674)
-            util::StatusOr<std::string> result =
+            absl::StatusOr<std::string> result =
                 self.Compute(std::string(input_data), output_length);
             if (!result.ok()) {
               throw TinkException(result.status());

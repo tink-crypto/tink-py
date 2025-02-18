@@ -50,7 +50,7 @@ void PybindRegisterPublicKeySign(pybind11::module* module) {
           [](const PublicKeySign& self,
              const py::bytes& data) -> py::bytes {
             // TODO(b/145925674)
-            util::StatusOr<std::string> result = self.Sign(std::string(data));
+            absl::StatusOr<std::string> result = self.Sign(std::string(data));
             if (!result.ok()) {
               throw TinkException(result.status());
             }

@@ -40,7 +40,7 @@ void PybindRegisterHybridEncrypt(pybind11::module* module) {
           [](const HybridEncrypt& self, const py::bytes& plaintext,
              const py::bytes& context_info) -> py::bytes {
             // TODO(b/145925674)
-            util::StatusOr<std::string> encrypt_result =
+            absl::StatusOr<std::string> encrypt_result =
                 self.Encrypt(std::string(plaintext), std::string(context_info));
             if (!encrypt_result.ok()) {
               throw TinkException(encrypt_result.status());
