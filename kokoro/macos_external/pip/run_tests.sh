@@ -41,7 +41,7 @@ pyenv install -s "3.12"
 pyenv global "3.12"
 
 # Sourcing required to update callers environment.
-source ./kokoro/testutils/install_protoc.sh "25.1"
+source ./kokoro/testutils/install_protoc.sh "29.3"
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
