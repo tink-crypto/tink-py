@@ -1,2 +1,7 @@
 absl-py>=2.1.0
 google-cloud-storage>=3.0.0
+protobuf>=5.29.3
+# We need to explicitly add rules for google-api-core and googleapis_common_protos
+# to be able to use protobuf>=5.
+google-api-core>=2.24.1
+googleapis_common_protos>=1.67.0
