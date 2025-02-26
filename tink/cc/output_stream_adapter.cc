@@ -25,7 +25,7 @@
 namespace crypto {
 namespace tink {
 
-util::StatusOr<int64_t> OutputStreamAdapter::Write(absl::string_view data) {
+absl::StatusOr<int64_t> OutputStreamAdapter::Write(absl::string_view data) {
   void* buffer;
   int64_t written = 0;
   while (written < data.size()) {

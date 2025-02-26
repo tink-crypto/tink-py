@@ -39,7 +39,7 @@ class OutputStreamAdapter {
   // It repeatedly calls Next() as long as it returns positive values. This
   // ensures that in the usual case when we can write all of 'data' the user can
   // call Write() once and no unnecessary copies are made.
-  util::StatusOr<int64_t> Write(absl::string_view data);
+  absl::StatusOr<int64_t> Write(absl::string_view data);
 
   // Closes the underlying OutputStream.
   absl::Status Close();
