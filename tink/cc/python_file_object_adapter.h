@@ -32,7 +32,7 @@ class PythonFileObjectAdapter {
  public:
   // Writes 'data' to the underlying Python file object and returns the number
   // of bytes written, which can be less than the size of 'data'.
-  virtual util::StatusOr<int> Write(absl::string_view data) = 0;
+  virtual absl::StatusOr<int> Write(absl::string_view data) = 0;
 
   // Closes the underlying Python file object.
   virtual absl::Status Close() = 0;
@@ -40,7 +40,7 @@ class PythonFileObjectAdapter {
   // Reads at most 'size' bytes from the underlying Python file object. Returns
   // UNKNOWN status with error message that contains "EOFError" if the file
   // object is alreday at EOF.
-  virtual util::StatusOr<std::string> Read(int size) = 0;
+  virtual absl::StatusOr<std::string> Read(int size) = 0;
 
   virtual ~PythonFileObjectAdapter() {}
 };

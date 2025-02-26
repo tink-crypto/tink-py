@@ -42,7 +42,7 @@ PythonOutputStream::PythonOutputStream(
   status_ = absl::OkStatus();
 }
 
-crypto::tink::util::StatusOr<int> PythonOutputStream::Next(void** data) {
+absl::StatusOr<int> PythonOutputStream::Next(void** data) {
   if (!status_.ok()) return status_;
 
   // This is the first call to Next(), so we return the whole buffer.

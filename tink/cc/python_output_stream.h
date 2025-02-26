@@ -39,7 +39,7 @@ class PythonOutputStream : public OutputStream {
 
   ~PythonOutputStream() override;
 
-  crypto::tink::util::StatusOr<int> Next(void** data) override;
+  absl::StatusOr<int> Next(void** data) override;
 
   void BackUp(int count) override;
 

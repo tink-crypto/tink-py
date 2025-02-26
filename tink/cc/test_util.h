@@ -35,14 +35,14 @@ namespace test {
 // Writable PythonFileObjectAdapter for testing.
 class TestWritableObject : public PythonFileObjectAdapter {
  public:
-  util::StatusOr<int> Write(absl::string_view data) override {
+  absl::StatusOr<int> Write(absl::string_view data) override {
     buffer_ += std::string(data);
     return data.size();
   }
 
   absl::Status Close() override { return absl::OkStatus(); }
 
-  util::StatusOr<std::string> Read(int size) override {
+  absl::StatusOr<std::string> Read(int size) override {
     return absl::Status(absl::StatusCode::kUnimplemented, "not readable");
   }
 
@@ -60,13 +60,13 @@ class TestReadableObject : public PythonFileObjectAdapter {
     position_ = 0;
   }
 
-  util::StatusOr<int> Write(absl::string_view data) override {
+  absl::StatusOr<int> Write(absl::string_view data) override {
     return absl::Status(absl::StatusCode::kUnimplemented, "not writable");
   }
 
   absl::Status Close() override { return absl::OkStatus(); }
 
-  util::StatusOr<std::string> Read(int size) override {
+  absl::StatusOr<std::string> Read(int size) override {
     if (position_ == buffer_.size() && size > 0) {
       return absl::Status(absl::StatusCode::kUnknown, "EOFError");
     }
@@ -91,7 +91,7 @@ class DummyStreamingAead : public StreamingAead {
   explicit DummyStreamingAead(absl::string_view streaming_aead_name)
       : streaming_aead_name_(streaming_aead_name) {}
 
-  crypto::tink::util::StatusOr<std::unique_ptr<crypto::tink::OutputStream>>
+  absl::StatusOr<std::unique_ptr<crypto::tink::OutputStream>>
   NewEncryptingStream(
       std::unique_ptr<crypto::tink::OutputStream> ciphertext_destination,
       absl::string_view associated_data) const override {
@@ -100,7 +100,7 @@ class DummyStreamingAead : public StreamingAead {
         absl::StrCat(streaming_aead_name_, associated_data))};
   }
 
-  crypto::tink::util::StatusOr<std::unique_ptr<crypto::tink::InputStream>>
+  absl::StatusOr<std::unique_ptr<crypto::tink::InputStream>>
   NewDecryptingStream(
       std::unique_ptr<crypto::tink::InputStream> ciphertext_source,
       absl::string_view associated_data) const override {
@@ -109,8 +109,7 @@ class DummyStreamingAead : public StreamingAead {
         absl::StrCat(streaming_aead_name_, associated_data))};
   }
 
-  crypto::tink::util::StatusOr<
-      std::unique_ptr<crypto::tink::RandomAccessStream>>
+  absl::StatusOr<std::unique_ptr<crypto::tink::RandomAccessStream>>
   NewDecryptingRandomAccessStream(
       std::unique_ptr<crypto::tink::RandomAccessStream> ciphertext_source,
       absl::string_view associated_data) const override {
@@ -131,7 +130,7 @@ class DummyStreamingAead : public StreamingAead {
           after_init_(false),
           status_(absl::OkStatus()) {}
 
-    crypto::tink::util::StatusOr<int> Next(void** data) override {
+    absl::StatusOr<int> Next(void** data) override {
       if (!after_init_) {  // Try to initialize.
         after_init_ = true;
         auto next_result = ct_dest_->Next(data);
@@ -198,7 +197,7 @@ class DummyStreamingAead : public StreamingAead {
           after_init_(false),
           status_(absl::OkStatus()) {}
 
-    crypto::tink::util::StatusOr<int> Next(const void** data) override {
+    absl::StatusOr<int> Next(const void** data) override {
       if (!after_init_) {  // Try to initialize.
         after_init_ = true;
         auto next_result = ct_source_->Next(data);
@@ -275,7 +274,7 @@ class DummyStreamingAead : public StreamingAead {
           position + exp_header_.size(), count, dest_buffer);
     }
 
-    util::StatusOr<int64_t> size() override {
+    absl::StatusOr<int64_t> size() override {
       {  // Initialize, if not initialized yet.
         absl::MutexLock lock(&status_mutex_);
         if (status_.code() == absl::StatusCode::kUnavailable) Initialize();
