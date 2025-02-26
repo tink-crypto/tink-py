@@ -37,7 +37,7 @@ void PybindRegisterOutputStreamAdapter(pybind11::module* module) {
       .def(
           "write",
           [](OutputStreamAdapter* self, const py::bytes& data) -> int64_t {
-            util::StatusOr<int64_t> result = self->Write(std::string(data));
+            absl::StatusOr<int64_t> result = self->Write(std::string(data));
             if (!result.ok()) {
               throw TinkException(result.status());
             }

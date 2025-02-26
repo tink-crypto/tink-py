@@ -59,7 +59,7 @@ void PybindRegisterInputStreamAdapter(pybind11::module* module) {
       .def(
           "read",
           [](InputStreamAdapter* self, int64_t size) -> py::bytes {
-            util::StatusOr<std::string> read_result = self->Read(size);
+            absl::StatusOr<std::string> read_result = self->Read(size);
             if (read_result.status().code() == absl::StatusCode::kOutOfRange) {
               throw TinkStreamFinishedException(
                   std::move(read_result).status());

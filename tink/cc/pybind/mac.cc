@@ -47,7 +47,8 @@ void PybindRegisterMac(pybind11::module* module) {
           "compute_mac",
           [](const Mac& self, const py::bytes& data) -> py::bytes {
             // TODO(b/145925674)
-            StatusOr<std::string> result = self.ComputeMac(std::string(data));
+            absl::StatusOr<std::string> result =
+                self.ComputeMac(std::string(data));
             if (!result.ok()) {
               throw TinkException(result.status());
             }

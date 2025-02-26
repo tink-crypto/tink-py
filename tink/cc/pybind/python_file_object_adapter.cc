@@ -38,7 +38,7 @@ class Pybind11PythonFileObjectAdapter : public PythonFileObjectAdapter {
   // exceptions, to ensure exceptions don't unwind through code compiled with
   // -fno-exceptions (or similar, depending on the platform).
 
-  util::StatusOr<int> Write(absl::string_view data) override {
+  absl::StatusOr<int> Write(absl::string_view data) override {
     try {
       pybind11::gil_scoped_acquire gil;
       pybind11::function overload = pybind11::get_overload(
@@ -74,7 +74,7 @@ class Pybind11PythonFileObjectAdapter : public PythonFileObjectAdapter {
     }
   }
 
-  util::StatusOr<std::string> Read(int size) override {
+  absl::StatusOr<std::string> Read(int size) override {
     try {
       pybind11::gil_scoped_acquire gil;
       pybind11::function overload = pybind11::get_overload(
