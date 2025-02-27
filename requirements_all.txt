@@ -131,9 +131,9 @@ google-auth==2.38.0 \
     #   google-api-core
     #   google-cloud-kms
     #   tink (setup.py)
-google-cloud-kms==3.3.0 \
-    --hash=sha256:0dd5d2215a0814c692d4845be61cbc2e487e13c95e4363e7855001c6c550a6af \
-    --hash=sha256:b8347a40b8e0732a7ad9ea403eccc4ee974edde3c1fb3f64b55a1f9a229da0f7
+google-cloud-kms==3.4.0 \
+    --hash=sha256:042a3acb35ff8c925aa8c25602c4ad9e7c204e9009a2083f0d32fe88763448c2 \
+    --hash=sha256:fcd0e428e5d9d80fd992cfbea775363eac839bb9fe2d60873cc933528c7e7658
     # via tink (setup.py)
 googleapis-common-protos[grpc]==1.67.0 \
     --hash=sha256:21398025365f138be356d5923e9168737d94d46a72aefee4a6110a1f23463c86 \
