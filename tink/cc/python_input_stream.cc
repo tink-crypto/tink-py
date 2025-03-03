@@ -53,7 +53,7 @@ PythonInputStream::PythonInputStream(
   status_ = absl::OkStatus();
 }
 
-util::StatusOr<int> PythonInputStream::Next(const void** data) {
+absl::StatusOr<int> PythonInputStream::Next(const void** data) {
   if (!status_.ok()) return status_;
 
   if (count_backedup_ > 0) {  // Return the backed-up bytes.
