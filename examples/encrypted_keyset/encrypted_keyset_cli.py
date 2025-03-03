@@ -56,7 +56,7 @@ def main(argv):
     logging.exception('Error creating GCP KMS client: %s', e)
     return 1
 
-  # Create envelope AEAD primitive using AES256 GCM for encrypting the data
+  # Create envelope AEAD primitive using AES128 GCM for encrypting the data
   try:
     remote_aead = client.get_aead(FLAGS.kek_uri)
   except tink.TinkError as e:
