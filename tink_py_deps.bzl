@@ -16,13 +16,12 @@ def tink_py_deps():
         ],
     )
 
-    # Release from 2024-09
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "a49147217f69e8d19aab0cc5c0059d6201261f5cb62145f8ab4ac8b94e7ffa86",
-        strip_prefix = "protobuf-27.3",
-        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v27.3/protobuf-27.3.zip"],
+        sha256 = "e9b9ac1910b1041065839850603caf36e29d3d3d230ddf52bd13778dd31b9046",
+        strip_prefix = "protobuf-29.3",
+        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v29.3/protobuf-29.3.zip"],
     )
 
     # Release from 2024-02-13
