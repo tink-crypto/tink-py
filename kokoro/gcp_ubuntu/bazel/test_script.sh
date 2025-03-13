@@ -90,9 +90,6 @@ if [[ "${SHOULD_RUN_KMS_TESTS}" == "true" ]]; then
   # Run all the test targets excluding *test_package, including manual ones that
   # interact with a KMS.
 
-  #TODO(b/276277854) It is not clear why this is needed.
-  python3 -m pip install --require-hashes --no-deps -r examples/requirements.txt
-
   EXAMPLE_TARGETS="$(cd examples && "${BAZEL_CMD}" query \
     'kind(.*_test, ...) except filter(.*test_package, ...)')"
 else
