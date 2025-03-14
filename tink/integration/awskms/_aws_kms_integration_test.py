@@ -17,7 +17,6 @@ import os
 
 from absl.testing import absltest
 import boto3
-import botocore
 
 import tink
 from tink import _kms_clients
@@ -213,59 +212,71 @@ class AwsKmsAeadTest(absltest.TestCase):
     )
 
   def test_server_side_key_commitment(self):
-    # TODO(b/242678738): Remove direct usage of KMS client and protected
-    # functions in this test once client side key ID verifiaction is removed.
+    key1_client = awskms.AwsKmsClient(KEY_URI, CREDENTIAL_PATH)
+    key1_aead = key1_client.get_aead(KEY_URI)
+
+    alias_client = awskms.AwsKmsClient(KEY_ALIAS_URI, CREDENTIAL_PATH)
+    alias_aead = alias_client.get_aead(KEY_ALIAS_URI)
+
+    key2_client = awskms.AwsKmsClient(KEY_URI_2, CREDENTIAL_PATH)
+    key2_aead = key2_client.get_aead(KEY_URI_2)
 
     plaintext = b'hello'
     associated_data = b'world'
-    encryption_context = _aws_kms_client._encryption_context(associated_data)
 
     # Confirm that KEY_URI and KEY_ALIAS_URI are interchangeable while the
     # KEY_ALIAS_URI continues to reference KEY_URI. This no longer holds if
     # KEY_ALIAS_URI is updated to reference a different key.
-    for k in (KEY_URI, KEY_ALIAS_URI):
-      # Create a ciphertext with k.
-      aws_client = awskms.AwsKmsClient(k, CREDENTIAL_PATH)
-      aws_aead = aws_client.get_aead(k)
-      ciphertext = aws_aead.encrypt(plaintext, associated_data)
-
-      # NOTE: The following operations directly utilize the KMS client to bypass
-      # client-side key commitment checks and to verify KMS behavior for
-      # requests not produced by this implementation (e.g. no KeyId specified).
+    for a in (key1_aead, alias_aead):
+      ciphertext = a.encrypt(plaintext, associated_data)
 
       # Decrypt with KEY_URI.
-      response = aws_aead.client.decrypt(
-          KeyId=_aws_kms_client._key_uri_to_key_arn(KEY_URI),
-          CiphertextBlob=ciphertext,
-          EncryptionContext=encryption_context,
+      self.assertEqual(
+          plaintext, key1_aead.decrypt(ciphertext, associated_data)
       )
-      self.assertEqual(plaintext, response['Plaintext'])
 
       # Decrypt with KEY_ALIAS_URI.
-      response = aws_aead.client.decrypt(
-          KeyId=_aws_kms_client._key_uri_to_key_arn(KEY_ALIAS_URI),
-          CiphertextBlob=ciphertext,
-          EncryptionContext=encryption_context,
-      )
-      self.assertEqual(plaintext, response['Plaintext'])
-      # AWS KMS always includes resolved key ID in responses, not aliases.
       self.assertEqual(
-          _aws_kms_client._key_uri_to_key_arn(KEY_URI), response['KeyId'])
-
-      # Decrypt without specifying a key ID in the request.
-      response = aws_aead.client.decrypt(
-          CiphertextBlob=ciphertext,
-          EncryptionContext=encryption_context,
+          plaintext, alias_aead.decrypt(ciphertext, associated_data)
       )
-      self.assertEqual(plaintext, response['Plaintext'])
 
       # Attempt to decrypt with KEY_URI_2.
-      with self.assertRaises(botocore.exceptions.ClientError):
-        aws_aead.client.decrypt(
-            KeyId=_aws_kms_client._key_uri_to_key_arn(KEY_URI_2),
-            CiphertextBlob=ciphertext,
-            EncryptionContext=encryption_context,
-        )
+      with self.assertRaises(tink.TinkError):
+        key2_aead.decrypt(ciphertext, associated_data)
+
+  def test_kms_behavior(self):
+    aws_aead = awskms.AwsKmsClient(KEY_URI, CREDENTIAL_PATH).get_aead(KEY_URI)
+    plaintext = b'hello'
+    associated_data = b'world'
+    ciphertext = aws_aead.encrypt(plaintext, associated_data)
+
+    # NOTE: The following operations directly utilize the KMS client to verify
+    # KMS behavior for requests not produced by this implementation (e.g. no
+    # KeyId specified, inspecting response fields).
+
+    encryption_context = _aws_kms_client._encryption_context(associated_data)
+
+    # Verify key ID contained in the reponse. AWS KMS includes resolved key IDs
+    # in responses, not aliases. This behavior precludes client-side key
+    # commitment checking.
+    response = aws_aead.client.decrypt(
+        KeyId=_aws_kms_client._key_uri_to_key_arn(KEY_ALIAS_URI),
+        CiphertextBlob=ciphertext,
+        EncryptionContext=encryption_context,
+    )
+    self.assertEqual(plaintext, response['Plaintext'])
+    self.assertEqual(
+        _aws_kms_client._key_uri_to_key_arn(KEY_URI), response['KeyId']
+    )
+
+    # Decrypt without specifying a key ID in the request. Decrypt requests
+    # produced by this library always include a key ID to trigger server side
+    # key commitment checks.
+    response = aws_aead.client.decrypt(
+        CiphertextBlob=ciphertext,
+        EncryptionContext=encryption_context,
+    )
+    self.assertEqual(plaintext, response['Plaintext'])
 
 
 if __name__ == '__main__':
