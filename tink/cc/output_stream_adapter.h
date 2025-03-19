@@ -17,13 +17,14 @@
 #ifndef TINK_PYTHON_TINK_CC_OUTPUT_STREAM_ADAPTER_H_
 #define TINK_PYTHON_TINK_CC_OUTPUT_STREAM_ADAPTER_H_
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "tink/output_stream.h"
-#include "tink/util/status.h"
-#include "tink/util/statusor.h"
 
 namespace crypto {
 namespace tink {

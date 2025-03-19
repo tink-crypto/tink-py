@@ -18,8 +18,8 @@
 
 #include <utility>
 
+#include "absl/status/status.h"
 #include "tink/config/tink_config.h"
-#include "tink/util/status.h"
 #include "tink/cc/pybind/tink_exception.h"
 
 namespace crypto {

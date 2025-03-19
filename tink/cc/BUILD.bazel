@@ -12,10 +12,9 @@ cc_library(
         "//tink/cc/pybind:tink_exception",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@tink_cc//tink:tink_cc",
-        "@tink_cc//tink/util:status",
-        "@tink_cc//tink/util:statusor",
     ],
 )
 
@@ -25,9 +24,9 @@ pybind_library(
     hdrs = ["cc_tink_config.h"],
     deps = [
         "//tink/cc/pybind:tink_exception",
+        "@com_google_absl//absl/status",
         "@tink_cc//tink:tink_cc",
         "@tink_cc//tink/config:tink_config",
-        "@tink_cc//tink/util:status",
     ],
 )
 
@@ -36,6 +35,7 @@ cc_library(
     srcs = ["cc_jwt_config.cc"],
     hdrs = ["cc_jwt_config.h"],
     deps = [
+        "@com_google_absl//absl/status",
         "@tink_cc//tink:tink_cc",
         "@tink_cc//tink/jwt/internal:raw_jwt_ecdsa_sign_key_manager",
         "@tink_cc//tink/jwt/internal:raw_jwt_ecdsa_verify_key_manager",
@@ -44,7 +44,6 @@ cc_library(
         "@tink_cc//tink/jwt/internal:raw_jwt_rsa_ssa_pkcs1_verify_key_manager",
         "@tink_cc//tink/jwt/internal:raw_jwt_rsa_ssa_pss_sign_key_manager",
         "@tink_cc//tink/jwt/internal:raw_jwt_rsa_ssa_pss_verify_key_manager",
-        "@tink_cc//tink/util:status",
     ],
 )
 
@@ -53,8 +52,8 @@ cc_library(
     srcs = ["cc_hpke_config.cc"],
     hdrs = ["cc_hpke_config.h"],
     deps = [
+        "@com_google_absl//absl/status",
         "@tink_cc//tink/hybrid:hpke_config",
-        "@tink_cc//tink/util:status",
     ],
 )
 
@@ -63,9 +62,9 @@ cc_library(
     hdrs = ["python_file_object_adapter.h"],
     include_prefix = "tink/cc",
     deps = [
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
-        "@tink_cc//tink/util:status",
-        "@tink_cc//tink/util:statusor",
     ],
 )
 
@@ -78,11 +77,11 @@ cc_library(
         ":python_file_object_adapter",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@tink_cc//tink:output_stream",
         "@tink_cc//tink/subtle:subtle_util",
-        "@tink_cc//tink/util:status",
-        "@tink_cc//tink/util:statusor",
     ],
 )
 
@@ -94,11 +93,11 @@ cc_test(
         ":python_output_stream",
         ":test_util",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
         "@tink_cc//tink/subtle:random",
-        "@tink_cc//tink/util:status",
-        "@tink_cc//tink/util:statusor",
     ],
 )
 
@@ -108,10 +107,10 @@ cc_library(
     hdrs = ["output_stream_adapter.h"],
     include_prefix = "tink/cc",
     deps = [
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@tink_cc//tink:output_stream",
-        "@tink_cc//tink/util:status",
-        "@tink_cc//tink/util:statusor",
     ],
 )
 
@@ -154,11 +153,12 @@ cc_library(
         ":python_file_object_adapter",
         ":python_input_stream",
         ":python_output_stream",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@tink_cc//tink:input_stream",
         "@tink_cc//tink:output_stream",
         "@tink_cc//tink:streaming_aead",
-        "@tink_cc//tink/util:statusor",
     ],
 )
 
@@ -182,11 +182,10 @@ cc_library(
         ":python_file_object_adapter",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@tink_cc//tink:input_stream",
         "@tink_cc//tink/subtle:subtle_util",
-        "@tink_cc//tink/util:status",
-        "@tink_cc//tink/util:statusor",
     ],
 )
 
@@ -210,10 +209,10 @@ cc_library(
     hdrs = ["input_stream_adapter.h"],
     include_prefix = "tink/cc",
     deps = [
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@tink_cc//tink:input_stream",
-        "@tink_cc//tink/util:status",
-        "@tink_cc//tink/util:statusor",
     ],
 )
 

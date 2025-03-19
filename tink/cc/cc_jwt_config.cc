@@ -16,6 +16,8 @@
 
 #include "tink/cc/cc_jwt_config.h"
 
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "tink/jwt/internal/raw_jwt_ecdsa_sign_key_manager.h"
 #include "tink/jwt/internal/raw_jwt_ecdsa_verify_key_manager.h"
 #include "tink/jwt/internal/raw_jwt_hmac_key_manager.h"
@@ -23,6 +25,7 @@
 #include "tink/jwt/internal/raw_jwt_rsa_ssa_pkcs1_verify_key_manager.h"
 #include "tink/jwt/internal/raw_jwt_rsa_ssa_pss_sign_key_manager.h"
 #include "tink/jwt/internal/raw_jwt_rsa_ssa_pss_verify_key_manager.h"
+#include "tink/registry.h"
 
 namespace crypto {
 namespace tink {

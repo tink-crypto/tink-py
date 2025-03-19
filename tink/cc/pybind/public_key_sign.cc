@@ -1,4 +1,4 @@
-// Copyright 2019 Google Inc.
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/statusor.h"
 #include "pybind11/pybind11.h"
 #include "tink/public_key_sign.h"
-#include "tink/util/statusor.h"
 #include "tink/cc/pybind/tink_exception.h"
 
 namespace crypto {

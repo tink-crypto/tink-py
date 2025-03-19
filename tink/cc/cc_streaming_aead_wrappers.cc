@@ -16,10 +16,15 @@
 
 #include "tink/cc/cc_streaming_aead_wrappers.h"
 
+#include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "tink/input_stream.h"
 #include "tink/output_stream.h"
+#include "tink/cc/output_stream_adapter.h"
 
 namespace crypto {
 namespace tink {

@@ -17,7 +17,7 @@
 #ifndef TINK_PYTHON_TINK_CC_CC_HPKE_CONFIG_H_
 #define TINK_PYTHON_TINK_CC_CC_HPKE_CONFIG_H_
 
-#include "tink/util/status.h"
+#include "absl/status/status.h"
 
 namespace crypto {
 namespace tink {

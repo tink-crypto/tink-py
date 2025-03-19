@@ -22,12 +22,11 @@
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "pybind11/pybind11.h"
 #include "tink/key_manager.h"
 #include "tink/registry.h"
-#include "tink/util/status.h"
-#include "tink/util/statusor.h"
 #include "tink/cc/pybind/tink_exception.h"
 
 namespace crypto {
@@ -65,7 +64,7 @@ class CcKeyManager {
       const std::string& serialized_key_data) const {
     google::crypto::tink::KeyData key_data;
     key_data.ParseFromString(serialized_key_data);
-    util::StatusOr<std::unique_ptr<P>> result =
+    absl::StatusOr<std::unique_ptr<P>> result =
         key_manager_->GetPrimitive(key_data);
     if (!result.ok()) {
       throw TinkException(result.status());

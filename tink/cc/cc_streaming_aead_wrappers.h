@@ -19,9 +19,9 @@
 
 #include <memory>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "tink/streaming_aead.h"
-#include "tink/util/statusor.h"
 #include "tink/cc/input_stream_adapter.h"
 #include "tink/cc/output_stream_adapter.h"
 #include "tink/cc/python_file_object_adapter.h"

@@ -1,4 +1,4 @@
-// Copyright 2019 Google Inc.
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,15 +19,15 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "pybind11/pybind11.h"
 #include "tink/mac.h"
-#include "tink/util/status.h"
 #include "tink/cc/pybind/tink_exception.h"
 
 namespace crypto {
 namespace tink {
 
-using crypto::tink::util::StatusOr;
 using pybind11::google_tink::TinkException;
 
 void PybindRegisterMac(pybind11::module* module) {

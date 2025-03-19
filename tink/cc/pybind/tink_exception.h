@@ -21,7 +21,7 @@
 #include <string>
 #include <utility>
 
-#include "tink/util/status.h"
+#include "absl/status/status.h"
 
 namespace pybind11 {
 namespace google_tink {

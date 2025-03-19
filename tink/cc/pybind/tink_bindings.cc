@@ -16,7 +16,6 @@
 
 #include "pybind11/pybind11.h"
 #include "tink/aead.h"
-#include "tink/util/statusor.h"
 #include "tink/cc/pybind/aead.h"
 #include "tink/cc/pybind/cc_hpke_config.h"
 #include "tink/cc/pybind/cc_jwt_config.h"

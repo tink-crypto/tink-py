@@ -17,16 +17,14 @@
 #include "tink/cc/python_input_stream.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
-#include "tink/input_stream.h"
 #include "tink/subtle/subtle_util.h"
-#include "tink/util/status.h"
-#include "tink/util/statusor.h"
 #include "tink/cc/python_file_object_adapter.h"
 
 namespace crypto {
