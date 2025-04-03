@@ -17,6 +17,7 @@ import re
 from typing import Optional
 
 from google.api_core import exceptions as core_exceptions
+from google.auth import credentials as auth_credentials
 from google.cloud import kms_v1
 from google.oauth2 import service_account
 
@@ -91,17 +92,24 @@ class GcpKmsClient(tink.KmsClient):
   """Basic GCP client for AEAD."""
 
   def __init__(
-      self, key_uri: Optional[str], credentials_path: Optional[str]
+      self,
+      key_uri: Optional[str],
+      credentials_path: Optional[str] = None,
+      *,
+      credentials: Optional[auth_credentials.Credentials] = None,
   ) -> None:
     """Creates a new GcpKmsClient that is bound to the key specified in 'key_uri'.
 
-    Uses the specified credentials when communicating with the KMS.
+    Uses the specified credentials when communicating with the KMS. If neither
+    credentials_path nor credentials are specified, the client will attempt to
+    ascertain credentials from the environment.
 
     Args:
       key_uri: The URI of the key the client should be bound to. If it is None
-          or empty, then the client is not bound to any particular key.
-      credentials_path: Path to the file with the access credentials. If it is
-          None or empty, then default credentials will be used.
+        or empty, then the client is not bound to any particular key.
+      credentials_path: Path to the file with the access credentials.
+      credentials: The authorization credentials to attach to requests. This
+        argument is mutually exclusive with credentials_path.
 
     Raises:
       ValueError: If the path or filename of the credentials is invalid.
@@ -114,14 +122,14 @@ class GcpKmsClient(tink.KmsClient):
       self._key_uri = key_uri
     else:
       raise tink.TinkError('Invalid key_uri.')
-    if not credentials_path:
-      credentials_path = ''
-    if not credentials_path:
-      self._client = kms_v1.KeyManagementServiceClient()
-      return
-    credentials = service_account.Credentials.from_service_account_file(
-        credentials_path
-    )
+    if credentials and credentials_path:
+      raise tink.TinkError(
+          'Only one of credentials and credentials_path can be set.'
+      )
+    if not credentials and credentials_path:
+      credentials = service_account.Credentials.from_service_account_file(
+          credentials_path
+      )
     self._client = kms_v1.KeyManagementServiceClient(credentials=credentials)
 
   def does_support(self, key_uri: str) -> bool:

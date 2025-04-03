@@ -15,13 +15,17 @@
 """Tests for tink.python.tink.integration.gcp_kms_aead."""
 
 import os
+from unittest import mock
 
 from absl.testing import absltest
+from google.cloud import kms_v1
+from google.oauth2 import service_account
 
 import tink
 from tink import aead
 from tink.integration import gcpkms
 from tink.testing import helper
+
 
 CREDENTIAL_PATH = os.path.join(helper.tink_py_testdata_path(),
                                'gcp/credential.json')
@@ -145,6 +149,40 @@ class GcpKmsAeadTest(absltest.TestCase):
       corrupted_ciphertext = bytes(tmp_ciphertext)
       with self.assertRaises(tink.TinkError):
         gcp_aead.decrypt(corrupted_ciphertext, b'')
+
+  def test_init_with_credentials_and_credentials_path_fails(self):
+    credentials = mock.Mock()
+    with self.assertRaises(tink.TinkError):
+      gcpkms.GcpKmsClient(KEY_URI, CREDENTIAL_PATH, credentials=credentials)
+
+  def test_init_with_credentials_no_credentials_path(self):
+    with mock.patch.object(
+        kms_v1, 'KeyManagementServiceClient', return_value=False
+    ) as mock_kms_client:
+      credentials = mock.Mock()
+      gcpkms.GcpKmsClient(KEY_URI, credentials=credentials)
+      mock_kms_client.assert_called_with(credentials=credentials)
+
+  def test_init_no_credentials_with_credentials_path(self):
+    with mock.patch.object(
+        kms_v1, 'KeyManagementServiceClient', return_value=False
+    ) as mock_kms_client:
+      mock_credentials = mock.Mock()
+      with mock.patch.object(
+          service_account.Credentials,
+          'from_service_account_file',
+          return_value=mock_credentials,
+      ):
+        gcpkms.GcpKmsClient(KEY_URI, CREDENTIAL_PATH)
+        mock_kms_client.assert_called_with(credentials=mock_credentials)
+
+  def test_init_no_credentials_no_credentials_path(self):
+    with mock.patch.object(
+        kms_v1, 'KeyManagementServiceClient', return_value=False
+    ) as mock_kms_client:
+      gcpkms.GcpKmsClient(KEY_URI)
+      mock_kms_client.assert_called()
+
 
 if __name__ == '__main__':
   absltest.main()
