@@ -1,2 +1,2 @@
 absl-py>=2.1.0
-protobuf>=5.29.3
+protobuf>=6.30.2
