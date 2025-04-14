@@ -16,12 +16,33 @@ def tink_py_deps():
         ],
     )
 
+    # Needed by com_google_protobuf.
+    maybe(
+        http_archive,
+        name = "rules_java",
+        urls = [
+            "https://github.com/bazelbuild/rules_java/releases/download/7.12.5/rules_java-7.12.5.tar.gz",
+        ],
+        sha256 = "17b18cb4f92ab7b94aa343ce78531b73960b1bed2ba166e5b02c9fdf0b0ac270",
+    )
+
+    # Needed by com_google_protobuf.
+    maybe(
+        http_archive,
+        name = "com_google_absl",
+        sha256 = "16242f394245627e508ec6bb296b433c90f8d914f73b9c026fddb905e27276e8",
+        strip_prefix = "abseil-cpp-20250127.0",
+        urls = [
+            "https://github.com/abseil/abseil-cpp/releases/download/20250127.0/abseil-cpp-20250127.0.tar.gz",
+        ],
+    )
+
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "e9b9ac1910b1041065839850603caf36e29d3d3d230ddf52bd13778dd31b9046",
-        strip_prefix = "protobuf-29.3",
-        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v29.3/protobuf-29.3.zip"],
+        sha256 = "6544e5ceec7f29d00397193360435ca8b3c4e843de3cf5698a99d36b72d65342",
+        strip_prefix = "protobuf-30.2",
+        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v30.2/protobuf-30.2.zip"],
     )
 
     # Release from 2024-02-13
@@ -50,16 +71,6 @@ def tink_py_deps():
         sha256 = "e8355ee56c2ff772334b4bfa22be17c709e5573f6d1d561c7176312156c27bd4",
         strip_prefix = "pybind11_bazel-2.11.1",
         url = "https://github.com/pybind/pybind11_bazel/archive/refs/tags/v2.11.1.tar.gz",
-    )
-
-    maybe(
-        http_archive,
-        name = "com_google_absl",
-        sha256 = "f50e5ac311a81382da7fa75b97310e4b9006474f9560ac46f54a9967f07d4ae3",
-        strip_prefix = "abseil-cpp-20240722.0",
-        urls = [
-            "https://github.com/abseil/abseil-cpp/releases/download/20240722.0/abseil-cpp-20240722.0.tar.gz",
-        ],
     )
 
     # Release from 2024-11-20.

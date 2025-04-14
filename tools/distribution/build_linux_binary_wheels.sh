@@ -23,11 +23,10 @@ set -euo pipefail
 # The following assoicative array contains:
 #   ["<Python version>"]="<python tag>-<abi tag>"
 # where:
-#   <Python version> = language version, e.g "3.8"
+#   <Python version> = language version, e.g "3.9"
 #   <python tag>, <abi tag> = as defined at
-#       https://packaging.python.org/en/latest/specifications/, e.g. "cp38-cp38"
+#       https://packaging.python.org/en/latest/specifications/, e.g. "cp39-cp39"
 declare -A PYTHON_VERSIONS
-PYTHON_VERSIONS["3.8"]="cp38-cp38"
 PYTHON_VERSIONS["3.9"]="cp39-cp39"
 PYTHON_VERSIONS["3.10"]="cp310-cp310"
 PYTHON_VERSIONS["3.11"]="cp311-cp311"
@@ -37,15 +36,15 @@ readonly -A PYTHON_VERSIONS
 export TINK_PYTHON_ROOT_PATH="${PWD}"
 export ARCH="$(uname -m)"
 
-# Install Bazelisk 1.19.0.
-readonly BAZELISK_VERSION="1.19.0"
+# Install Bazelisk 1.26.0.
+readonly BAZELISK_VERSION="1.26.0"
 readonly BAZELISK_DOWNLOAD_URL="https://github.com/bazelbuild/bazelisk/releases/download"
 BAZELISK_URL="${BAZELISK_DOWNLOAD_URL}/v${BAZELISK_VERSION}/bazelisk-linux-amd64"
-BAZELISK_SHA256="d28b588ac0916abd6bf02defb5433f6eddf7cba35ffa808eabb65a44aab226f7"
+BAZELISK_SHA256="6539c12842ad76966f3d493e8f80d67caa84ec4a000e220d5459833c967c12bc"
 
 if [[ "${ARCH}" == "aarch64" || "${ARCH}" == "arm64" ]]; then
   BAZELISK_URL="${BAZELISK_DOWNLOAD_URL}/v${BAZELISK_VERSION}/bazelisk-linux-arm64"
-  BAZELISK_SHA256="861a16ba9979613e70bd3d2f9d9ab5e3b59fe79471c5753acdc9c431ab6c9d94"
+  BAZELISK_SHA256="54f85ef4c23393f835252cc882e5fea596e8ef3c4c2056b059f8067cd19f0351"
 fi
 
 readonly BAZELISK_URL
@@ -54,15 +53,14 @@ curl -LsS "${BAZELISK_URL}" -o /usr/local/bin/bazelisk
 echo "${BAZELISK_SHA256} /usr/local/bin/bazelisk" | sha256sum -c
 chmod +x /usr/local/bin/bazelisk
 
-# Install protoc 25.1 (python version 4.25.1). Needed for protocol buffer
-# compilation.
+# Install protoc 30.2.
 readonly PROTOC_DOWNLOAD_URL="https://github.com/protocolbuffers/protobuf/releases/download"
-readonly PROTOC_RELEASE_TAG="25.1"
+readonly PROTOC_RELEASE_TAG="30.2"
 PROTOC_URL="${PROTOC_DOWNLOAD_URL}/v${PROTOC_RELEASE_TAG}/protoc-${PROTOC_RELEASE_TAG}-linux-x86_64.zip"
-PROTOC_SHA256="ed8fca87a11c888fed329d6a59c34c7d436165f662a2c875246ddb1ac2b6dd50"
+PROTOC_SHA256="327e9397c6fb3ea2a542513a3221334c6f76f7aa524a7d2561142b67b312a01f"
 if [[ "${ARCH}" == "aarch64" || "${ARCH}" == "arm64" ]]; then
   PROTOC_URL="${PROTOC_DOWNLOAD_URL}/v${PROTOC_RELEASE_TAG}/protoc-${PROTOC_RELEASE_TAG}-linux-aarch_64.zip"
-  PROTOC_SHA256="99975a8c11b83cd65c3e1151ae1714bf959abc0521acb659bf720524276ab0c8"
+  PROTOC_SHA256="a3173ea338ef91b1605b88c4f8120d6c8ccf36f744d9081991d595d0d4352996"
 fi
 readonly PROTOC_URL
 readonly PROTOC_SHA256

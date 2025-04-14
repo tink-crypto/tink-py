@@ -40,10 +40,6 @@ IF NOT "%TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET%"=="" (
 SET TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION=%TINK_VERSION%
 SET TINK_PYTHON_ROOT_PATH=%cd%
 
-CALL :UsePython "3.8.10" "38" || GOTO :Error
-CALL :BuildAndInstallWheel || GOTO :Error
-CALL :RunTests || GOTO :Error
-
 CALL :UsePython "3.9.13" "39" || GOTO :Error
 CALL :BuildAndInstallWheel || GOTO :Error
 CALL :RunTests || GOTO :Error
