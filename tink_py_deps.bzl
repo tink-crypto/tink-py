@@ -26,23 +26,18 @@ def tink_py_deps():
         sha256 = "17b18cb4f92ab7b94aa343ce78531b73960b1bed2ba166e5b02c9fdf0b0ac270",
     )
 
-    # Needed by com_google_protobuf.
-    maybe(
-        http_archive,
-        name = "com_google_absl",
-        sha256 = "16242f394245627e508ec6bb296b433c90f8d914f73b9c026fddb905e27276e8",
-        strip_prefix = "abseil-cpp-20250127.0",
-        urls = [
-            "https://github.com/abseil/abseil-cpp/releases/download/20250127.0/abseil-cpp-20250127.0.tar.gz",
-        ],
-    )
-
     maybe(
         http_archive,
         name = "com_google_protobuf",
         sha256 = "6544e5ceec7f29d00397193360435ca8b3c4e843de3cf5698a99d36b72d65342",
         strip_prefix = "protobuf-30.2",
         urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v30.2/protobuf-30.2.zip"],
+        # Make sure we protobuf uses the same Abseil version as tink-cc@2.3.0.
+        # This can be removed once tink-cc moves to
+        # https://github.com/abseil/abseil-cpp/releases/tag/20250127.1.
+        repo_mapping = {
+            "@abseil-cpp": "@com_google_absl",
+        },
     )
 
     # Release from 2024-02-13
