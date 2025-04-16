@@ -35,7 +35,7 @@ GOTO :Exit
 
 :InstallTink
   ECHO Install started at %TIME%
-  choco install -y --no-progress protoc --version=25.2.0 || EXIT /B %errorlevel%
+  choco install -y --no-progress protoc --version=30.2.0 || EXIT /B %errorlevel%
   python -m pip install --upgrade pip
   python -m pip install --upgrade setuptools
   python -m pip install --require-hashes --no-deps ^

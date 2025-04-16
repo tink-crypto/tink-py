@@ -9,3 +9,6 @@ build --cxxopt='-std=c++17' --host_cxxopt='-std=c++17'
 # in project code.
 build --per_file_copt=external/.*@-w
 build --host_per_file_copt=external/.*@-w
+
+# https://github.com/protocolbuffers/protobuf/issues/20085
+build:windows --define=protobuf_allow_msvc=true

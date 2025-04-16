@@ -35,8 +35,8 @@ ECHO Build started at %TIME%
 : TODO(b/217559572): Investigate if this is intended (and fix our config) or a
 : bug.
 bazel --output_base=C:\O build %CACHE_FLAGS% ^
-  --action_env PYTHON_BIN_PATH=C:/Python38/python.exe ^
-  --action_env PYTHON_LIB_PATH=C:/Python38/libs -- ...
+  --action_env PYTHON_BIN_PATH=C:/Python39/python.exe ^
+  --action_env PYTHON_LIB_PATH=C:/Python39/libs -- ...
 IF %errorlevel% neq 0 EXIT /B 1
 ECHO Build completed at %TIME%
 
@@ -44,8 +44,8 @@ ECHO Test started at %TIME%
 bazel --output_base=C:\O test %CACHE_FLAGS% ^
   --strategy=TestRunner=standalone ^
   --test_output=errors ^
-  --action_env PYTHON_BIN_PATH=C:/Python38/python.exe ^
-  --action_env PYTHON_LIB_PATH=C:/Python38/libs -- ...
+  --action_env PYTHON_BIN_PATH=C:/Python39/python.exe ^
+  --action_env PYTHON_LIB_PATH=C:/Python39/libs -- ...
 IF %errorlevel% neq 0 EXIT /B 1
 ECHO Test completed at %TIME%
 

@@ -15,6 +15,8 @@ build:windows --features=archive_param_file
 build:windows --features=linker_param_file
 build:windows --features=compiler_param_file
 build:windows --enable_runfiles
+# https://github.com/protocolbuffers/protobuf/issues/20085
+build:windows --define=protobuf_allow_msvc=true
 
 # Configs for macOS on x86_64.
 build:macos_x86_64 --cpu=darwin

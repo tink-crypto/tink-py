@@ -42,6 +42,9 @@ if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
 fi
 readonly CREATE_DIST_OPTIONS
 
+# Sourcing required to update callers environment.
+source ./kokoro/testutils/install_protoc.sh "30.2"
+
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
 
 source ./kokoro/testutils/install_vault.sh
