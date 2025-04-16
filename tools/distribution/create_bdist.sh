@@ -20,18 +20,18 @@ set -eEuox pipefail
 
 readonly GCS_URL="https://storage.googleapis.com"
 
-readonly PYTHON_VERSIONS=( "3.9" "3.10" "3.11" "3.12" )
+readonly PYTHON_VERSIONS=( "3.9" "3.10" "3.11" "3.12" "3.13" )
 
 readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 
 export TINK_PYTHON_ROOT_PATH="${PWD}"
 
 readonly MANYLINUX_X86_64_IMAGE_NAME="quay.io/pypa/manylinux2014_x86_64"
-readonly MANYLINUX_X86_64_IMAGE_SHA256="sha256:2f9e5abda045d41f5418216fe7601cf12249989b9aba0a83d009b8cc434cb220"
+readonly MANYLINUX_X86_64_IMAGE_SHA256="sha256:a88c482d5403f0fe91836f48a37828ef1520c3a548715dd0d7f20c0c1d4d34e0"
 readonly MANYLINUX_X86_64_IMAGE="${MANYLINUX_X86_64_IMAGE_NAME}@${MANYLINUX_X86_64_IMAGE_SHA256}"
 
 readonly MANYLINUX_AARCH64_IMAGE_NAME="quay.io/pypa/manylinux2014_aarch64"
-readonly MANYLINUX_AARCH64_IMAGE_SHA256="sha256:8fd5c58bf1c6a217cddd711144e25af433f2e1f5928245b6e2476affb5d1a76b"
+readonly MANYLINUX_AARCH64_IMAGE_SHA256="sha256:a4f98ac4c63be3566e8af2b0dcec65d99937c886e9fd6931a3ded224a451ec63"
 readonly MANYLINUX_AARCH64_IMAGE="${MANYLINUX_AARCH64_IMAGE_NAME}@${MANYLINUX_AARCH64_IMAGE_SHA256}"
 
 readonly ARCH="$(uname -m)"

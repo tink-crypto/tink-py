@@ -23,7 +23,7 @@ CD !WORKSPACE_DIR!
 IF %errorlevel% neq 0 EXIT /B 1
 
 @REM Install protoc.
-choco install -y --no-progress protoc --version=25.2.0
+choco install -y --no-progress protoc --version=30.2.0
 SET OLD_PATH=%PATH%
 
 SET /p TINK_VERSION=<VERSION
@@ -52,7 +52,11 @@ CALL :UsePython "3.11.9" "311" || GOTO :Error
 CALL :BuildAndInstallWheel || GOTO :Error
 CALL :RunTests || GOTO :Error
 
-CALL :UsePython "3.12.3" "312" || GOTO :Error
+CALL :UsePython "3.12.9" "312" || GOTO :Error
+CALL :BuildAndInstallWheel || GOTO :Error
+CALL :RunTests || GOTO :Error
+
+CALL :UsePython "3.13.3" "313" || GOTO :Error
 CALL :BuildAndInstallWheel || GOTO :Error
 CALL :RunTests || GOTO :Error
 

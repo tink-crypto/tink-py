@@ -35,10 +35,15 @@ if [[ -n "${KOKORO_ROOT:-}" ]]; then
   cd "${TINK_BASE_DIR}/tink_py"
 fi
 
-# Make sure we use the latest Python 3.12 available with pyenv.
-eval "$(pyenv init -)"
-pyenv install -s "3.12"
-pyenv global "3.12"
+# Make sure we use the latest Python 3.13 available with pyenv.
+# The macOS image exports a PYENV_ROOT env variable.
+(
+  cd "${PYENV_ROOT:-"${HOME}/.pyenv"}"
+  git pull
+  eval "$(pyenv init -)"
+  pyenv install -s "3.13"
+  pyenv global "3.13"
+)
 
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_protoc.sh "30.2"
