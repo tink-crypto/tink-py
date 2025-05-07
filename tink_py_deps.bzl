@@ -67,13 +67,13 @@ def tink_py_deps():
         url = "https://github.com/pybind/pybind11_bazel/archive/refs/tags/v2.11.1.tar.gz",
     )
 
-    # Release from 2024-11-20.
+    # Release from 2025-05-06.
     maybe(
         http_archive,
         name = "tink_cc",
-        sha256 = "363ce671ab5ce0b24f279d3647185597a25f407c3608db007315f79f151f436b",
-        strip_prefix = "tink-cc-2.3.0",
-        urls = ["https://github.com/tink-crypto/tink-cc/releases/download/v2.3.0/tink-cc-2.3.0.zip"],
+        sha256 = "06c4d49b0b1357f0b8c3abc77a7d920130dc868e4597d432a9ce1cda4f65e382",
+        strip_prefix = "tink-cc-2.4.0",
+        urls = ["https://github.com/tink-crypto/tink-cc/releases/download/v2.4.0/tink-cc-2.4.0.zip"],
     )
 
 def tink_py_testonly_deps():
