@@ -25,7 +25,9 @@ readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 usage() {
   cat <<EOF
 Usage:  $0 [-v <Python version to use>] [-t <release type (dev|release)>]
-  -t: [Optional] Type of release; if "dev", the genereted sdist archive is named tink-<version from VERSION>-dev0.tar.gz; if "release", tink-<version from VERSION>.tar.gz (default=dev).
+  -t: [Optional] Type of release; if "dev", the genereted sdist archive is named
+     tink-<version from TINK_VERSION.txt>-dev0.tar.gz; if "release",
+     tink-<version from TINK_VERSION.txt>.tar.gz (default=dev).
   -v: [Optional] Python version to use (default=3.10).
   -h: Help. Print this usage information.
 EOF
@@ -49,7 +51,7 @@ parse_args() {
   readonly PYTHON_VERSION
   readonly RELEASE_TYPE
 
-  TINK_VERSION="$(cat VERSION)"
+  TINK_VERSION="$(cat TINK_VERSION.txt)"
   case "${RELEASE_TYPE}" in
     dev) TINK_VERSION="${TINK_VERSION}.dev0" ;;
     release) ;;

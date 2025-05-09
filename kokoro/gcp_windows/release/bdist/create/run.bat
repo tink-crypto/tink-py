@@ -26,7 +26,7 @@ IF %errorlevel% neq 0 EXIT /B 1
 choco install -y --no-progress protoc --version=30.2.0
 SET OLD_PATH=%PATH%
 
-SET /p TINK_VERSION=<VERSION
+SET /p TINK_VERSION=<TINK_VERSION.txt
 ECHO %KOKORO_JOB_NAME% | FINDSTR "github" | FINDSTR "release"
 IF %errorlevel% NEQ 0 (
   SET TINK_VERSION=%TINK_VERSION%.dev0

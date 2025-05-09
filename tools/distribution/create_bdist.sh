@@ -40,7 +40,8 @@ usage() {
   cat <<EOF
 Usage:  $0 [-c Bazel cache name] [-t <release type (dev|release)>]
   -t: [Optional] Type of release; if "dev", the genereted wheels use <version
-      from VERSION>-dev0; if "release", <version from VERSION> (default=dev).
+      from TINK_VERSION.txt>-dev0; if "release", <version from TINK_VERSION.txt>
+      (default=dev).
   -c: [Optional] Bazel cache to use; credentials are expected to be in a
       /tmp/cache_key file.
   -h: Help. Print this usage information.
@@ -64,7 +65,7 @@ parse_args() {
   shift $((OPTIND - 1))
   readonly RELEASE_TYPE
   readonly BAZEL_CACHE_NAME
-  TINK_VERSION="$(cat VERSION)"
+  TINK_VERSION="$(cat TINK_VERSION.txt)"
   case "${RELEASE_TYPE}" in
     dev) TINK_VERSION="${TINK_VERSION}.dev0" ;;
     release) ;;

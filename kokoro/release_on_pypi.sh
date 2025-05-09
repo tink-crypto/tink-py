@@ -97,7 +97,7 @@ main() {
     cd "${KOKORO_ARTIFACTS_DIR}"/git*/tink_py
   fi
 
-  local -r version_value_in_version_file="$(cat VERSION)"
+  local -r version_value_in_version_file="$(cat TINK_VERSION.txt)"
   if [[ "${version_value_in_version_file}" != "${RELEASE_VERSION}" ]]; then
     echo "InvalidArgumentError: RELEASE_VERSION must coincide with VERSION" >&2
     echo "Found:" >&2

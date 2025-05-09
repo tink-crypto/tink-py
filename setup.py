@@ -44,11 +44,12 @@ def _get_tink_version() -> str:
   """Returns the project version.
 
   If the TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION environment variable is set,
-  this function returns its value; otherwise, it parses the value in VERSION.
+  this function returns its value; otherwise, it parses the value in
+  TINK_VERSION.txt.
   """
   if 'TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION' in os.environ:
     return os.environ['TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION']
-  with open(os.path.join(_PROJECT_BASE_DIR, 'VERSION')) as f:
+  with open(os.path.join(_PROJECT_BASE_DIR, 'TINK_VERSION.txt')) as f:
     version = f.read().strip()
     if not re.fullmatch(r'[0-9]+.[0-9]+.[0-9]+', version):
       raise ValueError(f'Invalid version: {version}')

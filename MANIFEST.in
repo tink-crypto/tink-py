@@ -9,7 +9,7 @@ include requirements_hcvault.in
 include requirements_all.txt
 include .bazelrc
 include .bazelversion
-include VERSION
+include TINK_VERSION.txt
 include WORKSPACE
 include BUILD.bazel
 include tink_py_deps.bzl
