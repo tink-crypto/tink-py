@@ -79,5 +79,5 @@ fi
 readonly TEST_SCRIPT_ARGS
 
 readonly TEST_SCRIPT="kokoro/gcp_ubuntu/pip/test_script.sh"
-./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" "${TEST_SCRIPT}" \
+./kokoro/testutils/docker_execute.sh "${RUN_COMMAND_ARGS[@]}" "${TEST_SCRIPT}" \
   "${TEST_SCRIPT_ARGS[@]}"

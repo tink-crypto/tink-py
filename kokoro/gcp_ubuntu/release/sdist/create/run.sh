@@ -54,5 +54,5 @@ fi
 readonly CREATE_DIST_OPTIONS
 
 # Generate a source distribution.
-./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" \
+./kokoro/testutils/docker_execute.sh "${RUN_COMMAND_ARGS[@]}" \
   ./tools/distribution/create_sdist.sh "${CREATE_DIST_OPTIONS[@]}"

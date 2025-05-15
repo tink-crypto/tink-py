@@ -88,4 +88,4 @@ cleanup() {
   rm -rf _do_test_dist.sh
 }
 
-./kokoro/testutils/run_command.sh "${RUN_COMMAND_ARGS[@]}" ./_do_test_dist.sh
+./kokoro/testutils/docker_execute.sh "${RUN_COMMAND_ARGS[@]}" ./_do_test_dist.sh
