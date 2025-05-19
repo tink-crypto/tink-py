@@ -16,8 +16,6 @@ The CLI takes the following required arguments:
 *   `--gcp_credential_path`: Name of the file with the Google Cloud Platform (GCP)
     credentials (in JSON format) that can access the Cloud KMS key and the GCS
     input/output blobs.
-*   `--gcp_project_id`: The ID of the GCP project hosting the GCS blobs that you
-    want to encrypt or decrypt.
 *   `--local_path`:
     *   When `--mode encrypt`, read the plaintext from this local file.
     *   When `--mode decrypt`, write the decryption result to this local file.
@@ -63,7 +61,6 @@ $ ./bazel-bin/gcs/gcs_envelope_aead_cli \
     --mode encrypt \
     --kek_uri gcp-kms://my-cloud-kms-key-uri \
     --gcp_credential_path my-service-account.json \
-    --gcp_project_id my-gcp-project-id \
     --local_path testdata.txt \
     --gcs_blob_path gs://my-bucket-name/my-blob-name
 ```
@@ -75,7 +72,6 @@ $ ./bazel-bin/gcs/gcs_envelope_aead_cli
     --mode decrypt \
     --kek_uri gcp-kms://my-key-uri \
     --gcp_credential_path my-service-account.json \
-    --gcp_project_id my-gcp-project-id \
     --gcs_blob_path gs://my-bucket-name/my-blob-name \
     --local_path testdata.txt.decrypted
 ```

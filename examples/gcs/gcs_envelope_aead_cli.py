@@ -27,19 +27,19 @@ import tink
 from tink import aead
 from tink.integration import gcpkms
 
-
-FLAGS = flags.FLAGS
-
-flags.DEFINE_enum('mode', None, ['encrypt', 'decrypt'],
-                  'The operation to perform.')
-flags.DEFINE_string('kek_uri', None,
-                    'The Cloud KMS URI of the key encryption key.')
-flags.DEFINE_string('gcp_credential_path', None,
-                    'Path to the GCP credentials JSON file.')
-flags.DEFINE_string('gcp_project_id', None,
-                    'The ID of the GCP project hosting the GCS blobs.')
-flags.DEFINE_string('local_path', None, 'Path to the local file.')
-flags.DEFINE_string('gcs_blob_path', None, 'Path to the GCS blob.')
+_MODE = flags.DEFINE_enum(
+    'mode', None, ['encrypt', 'decrypt'], 'The operation to perform.'
+)
+_KEK_URI = flags.DEFINE_string(
+    'kek_uri', None, 'The Cloud KMS URI of the key encryption key.'
+)
+_GCP_CREDENTIAL_PATH = flags.DEFINE_string(
+    'gcp_credential_path', None, 'Path to the GCP credentials JSON file.'
+)
+_LOCAL_PATH = flags.DEFINE_string('local_path', None, 'Path to the local file.')
+_GCS_BLOB_PATH = flags.DEFINE_string(
+    'gcs_blob_path', None, 'Path to the GCS blob.'
+)
 
 
 _GCS_PATH_PREFIX = 'gs://'
@@ -53,14 +53,14 @@ def main(argv):
 
   try:
     # Read the GCP credentials and setup client
-    client = gcpkms.GcpKmsClient(FLAGS.kek_uri, FLAGS.gcp_credential_path)
+    client = gcpkms.GcpKmsClient(_KEK_URI.value, _GCP_CREDENTIAL_PATH.value)
   except tink.TinkError as e:
     logging.exception('Error creating GCP KMS client: %s', e)
     return 1
 
   # Create envelope AEAD primitive using AES256 GCM for encrypting the data
   try:
-    remote_aead = client.get_aead(FLAGS.kek_uri)
+    remote_aead = client.get_aead(_KEK_URI.value)
     env_aead = aead.KmsEnvelopeAead(
         aead.aead_key_templates.AES256_GCM, remote_aead
     )
@@ -69,31 +69,31 @@ def main(argv):
     return 1
 
   storage_client = storage.Client.from_service_account_json(
-      FLAGS.gcp_credential_path)
+      _GCP_CREDENTIAL_PATH.value)
 
   try:
-    bucket_name, object_name = _get_bucket_and_object(FLAGS.gcs_blob_path)
+    bucket_name, object_name = _get_bucket_and_object(_GCS_BLOB_PATH.value)
   except ValueError as e:
     logging.exception('Error parsing GCS blob path: %s', e)
     return 1
   bucket = storage_client.bucket(bucket_name)
   blob = bucket.blob(object_name)
-  associated_data = FLAGS.gcs_blob_path.encode('utf-8')
+  associated_data = _GCS_BLOB_PATH.value.encode('utf-8')
 
-  if FLAGS.mode == 'encrypt':
-    with open(FLAGS.local_path, 'rb') as input_file:
+  if _MODE.value == 'encrypt':
+    with open(_LOCAL_PATH.value, 'rb') as input_file:
       output_data = env_aead.encrypt(input_file.read(), associated_data)
     blob.upload_from_string(output_data)
 
-  elif FLAGS.mode == 'decrypt':
+  elif _MODE.value == 'decrypt':
     ciphertext = blob.download_as_bytes()
-    with open(FLAGS.local_path, 'wb') as output_file:
+    with open(_LOCAL_PATH.value, 'wb') as output_file:
       output_file.write(env_aead.decrypt(ciphertext, associated_data))
 
   else:
     logging.error(
         'Unsupported mode %s. Please choose "encrypt" or "decrypt".',
-        FLAGS.mode,
+        _MODE.value,
     )
     return 1
 
@@ -122,8 +122,8 @@ def _get_bucket_and_object(gcs_blob_path):
   return parts[0], parts[1]
 
 if __name__ == '__main__':
-  flags.mark_flags_as_required([
-      'mode', 'kek_uri', 'gcp_credential_path', 'gcp_project_id', 'local_path',
-      'gcs_blob_path'])
+  flags.mark_flags_as_required(
+      ['mode', 'kek_uri', 'gcp_credential_path', 'local_path', 'gcs_blob_path']
+  )
   app.run(main)
 # [END gcs-envelope-aead-example]

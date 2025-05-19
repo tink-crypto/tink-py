@@ -25,8 +25,7 @@ set -x
 CLI="$1"
 KEY_URI="$2"
 CRED_FILE="$3"
-PROJECT_ID="$4"
-GCS_BUCKET="$5"
+GCS_BUCKET="$4"
 
 # Root certificates for GRPC.
 # Reference:
@@ -63,7 +62,6 @@ print_test "encrypt"
 test_command ${CLI} --mode encrypt \
   --kek_uri "${KEY_URI}" \
   --gcp_credential_path "${CRED_FILE}" \
-  --gcp_project_id "${PROJECT_ID}" \
   --local_path "${DATA_FILE}" \
   --gcs_blob_path "${GCS_BUCKET}/example_data.txt.encrypted"
 
@@ -82,7 +80,6 @@ print_test "decrypt"
 test_command ${CLI} --mode decrypt \
   --kek_uri "${KEY_URI}" \
   --gcp_credential_path "${CRED_FILE}" \
-  --gcp_project_id "${PROJECT_ID}" \
   --gcs_blob_path "${GCS_BUCKET}/example_data.txt.encrypted" \
   --local_path "${DATA_FILE}.decrypted"
 
