@@ -18,6 +18,7 @@ py_library(
         "//tink/prf",
         "//tink/proto:tink_py_pb2",
         "//tink/signature",
+        requirement("bazel-runfiles"),
     ],
 )
 

@@ -93,7 +93,7 @@ main() {
   export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
 
   # Build source distribution.
-  python3 setup.py sdist --owner=root --group=root
+  python3 -m build -s
   local -r sdist_filename="tink-${TINK_VERSION}.tar.gz"
   cp "dist/${sdist_filename}" release/
 

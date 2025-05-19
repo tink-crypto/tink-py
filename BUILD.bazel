@@ -1,0 +1,17 @@
+# Platform definition used when creating the binary wheels. Selected in setup.py.
+platform(
+    name = "darwin_arm64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:arm64",
+    ],
+)
+
+# Platform definition used when creating the binary wheels. Selected in setup.py.
+platform(
+    name = "darwin_x86_64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+)

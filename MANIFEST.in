@@ -10,8 +10,9 @@ include requirements_all.txt
 include .bazelrc
 include .bazelversion
 include TINK_VERSION.txt
-include WORKSPACE
 include BUILD.bazel
+include MODULE.bazel
+include pyproject.toml
 include tink_py_deps.bzl
 include tink_py_deps_init.bzl
 

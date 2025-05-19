@@ -1,0 +1,60 @@
+module(
+    name = "tink_py",
+    version = "0.0.0",  # We do not use this field currently.
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "rules_python", version = "1.4.0")
+bazel_dep(name = "abseil-cpp", version = "20250127.1", repo_name = "com_google_absl")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "tink_cc", version = "2.4.0")
+bazel_dep(name = "googletest", version = "1.16.0", repo_name = "com_google_googletest")
+bazel_dep(name = "pybind11_bazel", version = "2.13.6")
+bazel_dep(name = "protobuf", version = "30.1", repo_name = "com_google_protobuf")
+bazel_dep(name = "platforms", version = "0.0.11")
+
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "google_root_pem",
+    urls = ["https://pki.goog/roots.pem"],
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+
+python.toolchain(python_version = "3.9")
+python.toolchain(
+    is_default = True,
+    python_version = "3.10",
+)
+python.toolchain(python_version = "3.11")
+python.toolchain(python_version = "3.12")
+python.toolchain(python_version = "3.13")
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "tink_py_pip_deps",
+    python_version = "3.9",
+    requirements_lock = "@tink_py//:requirements_all.txt",
+)
+pip.parse(
+    hub_name = "tink_py_pip_deps",
+    python_version = "3.10",
+    requirements_lock = "@tink_py//:requirements_all.txt",
+)
+pip.parse(
+    hub_name = "tink_py_pip_deps",
+    python_version = "3.11",
+    requirements_lock = "@tink_py//:requirements_all.txt",
+)
+pip.parse(
+    hub_name = "tink_py_pip_deps",
+    python_version = "3.12",
+    requirements_lock = "@tink_py//:requirements_all.txt",
+)
+pip.parse(
+    hub_name = "tink_py_pip_deps",
+    python_version = "3.13",
+    requirements_lock = "@tink_py//:requirements_all.txt",
+)
+use_repo(pip, "tink_py_pip_deps")

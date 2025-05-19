@@ -1,3 +1,5 @@
+build --enable_platform_specific_config=true
+
 # Minumum C++ version. Override it building this project with
 # `bazel build --cxxopt='-std=c++<XY>' --host_cxxopt='c++<XY>' ...`
 # (Both -std and --host_cxxopt must be set to force the desired version.)
@@ -12,3 +14,20 @@ build --host_per_file_copt=external/.*@-w
 
 # https://github.com/protocolbuffers/protobuf/issues/20085
 build:windows --define=protobuf_allow_msvc=true
+
+# Configs for macOS on x86_64.
+build:macos_x86_64 --cpu=darwin
+# NOTE: If macos_minimum_os is unspecified, Bazel uses the default value of
+# macos_sdk_version which is taken from the default system Xcode [1], even if
+# MACOSX_DEPLOYMENT_TARGET is set [2].
+# [1] https://bazel.build/reference/command-line-reference#flag--macos_minimum_os
+# [2] https://github.com/bazelbuild/bazel/issues/16932
+build:macos_x86_64 --macos_minimum_os=11.0
+
+# Configs for macOS on ARM64.
+build:macos_arm64 --cpu=darwin_arm64
+build:macos_arm64 --macos_cpus=arm64
+build:macos_arm64 --macos_minimum_os=11.0
+
+# See https://github.com/bazelbuild/bazel/issues/10472
+build:macos --copt=-isystem/usr/local/include

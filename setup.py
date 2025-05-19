@@ -137,7 +137,7 @@ class BuildBazelExtension(build_ext.build_ext):
       self.bazel_build(ext)
     build_ext.build_ext.run(self)
 
-  def bazel_build(self, ext: str) -> None:
+  def bazel_build(self, ext: BazelExtension) -> None:
     if not os.path.exists(self.build_temp):
       os.makedirs(self.build_temp)
 
@@ -152,11 +152,22 @@ class BuildBazelExtension(build_ext.build_ext):
         '--compilation_mode=' + ('dbg' if self.debug else 'opt'),
     ]
 
-    target_arch = os.getenv('TARGET_ARCH', '')
-    target_os = os.getenv('TARGET_OS', '')
-    if target_arch and target_os:
-      bazel_build_args += [f'--config={target_os}_{target_arch}']
+    # Allow the user to select a configuration (using SETUP_PY_BAZEL_CONFIG).
+    # The configuration then selects the corresponding lines in .bazelrc.
+    # Used for macOS which needs different flags depending on whether we cross
+    # compile
+    bazel_config_arg = os.getenv('SETUP_PY_BAZEL_CONFIG', '')
+    if bazel_config_arg:
+      bazel_build_args += [f'--config={bazel_config_arg}']
 
+    # Sets e.g.
+    # --@rules_python//python/config_settings:python_version=3.12
+    # which is the way to tell bazel which Python version to use (without this,
+    # we fall back to the default as specified in MODULE.bazel)
+    python_version_rule = '@rules_python//python/config_settings:python_version'
+    major = sys.version_info.major
+    minor = sys.version_info.minor
+    bazel_build_args += [f'--{python_version_rule}={major}.{minor}']
     lib_extension = '.so'
     if platform.system() == 'Windows':
       # Required to build protobuf. See

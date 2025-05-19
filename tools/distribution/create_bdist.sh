@@ -142,14 +142,11 @@ _create_universal2_macos_wheel() {
     exit 1
   fi
 
-  # NOTE: The resulting wheel is named after the 1st parameter (in this case
-  # arm64_whl). We thus use a separate folder to avoid delocate to overwrite it.
   local -r tmp_build_dir="$(mktemp -d -t universal2)"
-  time python3 -m delocate.cmd.delocate_fuse "${arm64_whl}" "${x86_whl}" \
+  time python3 -m delocate.cmd.delocate_merge "${arm64_whl}" "${x86_whl}" \
     -w "${tmp_build_dir}"
-  local -r generated_whl="${tmp_build_dir}/$(basename "${arm64_whl}")"
-  local -r rename_to="${out_dir}/$(basename ${generated_whl//arm64/universal2})"
-  mv "${generated_whl}" "${rename_to}"
+  generated_whl="$(basename ${tmp_build_dir}/tink*universal2.whl)"
+  mv "${tmp_build_dir}/${generated_whl}" "${out_dir}"
   # Cleanup.
   rm -rf "${tmp_build_dir}"
 }
@@ -172,36 +169,47 @@ create_bdist_for_macos() {
     export TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL="${GCS_URL}/${BAZEL_CACHE_NAME}"
     export TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH="/tmp/cache_key"
   fi
-
+  # Remove the line build:macos --copt=-isystem/usr/local/include from .bazelrc.
+  sed -i .bak 'sXbuild:macos --copt=-isystem/usr/local/includeXXg' .bazelrc
+  cat .bazelrc
   rm -rf release && mkdir -p release
   for python_version in "${PYTHON_VERSIONS[@]}"; do
     enable_py_version "${python_version}"
 
     tmp_build_dir="$(mktemp -d -t tmp_build_dir)"
-
+    second_tmp_build_dir="$(mktemp -d -t second_tmp_build_dir)"
     # Build binary wheel for arm64.
     (
-      export TARGET_ARCH="arm64"
-      export TARGET_OS="macos"
-      export PLAT_NAME="macosx-11.0-${TARGET_ARCH}"
+      export SETUP_PY_BAZEL_CONFIG="macos_arm64"
+      export PLAT_NAME="macosx-11.0-arm64"
       time python3 -m pip wheel -w "${tmp_build_dir}" .
     )
-    arm64_whl="$(echo ${tmp_build_dir}/tink-*arm64.whl)"
+    arm64_whl="$(basename ${tmp_build_dir}/tink-*arm64.whl)"
+    # Use delocate to create a wheel which includes all dynamic libraries
+    # needed. This might rename the wheel, so we recompute the name.
     time python3 -m delocate.cmd.delocate_wheel --require-archs arm64 \
-      -v "${arm64_whl}"
+      -v "${tmp_build_dir}/${arm64_whl}" -w "${second_tmp_build_dir}"
+    arm64_whl="$(basename ${second_tmp_build_dir}/tink-*arm64.whl)"
+    mv "${second_tmp_build_dir}/${arm64_whl}" "${tmp_build_dir}/"
 
     # Build binary wheel for x86.
     (
-      export TARGET_ARCH="x86_64"
-      export TARGET_OS="macos"
-      export PLAT_NAME="macosx-10.9-${TARGET_ARCH}"
+      export SETUP_PY_BAZEL_CONFIG="macos_x86_64"
+      export PLAT_NAME="macosx-10.9-x86_64"
       time python3 -m pip wheel -w "${tmp_build_dir}" .
     )
-    x86_64_whl="$(echo ${tmp_build_dir}/tink-*x86_64.whl)"
+    x86_64_whl="$(basename ${tmp_build_dir}/tink-*x86_64.whl)"
+    # Use delocate to create a wheel which includes all dynamic libraries
+    # needed. This might rename the wheel, so we recompute the name.
     time python3 -m delocate.cmd.delocate_wheel --require-archs x86_64 \
-      -v "${x86_64_whl}"
+      -v "${tmp_build_dir}/${x86_64_whl}" -w "${second_tmp_build_dir}"
+    x86_64_whl="$(basename ${second_tmp_build_dir}/tink-*x86_64.whl)"
+    mv "${second_tmp_build_dir}/${x86_64_whl}" "${tmp_build_dir}/"
 
-    _create_universal2_macos_wheel "${arm64_whl}" "${x86_64_whl}" "release"
+    # Use delocate to combine the two wheels into one (a universal2 wheel)
+    _create_universal2_macos_wheel \
+       "${tmp_build_dir}/${arm64_whl}" \
+       "${tmp_build_dir}/${x86_64_whl}" "release"
 
     rm -rf "${tmp_build_dir}"
     ls -l release

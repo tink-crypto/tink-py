@@ -17,6 +17,7 @@
 import os
 from typing import Mapping
 
+from runfiles import Runfiles
 from tink.proto import tink_pb2
 from tink import aead
 from tink import core
@@ -26,7 +27,13 @@ from tink import mac
 from tink import prf
 from tink import signature as pk_signature
 
-_RELATIVE_TESTDATA_PATH = 'tink_py/testdata'
+_RELATIVE_TESTDATA_PATH = 'google3/third_party/tink/testdata'
+
+
+def _get_test_src_dir() -> str:
+  # Note: this implementation is rewritten by copybara
+  return os.path.join(
+      Runfiles.Create().Rlocation('tink_py/testdata'))
 
 
 def tink_py_testdata_path() -> str:
@@ -38,9 +45,7 @@ def tink_py_testdata_path() -> str:
                            os.path.join(os.environ['TINK_PYTHON_ROOT_PATH'],
                                         'testdata')))
   if 'TEST_SRCDIR' in os.environ:
-    testdata_paths.append(('TEST_SRCDIR',
-                           os.path.join(os.environ['TEST_SRCDIR'],
-                                        _RELATIVE_TESTDATA_PATH)))
+    testdata_paths.append(('TEST_SRCDIR', _get_test_src_dir()))
   for env_variable, testdata_path in testdata_paths:
     # Return the first path that is encountered.
     if not os.path.exists(testdata_path):
