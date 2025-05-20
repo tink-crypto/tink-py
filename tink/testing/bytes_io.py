@@ -46,10 +46,10 @@ class BytesIOWithValueAfterClose(io.BytesIO):
     return self._value_after_close
 
 
-class SlowBytesIO(io.BytesIO):
-  """A readable BytesIO that raised BlockingIOError on some calls to read."""
+class SlowBytesIO(BytesIOWithValueAfterClose):
+  """An BytesIO that raised BlockingIOError on some calls to read or write."""
 
-  def __init__(self, data: bytes, seekable: bool = False):
+  def __init__(self, data: bytes = b'', seekable: bool = False):
     super().__init__(data)
     self._seekable = seekable
     self._state = -1
@@ -58,7 +58,7 @@ class SlowBytesIO(io.BytesIO):
     if size and size > 0:
       self._state += 1
       if self._state > 10000000:
-        raise AssertionError('too many read. Is there an infinite loop?')
+        raise AssertionError('too many read/write. Is there an infinite loop?')
       if self._state % 3 == 0:   # block on every third call.
         raise io.BlockingIOError(
             errno.EAGAIN,
@@ -66,6 +66,17 @@ class SlowBytesIO(io.BytesIO):
       # read at most 5 bytes.
       return super().read(min(size, 5))
     return super().read(size)
+
+  def write(self, b: bytes) -> int:
+    self._state += 1
+    if self._state > 10000000:
+      raise AssertionError('too many read/write. Is there an infinite loop?')
+    if self._state % 3 == 0:  # block on every third call.
+      raise io.BlockingIOError(
+          errno.EAGAIN, 'write could not complete without blocking', 0
+      )
+    # write at most 5 bytes.
+    return super().write(b[:5])
 
   def seek(self, pos: int, whence: int = 0) -> int:
     if self._seekable:
@@ -96,8 +107,8 @@ class SlowReadableRawBytes(io.RawIOBase):
       q = self._bytes_io.read(5)
       b[:len(q)] = q
       return len(q)
-    except io.BlockingIOError:
-      raise ValueError('io.BytesIO should not raise BlockingIOError')
+    except io.BlockingIOError as exc:
+      raise ValueError('io.BytesIO should not raise BlockingIOError') from exc
 
   def readable(self):
     return True

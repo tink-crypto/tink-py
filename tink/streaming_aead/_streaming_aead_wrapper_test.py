@@ -81,9 +81,28 @@ class StreamingAeadWrapperTest(parameterized.TestCase):
     self.assertTrue(ciphertext_src.closed)
     self.assertEqual(output, long_plaintext)
 
-  @parameterized.parameters(
-      [bytes_io.SlowBytesIO, bytes_io.SlowReadableRawBytes])
-  def test_slow_encrypt_decrypt_success(self, input_stream_factory):
+  def test_encrypt_decrypt_with_slow_bytes_io_success(self):
+    keyset_handle = tink.new_keyset_handle(TEMPLATE)
+    primitive = keyset_handle.primitive(streaming_aead.StreamingAead)
+    plaintext = b' '.join(b'%d' % i for i in range(10 * 1000))
+    aad = b'associated_data'
+
+    # Even if the ciphertext destination only writes small data chunks and
+    # sometimes None, calling write() should write the whole plaintext.
+    ciphertext_dest = bytes_io.SlowBytesIO()
+    with primitive.new_encrypting_stream(ciphertext_dest, aad) as es:
+      es.write(plaintext)
+    ciphertext = ciphertext_dest.value_after_close()
+
+    # Even if the ciphertext source only returns small data chunks and sometimes
+    # None, calling read() should return the whole ciphertext.
+    ciphertext_src = cast(BinaryIO, bytes_io.SlowBytesIO(ciphertext))
+    with primitive.new_decrypting_stream(ciphertext_src, aad) as ds:
+      output = ds.read()
+    self.assertTrue(ciphertext_src.closed)
+    self.assertEqual(output, plaintext)
+
+  def test_encrypt_decrypt_with_slow_readable_raw_bytes_success(self):
     keyset_handle = tink.new_keyset_handle(TEMPLATE)
     primitive = keyset_handle.primitive(streaming_aead.StreamingAead)
     plaintext = b' '.join(b'%d' % i for i in range(10 * 1000))
@@ -92,7 +111,7 @@ class StreamingAeadWrapperTest(parameterized.TestCase):
 
     # Even if the ciphertext source only returns small data chunks and sometimes
     # None, calling read() should return the whole ciphertext.
-    ciphertext_src = cast(BinaryIO, input_stream_factory(ciphertext))
+    ciphertext_src = cast(BinaryIO, bytes_io.SlowReadableRawBytes(ciphertext))
     with primitive.new_decrypting_stream(ciphertext_src, aad) as ds:
       output = ds.read()
     self.assertTrue(ciphertext_src.closed)

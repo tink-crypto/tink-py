@@ -97,6 +97,22 @@ class SlowBytesIOTest(absltest.TestCase):
       f.seek(0)
       self.assertEqual(b'The quick brown fox', f.read())
 
+  def test_write(self):
+    with bytes_io.SlowBytesIO() as f:
+      with self.assertRaises(io.BlockingIOError):
+        f.write(b'The quick ')
+      len1 = f.write(b'brown fox ')
+      self.assertEqual(len1, 5)
+      len2 = f.write(b'jumps over ')
+      self.assertEqual(len2, 5)
+      with self.assertRaises(io.BlockingIOError):
+        f.write(b'the lazy ')
+      len3 = f.write(b'dog')
+      self.assertEqual(len3, 3)
+      len4 = f.write(b'')
+      self.assertEqual(len4, 0)
+    self.assertEqual(b'brownjumpsdog', f.value_after_close())
+
 
 class SlowReadableRawBytesTest(absltest.TestCase):
 
