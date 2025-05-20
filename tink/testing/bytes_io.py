@@ -62,7 +62,7 @@ class SlowBytesIO(BytesIOWithValueAfterClose):
       if self._state % 3 == 0:   # block on every third call.
         raise io.BlockingIOError(
             errno.EAGAIN,
-            'write could not complete without blocking', 0)
+            'read could not complete without blocking', 0)
       # read at most 5 bytes.
       return super().read(min(size, 5))
     return super().read(size)
@@ -71,9 +71,13 @@ class SlowBytesIO(BytesIOWithValueAfterClose):
     self._state += 1
     if self._state > 10000000:
       raise AssertionError('too many read/write. Is there an infinite loop?')
-    if self._state % 3 == 0:  # block on every third call.
+    if self._state % 3 == 0:
+      # On every third call: write up to 3 bytes, then block.
+      bytes_written = super().write(b[:3])
       raise io.BlockingIOError(
-          errno.EAGAIN, 'write could not complete without blocking', 0
+          errno.EAGAIN,
+          'write could not complete without blocking',
+          bytes_written,
       )
     # write at most 5 bytes.
     return super().write(b[:5])
