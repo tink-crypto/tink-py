@@ -93,6 +93,9 @@ class _DecryptingStreamWrapper(io.RawIOBase):
     # self._attempting_stream but no data has been read successfully yet.
     while True:
       try:
+        if not self._attempting_stream:
+          # this should not happen.
+          raise ValueError('self._attempting_stream is None')
         data = self._attempting_stream.read(size)
         if data is None:
           # No data at the moment. Not clear if decryption was successful.
@@ -104,10 +107,10 @@ class _DecryptingStreamWrapper(io.RawIOBase):
         self._attempting_stream = None
         self._ciphertext_source.disable_rewind()
         return data
-      except core.TinkError:
+      except core.TinkError as exc:
         if not self._remaining_primitives:
           raise core.TinkError(
-              'No matching key found for the ciphertext in the stream')
+              'No matching key found for the ciphertext in the stream') from exc
         # Try another key.
         self._ciphertext_source.rewind()
         self._attempting_stream = self._next_decrypting_stream()
