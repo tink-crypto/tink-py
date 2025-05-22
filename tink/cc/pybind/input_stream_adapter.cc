@@ -16,9 +16,13 @@
 
 #include "tink/cc/pybind/input_stream_adapter.h"
 
+#include <cstdint>
+#include <exception>
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "pybind11/pybind11.h"
 #include "tink/cc/input_stream_adapter.h"
 #include "tink/cc/pybind/tink_exception.h"

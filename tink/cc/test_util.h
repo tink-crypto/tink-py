@@ -18,14 +18,24 @@
 #define TINK_PYTHON_TINK_CC_TEST_UTIL_H_
 
 #include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
+#include "tink/input_stream.h"
+#include "tink/output_stream.h"
+#include "tink/random_access_stream.h"
 #include "tink/streaming_aead.h"
+#include "tink/util/buffer.h"
 #include "tink/cc/python_file_object_adapter.h"
 
 namespace crypto {

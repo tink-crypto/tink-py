@@ -17,6 +17,8 @@
 #include "tink/cc/python_output_stream.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <utility>
