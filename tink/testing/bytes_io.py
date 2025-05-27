@@ -124,3 +124,12 @@ class SlowReadableRawBytes(io.RawIOBase):
 
   def seekable(self)-> bool:
     return self._seekable
+
+
+class BadWriteBytesIO(BytesIOWithValueAfterClose):
+  """An BytesIO that returns an invalid value from write()."""
+
+  def write(self, b: bytes) -> int:
+    # On every third call: write and return an invalid written length.
+    bytes_written = super().write(b)
+    return bytes_written + 1

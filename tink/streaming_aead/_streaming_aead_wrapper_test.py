@@ -102,6 +102,18 @@ class StreamingAeadWrapperTest(parameterized.TestCase):
     self.assertTrue(ciphertext_src.closed)
     self.assertEqual(output, plaintext)
 
+  def test_encrypt_decrypt_with_bad_write_bytes_io_success(self):
+    keyset_handle = tink.new_keyset_handle(TEMPLATE)
+    primitive = keyset_handle.primitive(streaming_aead.StreamingAead)
+    plaintext = b'plaintext'
+    aad = b'associated_data'
+
+    ciphertext_dest = bytes_io.BadWriteBytesIO()
+    with self.assertRaises(tink.TinkError):
+      es = primitive.new_encrypting_stream(ciphertext_dest, aad)
+      es.write(plaintext)
+      es.close()
+
   def test_encrypt_decrypt_with_slow_readable_raw_bytes_success(self):
     keyset_handle = tink.new_keyset_handle(TEMPLATE)
     primitive = keyset_handle.primitive(streaming_aead.StreamingAead)

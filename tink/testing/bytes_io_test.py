@@ -171,5 +171,16 @@ class SlowReadableRawBytesTest(absltest.TestCase):
       f.seek(0)
       self.assertEqual(b'The quick ', f.read())
 
+
+class BadWriteBytesIOTest(absltest.TestCase):
+
+  def test_write(self):
+    with bytes_io.BadWriteBytesIO() as f:
+      len1 = f.write(b'aaa')
+      self.assertEqual(len1, 4)  # 3 + 1
+      len2 = f.write(b'')
+      self.assertEqual(len2, 1)  # 0 + 1
+
+
 if __name__ == '__main__':
   absltest.main()

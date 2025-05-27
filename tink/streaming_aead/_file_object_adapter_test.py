@@ -48,19 +48,46 @@ class FileObjectAdapterTest(absltest.TestCase):
     with self.assertRaises(ValueError):
       adapter.write(b'something')
 
-  def test_write_returns_none(self):
+  def test_write_returns_none_written_is_zero(self):
     file_object = mock.Mock()
     file_object.write = mock.Mock(return_value=None)
     adapter = _file_object_adapter.FileObjectAdapter(file_object)
 
-    self.assertEqual(0, adapter.write(b'something'))
+    self.assertEqual(0, adapter.write(b''))
 
-  def test_write_raises_blocking_error(self):
+  def test_write_returns_negative_number_raises_error(self):
+    file_object = mock.Mock()
+    file_object.write = mock.Mock(return_value=-1)
+    adapter = _file_object_adapter.FileObjectAdapter(file_object)
+
+    with self.assertRaises(ValueError):
+      adapter.write(b'something')
+
+  def test_write_returns_too_large_number_raises_error(self):
+    data = b'something'
+    file_object = mock.Mock()
+    file_object.write = mock.Mock(return_value=len(data) + 1)
+    adapter = _file_object_adapter.FileObjectAdapter(file_object)
+
+    with self.assertRaises(ValueError):
+      adapter.write(b'something')
+
+  def test_write_raises_blocking_error_returns_characters_written_success(self):
     file_object = mock.Mock()
     file_object.write = mock.Mock(side_effect=io.BlockingIOError(None, None, 5))
     adapter = _file_object_adapter.FileObjectAdapter(file_object)
 
     self.assertEqual(5, adapter.write(b'something'))
+
+  def test_write_raises_invalid_blocking_error_raises_error(self):
+    file_object = mock.Mock()
+    file_object.write = mock.Mock(
+        side_effect=io.BlockingIOError(None, None, 42)
+    )
+    adapter = _file_object_adapter.FileObjectAdapter(file_object)
+
+    with self.assertRaises(ValueError):
+      adapter.write(b'something')
 
   def test_partial_write(self):
     file_object = mock.Mock()

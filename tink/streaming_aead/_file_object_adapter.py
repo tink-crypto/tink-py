@@ -35,8 +35,16 @@ class FileObjectAdapter(tink_bindings.PythonFileObjectAdapter):
     """Writes to underlying file object and returns number of bytes written."""
     try:
       written = self._file_object.write(data)
-      return 0 if written is None else written
+      if written is None:
+        return 0
+      if written < 0 or written > len(data):
+        raise ValueError('invalid value returned by write')
+      return written
     except io.BlockingIOError as e:
+      if e.characters_written is None:
+        return 0
+      if e.characters_written < 0 or e.characters_written > len(data):
+        raise ValueError('invalid characters_written') from e
       return e.characters_written
 
   def close(self) -> None:
