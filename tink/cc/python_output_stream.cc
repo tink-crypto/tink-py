@@ -73,6 +73,16 @@ absl::StatusOr<int> PythonOutputStream::Next(void** data) {
 
   // Some data was written, so we can return some portion of buffer_.
   int written = write_result.value();
+
+  // This should not happen, because the only implementation of
+  // PythonFileObjectAdapter we have is FileObjectAdapter in
+  // _file_object_adapter.py, which never returns a value larger than the buffer
+  // size.
+  if (written > buffer_.size()) {
+    return status_ = absl::Status(absl::StatusCode::kInternal,
+                                  "Invalid value returned by Write");
+  }
+
   position_ += written;
   count_in_buffer_ = buffer_.size();
   buffer_offset_ = buffer_.size() - written;

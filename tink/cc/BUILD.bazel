@@ -107,6 +107,7 @@ cc_library(
     hdrs = ["output_stream_adapter.h"],
     include_prefix = "tink/cc",
     deps = [
+        "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
