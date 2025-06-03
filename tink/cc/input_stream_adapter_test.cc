@@ -16,14 +16,14 @@
 
 #include "tink/cc/input_stream_adapter.h"
 
-#include <algorithm>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
 
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
-#include "tink/input_stream.h"
+#include "absl/status/status.h"
 #include "tink/subtle/random.h"
 #include "tink/util/istream_input_stream.h"
 

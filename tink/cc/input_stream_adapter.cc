@@ -17,12 +17,11 @@
 #include "tink/cc/input_stream_adapter.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <string>
 
-#include "absl/strings/str_cat.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "tink/util/status.h"
-#include "tink/util/statusor.h"
 
 namespace crypto {
 namespace tink {

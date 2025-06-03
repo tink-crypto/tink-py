@@ -210,7 +210,6 @@ cc_library(
     hdrs = ["input_stream_adapter.h"],
     include_prefix = "tink/cc",
     deps = [
-        "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@tink_cc//tink:input_stream",
@@ -224,8 +223,8 @@ cc_test(
     deps = [
         ":input_stream_adapter",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest_main",
-        "@tink_cc//tink:input_stream",
         "@tink_cc//tink/subtle:random",
         "@tink_cc//tink/util:istream_input_stream",
     ],
