@@ -30,6 +30,7 @@ from tink.testing import helper
 CREDENTIAL_PATH = os.path.join(helper.tink_py_testdata_path(),
                                'gcp/credential.json')
 KEY_URI = 'gcp-kms://projects/tink-test-infrastructure/locations/global/keyRings/unit-and-integration-testing/cryptoKeys/aead-key'
+KEY_VERSION_URI = KEY_URI + '/cryptoKeyVersions/1'
 LOCAL_KEY_URI = 'gcp-kms://projects/tink-test-infrastructure/locations/europe-west1/keyRings/unit-and-integration-test/cryptoKeys/aead-key'
 BAD_KEY_URI = 'aws-kms://arn:aws:kms:us-east-2:235739564943:key/3ee50705-5a82-4f5b-9753-05c4f473922f'
 
@@ -182,6 +183,21 @@ class GcpKmsAeadTest(absltest.TestCase):
     ) as mock_kms_client:
       gcpkms.GcpKmsClient(KEY_URI)
       mock_kms_client.assert_called()
+
+  def test_encrypt_decrypt_with_key_version_uri(self):
+    gcp_client = gcpkms.GcpKmsClient(KEY_VERSION_URI, CREDENTIAL_PATH)
+
+    self.assertTrue(gcp_client.does_support(KEY_VERSION_URI))
+
+    gcp_aead = gcp_client.get_aead(KEY_VERSION_URI)
+
+    plaintext = b'plaintext'
+    associated_data = b'associated_data'
+    # Encryption is supported.
+    ciphertext = gcp_aead.encrypt(plaintext, associated_data)
+    # Decrpytion is not.
+    with self.assertRaises(tink.TinkError):
+      gcp_aead.decrypt(ciphertext, associated_data)
 
 
 if __name__ == '__main__':

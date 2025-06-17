@@ -133,7 +133,6 @@ class GcpKmsClientTest(parameterized.TestCase):
   @parameterized.parameters(
       KEY_URI1,
       KEY_URI2,
-      KEY_URI3,
   )
   def test_aead_decryption_works(self, key_uri):
     kms_v1.KeyManagementServiceClient().decrypt.return_value = (
@@ -143,6 +142,12 @@ class GcpKmsClientTest(parameterized.TestCase):
     gcp_aead = gcp_client.get_aead(key_uri)
     plaintext = gcp_aead.decrypt(CIPHERTEXT, ASSOCIATED_DATA)
     self.assertEqual(plaintext, PLAINTEXT)
+
+  def test_aead_decryption_with_key_version_fails(self):
+    gcp_client = gcpkms.GcpKmsClient(KEY_URI3, CREDENTIAL_PATH)
+    gcp_aead = gcp_client.get_aead(KEY_URI3)
+    with self.assertRaises(core.TinkError):
+      gcp_aead.decrypt(CIPHERTEXT, ASSOCIATED_DATA)
 
 
 if __name__ == '__main__':
