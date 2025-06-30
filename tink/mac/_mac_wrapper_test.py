@@ -13,9 +13,14 @@
 # limitations under the License.
 """Tests for tink.python.tink._mac_wrapper."""
 
+from unittest import mock
+
 from absl.testing import absltest
 from absl.testing import parameterized
+
 import tink
+from tink import _monitoring
+from tink import core
 from tink import mac
 from tink.testing import keyset_builder
 
@@ -31,9 +36,9 @@ def setUpModule():
 
 class MacWrapperTest(parameterized.TestCase):
 
-  @parameterized.parameters([MAC_TEMPLATE,
-                             RAW_MAC_TEMPLATE,
-                             LEGACY_MAC_TEMPLATE])
+  @parameterized.parameters(
+      [MAC_TEMPLATE, RAW_MAC_TEMPLATE, LEGACY_MAC_TEMPLATE]
+  )
   def test_compute_verify_mac(self, template):
     keyset_handle = tink.new_keyset_handle(template)
     primitive = keyset_handle.primitive(mac.Mac)
@@ -41,9 +46,9 @@ class MacWrapperTest(parameterized.TestCase):
     # No exception raised, no return value.
     self.assertIsNone(primitive.verify_mac(tag, b'data'))
 
-  @parameterized.parameters([MAC_TEMPLATE,
-                             RAW_MAC_TEMPLATE,
-                             LEGACY_MAC_TEMPLATE])
+  @parameterized.parameters(
+      [MAC_TEMPLATE, RAW_MAC_TEMPLATE, LEGACY_MAC_TEMPLATE]
+  )
   def test_verify_unknown_mac_fails(self, template):
     unknown_handle = tink.new_keyset_handle(template)
     unknown_primitive = unknown_handle.primitive(mac.Mac)
@@ -54,9 +59,9 @@ class MacWrapperTest(parameterized.TestCase):
     with self.assertRaises(tink.TinkError):
       primitive.verify_mac(unknown_tag, b'data')
 
-  @parameterized.parameters([MAC_TEMPLATE,
-                             RAW_MAC_TEMPLATE,
-                             LEGACY_MAC_TEMPLATE])
+  @parameterized.parameters(
+      [MAC_TEMPLATE, RAW_MAC_TEMPLATE, LEGACY_MAC_TEMPLATE]
+  )
   def test_verify_short_mac_fails(self, template):
     keyset_handle = tink.new_keyset_handle(template)
     primitive = keyset_handle.primitive(mac.Mac)
@@ -65,16 +70,17 @@ class MacWrapperTest(parameterized.TestCase):
     with self.assertRaises(tink.TinkError):
       primitive.verify_mac(b'tag', b'data')
 
-  @parameterized.parameters(
-      [(MAC_TEMPLATE, MAC_TEMPLATE),
-       (MAC_TEMPLATE, RAW_MAC_TEMPLATE),
-       (MAC_TEMPLATE, LEGACY_MAC_TEMPLATE),
-       (RAW_MAC_TEMPLATE, MAC_TEMPLATE),
-       (RAW_MAC_TEMPLATE, RAW_MAC_TEMPLATE),
-       (RAW_MAC_TEMPLATE, LEGACY_MAC_TEMPLATE),
-       (LEGACY_MAC_TEMPLATE, MAC_TEMPLATE),
-       (LEGACY_MAC_TEMPLATE, RAW_MAC_TEMPLATE),
-       (LEGACY_MAC_TEMPLATE, LEGACY_MAC_TEMPLATE)])
+  @parameterized.parameters([
+      (MAC_TEMPLATE, MAC_TEMPLATE),
+      (MAC_TEMPLATE, RAW_MAC_TEMPLATE),
+      (MAC_TEMPLATE, LEGACY_MAC_TEMPLATE),
+      (RAW_MAC_TEMPLATE, MAC_TEMPLATE),
+      (RAW_MAC_TEMPLATE, RAW_MAC_TEMPLATE),
+      (RAW_MAC_TEMPLATE, LEGACY_MAC_TEMPLATE),
+      (LEGACY_MAC_TEMPLATE, MAC_TEMPLATE),
+      (LEGACY_MAC_TEMPLATE, RAW_MAC_TEMPLATE),
+      (LEGACY_MAC_TEMPLATE, LEGACY_MAC_TEMPLATE),
+  ])
   def test_key_rotation(self, old_key_tmpl, new_key_tmpl):
     builder = keyset_builder.new_keyset_builder()
     older_key_id = builder.add_new_key(old_key_tmpl)
@@ -123,6 +129,43 @@ class MacWrapperTest(parameterized.TestCase):
     mac2.verify_mac(mac_value4, b'plaintext')
     mac3.verify_mac(mac_value4, b'plaintext')
     mac4.verify_mac(mac_value4, b'plaintext')
+
+
+class KeyUsageMonitorTest(absltest.TestCase):
+
+  def setUp(self):
+    super().setUp()
+    self.key_usage_monitor = mock.MagicMock()
+    _monitoring.register_key_usage_monitor_factory(
+        lambda: self.key_usage_monitor
+    )
+
+  def test_key_usage_monitor_log(self):
+    keyset_handle = tink.new_keyset_handle(MAC_TEMPLATE)
+    primitive = keyset_handle.primitive(mac.Mac)
+
+    tag = primitive.compute_mac(b'data')
+    primitive.verify_mac(tag, b'data')
+
+    self.assertEqual(self.key_usage_monitor.log.call_count, 2)
+    self.key_usage_monitor.log.assert_has_calls([
+        mock.call(keyset_handle.keyset_info().key_info[0].key_id, len(b'data')),
+        mock.call(
+            keyset_handle.keyset_info().key_info[0].key_id,
+            len(tag) - core.crypto_format.NON_RAW_PREFIX_SIZE,
+        ),
+    ])
+
+  def test_key_usage_monitor_log_failure(self):
+    keyset_handle = tink.new_keyset_handle(MAC_TEMPLATE)
+    primitive = keyset_handle.primitive(mac.Mac)
+
+    try:
+      primitive.verify_mac(b'x', b'data')
+    except tink.TinkError:
+      pass
+
+    self.key_usage_monitor.log_failure.assert_called_once()
 
 
 if __name__ == '__main__':

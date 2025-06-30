@@ -14,8 +14,9 @@
 
 """HybridDecrypt wrapper."""
 
-from typing import Type
+from typing import Optional, Type
 
+from tink import _monitoring
 from tink import core
 from tink.hybrid import _hybrid_decrypt
 from tink.hybrid import _hybrid_encrypt
@@ -24,8 +25,13 @@ from tink.hybrid import _hybrid_encrypt
 class _WrappedHybridDecrypt(_hybrid_decrypt.HybridDecrypt):
   """Implements HybridDecrypt for a set of HybridDecrypt primitives."""
 
-  def __init__(self, pset: core.PrimitiveSet):
+  def __init__(
+      self,
+      pset: core.PrimitiveSet,
+      monitor: Optional[_monitoring.KeyUsageMonitor] = None,
+  ):
     self._primitive_set = pset
+    self._monitor = monitor
 
   def decrypt(self, ciphertext: bytes, context_info: bytes) -> bytes:
     if len(ciphertext) > core.crypto_format.NON_RAW_PREFIX_SIZE:
@@ -33,17 +39,29 @@ class _WrappedHybridDecrypt(_hybrid_decrypt.HybridDecrypt):
       ciphertext_no_prefix = ciphertext[core.crypto_format.NON_RAW_PREFIX_SIZE:]
       for entry in self._primitive_set.primitive_from_identifier(prefix):
         try:
-          return entry.primitive.decrypt(ciphertext_no_prefix,
-                                         context_info)
+          result = entry.primitive.decrypt(ciphertext_no_prefix, context_info)
+          if self._monitor:
+            self._monitor.log(entry.key_id, len(ciphertext_no_prefix))
+
+          return result
         except core.TinkError:
           pass
     # Let's try all RAW keys.
     for entry in self._primitive_set.raw_primitives():
       try:
-        return entry.primitive.decrypt(ciphertext, context_info)
+        result = entry.primitive.decrypt(ciphertext, context_info)
+
+        if self._monitor:
+          self._monitor.log(entry.key_id, len(ciphertext))
+
+        return result
       except core.TinkError:
         pass
+
     # nothing works.
+    if self._monitor:
+      self._monitor.log_failure()
+
     raise core.TinkError('Decryption failed.')
 
 
@@ -60,7 +78,8 @@ class HybridDecryptWrapper(core.PrimitiveWrapper[_hybrid_decrypt.HybridDecrypt,
 
   def wrap(self,
            pset: core.PrimitiveSet) -> _hybrid_decrypt.HybridDecrypt:
-    return _WrappedHybridDecrypt(pset)
+    monitor = _monitoring.get_key_usage_monitor_or_none()
+    return _WrappedHybridDecrypt(pset, monitor)
 
   def primitive_class(self) -> Type[_hybrid_decrypt.HybridDecrypt]:
     return _hybrid_decrypt.HybridDecrypt
@@ -72,15 +91,27 @@ class HybridDecryptWrapper(core.PrimitiveWrapper[_hybrid_decrypt.HybridDecrypt,
 class _WrappedHybridEncrypt(_hybrid_encrypt.HybridEncrypt):
   """Implements HybridEncrypt for a set of HybridEncrypt primitives."""
 
-  def __init__(self, pset: core.PrimitiveSet):
+  def __init__(
+      self,
+      pset: core.PrimitiveSet,
+      monitor: Optional[_monitoring.KeyUsageMonitor] = None,
+  ):
     self._primitive_set = pset
+    self._monitor = monitor
 
   def encrypt(self, plaintext: bytes, context_info: bytes) -> bytes:
     if not self._primitive_set.primary():
       raise core.TinkError('keyset without primary key')
+
     primary = self._primitive_set.primary()
-    return primary.identifier + primary.primitive.encrypt(
-        plaintext, context_info)
+    result = primary.identifier + primary.primitive.encrypt(
+        plaintext, context_info
+    )
+
+    if self._monitor:
+      self._monitor.log(primary.key_id, len(plaintext))
+
+    return result
 
 
 class HybridEncryptWrapper(core.PrimitiveWrapper[_hybrid_encrypt.HybridEncrypt,
@@ -95,7 +126,8 @@ class HybridEncryptWrapper(core.PrimitiveWrapper[_hybrid_encrypt.HybridEncrypt,
 
   def wrap(self,
            pset: core.PrimitiveSet) -> _hybrid_encrypt.HybridEncrypt:
-    return _WrappedHybridEncrypt(pset)
+    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none()
+    return _WrappedHybridEncrypt(pset, key_usage_monitor)
 
   def primitive_class(self) -> Type[_hybrid_encrypt.HybridEncrypt]:
     return _hybrid_encrypt.HybridEncrypt

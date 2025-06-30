@@ -14,10 +14,14 @@
 
 """Tests for tink.python.tink.public_key_sign_wrapper."""
 
+from unittest import mock
+
 from absl.testing import absltest
 from absl.testing import parameterized
 
 import tink
+from tink import _monitoring
+from tink import core
 from tink import signature
 from tink.testing import keyset_builder
 
@@ -66,15 +70,17 @@ class SignatureWrapperTest(parameterized.TestCase):
     with self.assertRaises(tink.TinkError):
       verify_primitive.verify(unknown_data_signature, b'data')
 
-  @parameterized.parameters([(TEMPLATE, TEMPLATE),
-                             (TEMPLATE, LEGACY_TEMPLATE),
-                             (TEMPLATE, RAW_TEMPLATE),
-                             (LEGACY_TEMPLATE, TEMPLATE),
-                             (LEGACY_TEMPLATE, LEGACY_TEMPLATE),
-                             (LEGACY_TEMPLATE, RAW_TEMPLATE),
-                             (RAW_TEMPLATE, TEMPLATE),
-                             (RAW_TEMPLATE, LEGACY_TEMPLATE),
-                             (RAW_TEMPLATE, RAW_TEMPLATE)])
+  @parameterized.parameters([
+      (TEMPLATE, TEMPLATE),
+      (TEMPLATE, LEGACY_TEMPLATE),
+      (TEMPLATE, RAW_TEMPLATE),
+      (LEGACY_TEMPLATE, TEMPLATE),
+      (LEGACY_TEMPLATE, LEGACY_TEMPLATE),
+      (LEGACY_TEMPLATE, RAW_TEMPLATE),
+      (RAW_TEMPLATE, TEMPLATE),
+      (RAW_TEMPLATE, LEGACY_TEMPLATE),
+      (RAW_TEMPLATE, RAW_TEMPLATE),
+  ])
   def test_sign_verify_with_key_rotation(self, old_template, new_template):
     builder = keyset_builder.new_keyset_builder()
     older_key_id = builder.add_new_key(old_template)
@@ -82,25 +88,29 @@ class SignatureWrapperTest(parameterized.TestCase):
     private_handle1 = builder.keyset_handle()
     sign1 = private_handle1.primitive(signature.PublicKeySign)
     verify1 = private_handle1.public_keyset_handle().primitive(
-        signature.PublicKeyVerify)
+        signature.PublicKeyVerify
+    )
 
     newer_key_id = builder.add_new_key(new_template)
     private_handle2 = builder.keyset_handle()
     sign2 = private_handle2.primitive(signature.PublicKeySign)
     verify2 = private_handle2.public_keyset_handle().primitive(
-        signature.PublicKeyVerify)
+        signature.PublicKeyVerify
+    )
 
     builder.set_primary_key(newer_key_id)
     private_handle3 = builder.keyset_handle()
     sign3 = private_handle3.primitive(signature.PublicKeySign)
     verify3 = private_handle3.public_keyset_handle().primitive(
-        signature.PublicKeyVerify)
+        signature.PublicKeyVerify
+    )
 
     builder.disable_key(older_key_id)
     private_handle4 = builder.keyset_handle()
     sign4 = private_handle4.primitive(signature.PublicKeySign)
     verify4 = private_handle4.public_keyset_handle().primitive(
-        signature.PublicKeyVerify)
+        signature.PublicKeyVerify
+    )
     self.assertNotEqual(older_key_id, newer_key_id)
 
     # 1 signs with the older key. So 1, 2 and 3 can verify it, but not 4.
@@ -134,6 +144,48 @@ class SignatureWrapperTest(parameterized.TestCase):
     verify2.verify(data_signature4, b'data')
     verify3.verify(data_signature4, b'data')
     verify4.verify(data_signature4, b'data')
+
+
+class KeyUsageMonitorTest(absltest.TestCase):
+
+  def setUp(self):
+    super().setUp()
+    self.key_usage_monitor = mock.MagicMock()
+    _monitoring.register_key_usage_monitor_factory(
+        lambda: self.key_usage_monitor
+    )
+
+  def test_key_usage_monitor_log(self):
+    private_handle = tink.new_keyset_handle(TEMPLATE)
+    public_handle = private_handle.public_keyset_handle()
+    sign_primitive = private_handle.primitive(signature.PublicKeySign)
+    verify_primitive = public_handle.primitive(signature.PublicKeyVerify)
+
+    data_signature = sign_primitive.sign(b'data')
+    verify_primitive.verify(data_signature, b'data')
+
+    self.assertEqual(self.key_usage_monitor.log.call_count, 2)
+    self.key_usage_monitor.log.assert_has_calls([
+        mock.call(
+            private_handle.keyset_info().key_info[0].key_id, len(b'data')
+        ),
+        mock.call(
+            public_handle.keyset_info().key_info[0].key_id,
+            len(data_signature),
+        ),
+    ])
+
+  def test_key_usage_monitor_log_failure(self):
+    private_handle = tink.new_keyset_handle(TEMPLATE)
+    public_handle = private_handle.public_keyset_handle()
+    verify_primitive = public_handle.primitive(signature.PublicKeyVerify)
+
+    try:
+      verify_primitive.verify(b'x', b'data')
+    except core.TinkError:
+      pass
+
+    self.key_usage_monitor.log_failure.assert_called_once()
 
 
 if __name__ == '__main__':

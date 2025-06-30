@@ -107,6 +107,12 @@ py_test(
 )
 
 py_library(
+    name = "_monitoring",
+    srcs = ["_monitoring.py"],
+    deps = [],
+)
+
+py_library(
     name = "tink_config",
     srcs = ["tink_config.py"],
     srcs_version = "PY3",

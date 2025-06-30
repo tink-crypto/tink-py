@@ -66,6 +66,7 @@ py_library(
     srcs_version = "PY3",
     deps = [
         ":_aead",
+        "//tink:_monitoring",
         "//tink/core",
     ],
 )
@@ -77,7 +78,9 @@ py_test(
     deps = [
         ":aead",
         requirement("absl-py"),
+        "//tink:_monitoring",
         "//tink:tink_python",
+        "//tink/core",
         "//tink/proto:tink_py_pb2",
         "//tink/testing:keyset_builder",
     ],

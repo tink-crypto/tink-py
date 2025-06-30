@@ -66,6 +66,7 @@ py_library(
     deps = [
         ":_public_key_sign",
         ":_public_key_verify",
+        "//tink:_monitoring",
         "//tink/core",
         "//tink/proto:tink_py_pb2",
     ],
@@ -78,7 +79,9 @@ py_test(
     deps = [
         ":signature",
         requirement("absl-py"),
+        "//tink:_monitoring",
         "//tink:tink_python",
+        "//tink/core",
         "//tink/testing:keyset_builder",
     ],
 )

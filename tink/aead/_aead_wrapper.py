@@ -14,8 +14,9 @@
 
 """AEAD wrapper."""
 
-from typing import Type
+from typing import Optional, Type
 
+from tink import _monitoring
 from tink import core
 from tink.aead import _aead
 
@@ -23,31 +24,55 @@ from tink.aead import _aead
 class _WrappedAead(_aead.Aead):
   """Implements Aead for a set of Aead primitives."""
 
-  def __init__(self, pset: core.PrimitiveSet):
+  def __init__(
+      self,
+      pset: core.PrimitiveSet,
+      monitor: Optional[_monitoring.KeyUsageMonitor] = None,
+  ):
     self._primitive_set = pset
+    self._monitor = monitor
 
   def encrypt(self, plaintext: bytes, associated_data: bytes) -> bytes:
     primary = self._primitive_set.primary()
-    return primary.identifier + primary.primitive.encrypt(
-        plaintext, associated_data)
+    result = primary.identifier + primary.primitive.encrypt(
+        plaintext, associated_data
+    )
+
+    if self._monitor:
+      self._monitor.log(primary.key_id, len(plaintext))
+
+    return result
 
   def decrypt(self, ciphertext: bytes, associated_data: bytes) -> bytes:
     if len(ciphertext) > core.crypto_format.NON_RAW_PREFIX_SIZE:
-      prefix = ciphertext[:core.crypto_format.NON_RAW_PREFIX_SIZE]
-      ciphertext_no_prefix = ciphertext[core.crypto_format.NON_RAW_PREFIX_SIZE:]
+      prefix = ciphertext[: core.crypto_format.NON_RAW_PREFIX_SIZE]
+      ciphertext_no_prefix = ciphertext[
+          core.crypto_format.NON_RAW_PREFIX_SIZE :
+      ]
       for entry in self._primitive_set.primitive_from_identifier(prefix):
         try:
-          return entry.primitive.decrypt(ciphertext_no_prefix,
-                                         associated_data)
+          result = entry.primitive.decrypt(
+              ciphertext_no_prefix, associated_data
+          )
+          if self._monitor:
+            self._monitor.log(entry.key_id, len(ciphertext_no_prefix))
+          return result
         except core.TinkError:
           pass
     # Let's try all RAW keys.
     for entry in self._primitive_set.raw_primitives():
       try:
-        return entry.primitive.decrypt(ciphertext, associated_data)
+        result = entry.primitive.decrypt(ciphertext, associated_data)
+        if self._monitor:
+          self._monitor.log(entry.key_id, len(ciphertext))
+        return result
       except core.TinkError:
         pass
+
     # nothing works.
+    if self._monitor:
+      self._monitor.log_failure()
+
     raise core.TinkError('Decryption failed.')
 
 
@@ -62,7 +87,8 @@ class AeadWrapper(core.PrimitiveWrapper[_aead.Aead, _aead.Aead]):
   """
 
   def wrap(self, pset: core.PrimitiveSet) -> _aead.Aead:
-    return _WrappedAead(pset)
+    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none()
+    return _WrappedAead(pset, key_usage_monitor)
 
   def primitive_class(self) -> Type[_aead.Aead]:
     return _aead.Aead
