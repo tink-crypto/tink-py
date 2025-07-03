@@ -87,11 +87,20 @@ class AeadWrapper(core.PrimitiveWrapper[_aead.Aead, _aead.Aead]):
   """
 
   def wrap(self, pset: core.PrimitiveSet) -> _aead.Aead:
-    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none()
-    return _WrappedAead(pset, key_usage_monitor)
+    return _WrappedAead(pset)
 
   def primitive_class(self) -> Type[_aead.Aead]:
     return _aead.Aead
 
   def input_primitive_class(self) -> Type[_aead.Aead]:
     return _aead.Aead
+
+  def _wrap_with_annotations(
+      self,
+      pset: core.PrimitiveSet,
+      annotations: Optional[_monitoring.Annotations],
+  ) -> _aead.Aead:
+    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        annotations
+    )
+    return _WrappedAead(pset, key_usage_monitor)

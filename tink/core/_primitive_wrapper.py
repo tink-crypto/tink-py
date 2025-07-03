@@ -15,8 +15,9 @@
 """Basic interface for wrapping a primitive."""
 
 import abc
-from typing import Generic, Type, TypeVar
+from typing import Generic, Optional, Type, TypeVar
 
+from tink import _monitoring
 from tink.core import _primitive_set
 
 
@@ -36,6 +37,9 @@ class PrimitiveWrapper(Generic[B, P], metaclass=abc.ABCMeta):
   B and P are the same.
   """
 
+  def __init__(self, annotations: Optional[_monitoring.Annotations] = None):
+    self._annotations = annotations
+
   @abc.abstractmethod
   def wrap(self, pset: _primitive_set.PrimitiveSet) -> P:
     """Wraps a PrimitiveSet and returns a single primitive instance."""
@@ -49,3 +53,29 @@ class PrimitiveWrapper(Generic[B, P], metaclass=abc.ABCMeta):
   def input_primitive_class(self) -> Type[B]:
     """Returns the class of the primitive that gets wrapped."""
     raise NotImplementedError()
+
+  def _wrap_with_annotations(
+      self,
+      pset: _primitive_set.PrimitiveSet,
+      annotations: Optional[_monitoring.Annotations],
+  ) -> P:
+    """Same as `wrap`, but passes along monitoring annotations.
+
+       By default it does nothing more than `wrap`. Subclasses can override
+    this method to handle monitoring annotations.
+
+    Args:
+      pset: The PrimitiveSet to wrap.
+      annotations: The monitoring annotations to pass along.
+
+    Returns:
+      The wrapped primitive.
+    """
+    if annotations:
+      raise NotImplementedError(
+          'Support for monitoring annotations is not implemented for this'
+          ' primitive'
+      )
+    # Monitoring annotations are optional and thus ignored by default.
+    del annotations
+    return self.wrap(pset)

@@ -20,6 +20,7 @@ from absl.testing import absltest
 from absl.testing import parameterized
 
 import tink
+from tink import _keyset_handle
 from tink import _monitoring
 from tink import aead
 from tink import core
@@ -133,11 +134,13 @@ class KeyUsageMonitorTest(absltest.TestCase):
     super().setUp()
     self.key_usage_monitor = mock.MagicMock()
     _monitoring.register_key_usage_monitor_factory(
-        lambda: self.key_usage_monitor
+        lambda annotations: self.key_usage_monitor
     )
 
   def test_key_usage_monitor_log(self):
-    keyset_handle = tink.new_keyset_handle(AEAD_TEMPLATE)
+    keyset_handle = _keyset_handle._new_keyset_handle_with_annotations(
+        AEAD_TEMPLATE, {'test': 'test'}
+    )
     primitive = keyset_handle.primitive(aead.Aead)
 
     ciphertext = primitive.encrypt(b'plaintext', b'associated_data')
@@ -155,7 +158,9 @@ class KeyUsageMonitorTest(absltest.TestCase):
     ])
 
   def test_key_usage_monitor_log_failure(self):
-    keyset_handle = tink.new_keyset_handle(AEAD_TEMPLATE)
+    keyset_handle = _keyset_handle._new_keyset_handle_with_annotations(
+        AEAD_TEMPLATE, {'test': 'test'}
+    )
     primitive = keyset_handle.primitive(aead.Aead)
 
     try:

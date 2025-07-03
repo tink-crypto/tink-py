@@ -76,16 +76,24 @@ class HybridDecryptWrapper(core.PrimitiveWrapper[_hybrid_decrypt.HybridDecrypt,
   the primitive tries all keys with OutputPrefixType RAW.
   """
 
-  def wrap(self,
-           pset: core.PrimitiveSet) -> _hybrid_decrypt.HybridDecrypt:
-    monitor = _monitoring.get_key_usage_monitor_or_none()
-    return _WrappedHybridDecrypt(pset, monitor)
+  def wrap(self, pset: core.PrimitiveSet) -> _hybrid_decrypt.HybridDecrypt:
+    return _WrappedHybridDecrypt(pset)
 
   def primitive_class(self) -> Type[_hybrid_decrypt.HybridDecrypt]:
     return _hybrid_decrypt.HybridDecrypt
 
   def input_primitive_class(self) -> Type[_hybrid_decrypt.HybridDecrypt]:
     return _hybrid_decrypt.HybridDecrypt
+
+  def _wrap_with_annotations(
+      self,
+      pset: core.PrimitiveSet,
+      annotations: Optional[_monitoring.Annotations],
+  ) -> _hybrid_decrypt.HybridDecrypt:
+    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        annotations
+    )
+    return _WrappedHybridDecrypt(pset, key_usage_monitor)
 
 
 class _WrappedHybridEncrypt(_hybrid_encrypt.HybridEncrypt):
@@ -124,13 +132,21 @@ class HybridEncryptWrapper(core.PrimitiveWrapper[_hybrid_encrypt.HybridEncrypt,
   the ciphertext a certain prefix associated with the primary key.
   """
 
-  def wrap(self,
-           pset: core.PrimitiveSet) -> _hybrid_encrypt.HybridEncrypt:
-    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none()
-    return _WrappedHybridEncrypt(pset, key_usage_monitor)
+  def wrap(self, pset: core.PrimitiveSet) -> _hybrid_encrypt.HybridEncrypt:
+    return _WrappedHybridEncrypt(pset)
 
   def primitive_class(self) -> Type[_hybrid_encrypt.HybridEncrypt]:
     return _hybrid_encrypt.HybridEncrypt
 
   def input_primitive_class(self) -> Type[_hybrid_encrypt.HybridEncrypt]:
     return _hybrid_encrypt.HybridEncrypt
+
+  def _wrap_with_annotations(
+      self,
+      pset: core.PrimitiveSet,
+      annotations: Optional[_monitoring.Annotations],
+  ) -> _hybrid_encrypt.HybridEncrypt:
+    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        annotations
+    )
+    return _WrappedHybridEncrypt(pset, key_usage_monitor)

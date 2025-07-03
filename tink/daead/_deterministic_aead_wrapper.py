@@ -105,8 +105,7 @@ class DeterministicAeadWrapper(
   def wrap(
       self, pset: core.PrimitiveSet
   ) -> _deterministic_aead.DeterministicAead:
-    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none()
-    return _WrappedDeterministicAead(pset, key_usage_monitor)
+    return _WrappedDeterministicAead(pset)
 
   def primitive_class(self) -> Type[_deterministic_aead.DeterministicAead]:
     return _deterministic_aead.DeterministicAead
@@ -115,3 +114,13 @@ class DeterministicAeadWrapper(
       self,
   ) -> Type[_deterministic_aead.DeterministicAead]:
     return _deterministic_aead.DeterministicAead
+
+  def _wrap_with_annotations(
+      self,
+      pset: core.PrimitiveSet,
+      annotations: Optional[_monitoring.Annotations],
+  ) -> _deterministic_aead.DeterministicAead:
+    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        annotations
+    )
+    return _WrappedDeterministicAead(pset, key_usage_monitor)

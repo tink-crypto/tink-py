@@ -97,6 +97,7 @@ py_library(
     deps = [
         ":_crypto_format",
         ":_tink_error",
+        "//tink:_monitoring",
         "//tink/proto:tink_py_pb2",
     ],
 )
@@ -121,5 +122,6 @@ py_library(
     srcs_version = "PY3",
     deps = [
         ":_primitive_set",
+        "//tink:_monitoring",
     ],
 )

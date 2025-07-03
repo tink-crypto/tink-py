@@ -35,6 +35,7 @@ py_library(
     deps = [
         ":_keyset_reader",
         ":_keyset_writer",
+        ":_monitoring",
         ":secret_key_access",
         requirement("protobuf"),
         "//tink/aead",

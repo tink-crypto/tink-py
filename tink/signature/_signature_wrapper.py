@@ -70,16 +70,24 @@ class PublicKeySignWrapper(
   signature a certain prefix associated with the primary key.
   """
 
-  def wrap(self, primitives_set: core.PrimitiveSet
-          ) -> _WrappedPublicKeySign:
-    monitor = _monitoring.get_key_usage_monitor_or_none()
-    return _WrappedPublicKeySign(primitives_set, monitor)
+  def wrap(self, primitives_set: core.PrimitiveSet) -> _WrappedPublicKeySign:
+    return _WrappedPublicKeySign(primitives_set)
 
   def primitive_class(self) -> Type[_public_key_sign.PublicKeySign]:
     return _public_key_sign.PublicKeySign
 
   def input_primitive_class(self) -> Type[_public_key_sign.PublicKeySign]:
     return _public_key_sign.PublicKeySign
+
+  def _wrap_with_annotations(
+      self,
+      primitives_set: core.PrimitiveSet,
+      annotations: Optional[_monitoring.Annotations],
+  ) -> _public_key_sign.PublicKeySign:
+    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        annotations
+    )
+    return _WrappedPublicKeySign(primitives_set, key_usage_monitor)
 
 
 class _WrappedPublicKeyVerify(_public_key_verify.PublicKeyVerify):
@@ -160,13 +168,21 @@ class PublicKeyVerifyWrapper(
   primitive tries all keys with tink_pb2.OutputPrefixType = tink_pb2.RAW.
   """
 
-  def wrap(self, primitives_set: core.PrimitiveSet
-          ) -> _WrappedPublicKeyVerify:
-    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none()
-    return _WrappedPublicKeyVerify(primitives_set, key_usage_monitor)
+  def wrap(self, primitives_set: core.PrimitiveSet) -> _WrappedPublicKeyVerify:
+    return _WrappedPublicKeyVerify(primitives_set)
 
   def primitive_class(self) -> Type[_public_key_verify.PublicKeyVerify]:
     return _public_key_verify.PublicKeyVerify
 
   def input_primitive_class(self) -> Type[_public_key_verify.PublicKeyVerify]:
     return _public_key_verify.PublicKeyVerify
+
+  def _wrap_with_annotations(
+      self,
+      primitives_set: core.PrimitiveSet,
+      annotations: Optional[_monitoring.Annotations],
+  ) -> _public_key_verify.PublicKeyVerify:
+    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        annotations
+    )
+    return _WrappedPublicKeyVerify(primitives_set, key_usage_monitor)

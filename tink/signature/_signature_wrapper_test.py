@@ -20,6 +20,7 @@ from absl.testing import absltest
 from absl.testing import parameterized
 
 import tink
+from tink import _keyset_handle
 from tink import _monitoring
 from tink import core
 from tink import signature
@@ -152,11 +153,13 @@ class KeyUsageMonitorTest(absltest.TestCase):
     super().setUp()
     self.key_usage_monitor = mock.MagicMock()
     _monitoring.register_key_usage_monitor_factory(
-        lambda: self.key_usage_monitor
+        lambda annotations: self.key_usage_monitor
     )
 
   def test_key_usage_monitor_log(self):
-    private_handle = tink.new_keyset_handle(TEMPLATE)
+    private_handle = _keyset_handle._new_keyset_handle_with_annotations(
+        TEMPLATE, {'test': 'test'}
+    )
     public_handle = private_handle.public_keyset_handle()
     sign_primitive = private_handle.primitive(signature.PublicKeySign)
     verify_primitive = public_handle.primitive(signature.PublicKeyVerify)
@@ -176,7 +179,9 @@ class KeyUsageMonitorTest(absltest.TestCase):
     ])
 
   def test_key_usage_monitor_log_failure(self):
-    private_handle = tink.new_keyset_handle(TEMPLATE)
+    private_handle = _keyset_handle._new_keyset_handle_with_annotations(
+        TEMPLATE, {'test': 'test'}
+    )
     public_handle = private_handle.public_keyset_handle()
     verify_primitive = public_handle.primitive(signature.PublicKeyVerify)
 

@@ -70,6 +70,7 @@ py_test(
     deps = [
         ":mac",
         requirement("absl-py"),
+        "//tink:_keyset_handle",
         "//tink:_monitoring",
         "//tink:tink_python",
         "//tink/core",

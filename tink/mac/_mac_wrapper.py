@@ -99,11 +99,20 @@ class MacWrapper(core.PrimitiveWrapper[_mac.Mac, _mac.Mac]):
   """
 
   def wrap(self, pset: core.PrimitiveSet) -> _mac.Mac:
-    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none()
-    return _WrappedMac(pset, key_usage_monitor)
+    return _WrappedMac(pset)
 
   def primitive_class(self) -> Type[_mac.Mac]:
     return _mac.Mac
 
   def input_primitive_class(self) -> Type[_mac.Mac]:
     return _mac.Mac
+
+  def _wrap_with_annotations(
+      self,
+      pset: core.PrimitiveSet,
+      annotations: Optional[_monitoring.Annotations],
+  ) -> _mac.Mac:
+    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        annotations
+    )
+    return _WrappedMac(pset, key_usage_monitor)

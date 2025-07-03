@@ -18,7 +18,10 @@ Defines entities related to monitoring of key usage.
 """
 
 import abc
-from typing import Callable, Optional
+from typing import Callable, Dict, Optional
+
+
+Annotations = Dict[str, str]
 
 _registered_key_usage_monitor_factory = None
 
@@ -61,7 +64,9 @@ class KeyUsageMonitor(metaclass=abc.ABCMeta):
     pass
 
 
-def register_key_usage_monitor_factory(f: Callable[[], KeyUsageMonitor]):
+def register_key_usage_monitor_factory(
+    f: Callable[[Annotations], KeyUsageMonitor],
+):
   """Registers a factory for creating KeyUsageMonitor objects.
 
   The factory will be called in the `wrap` method of the primitive wrappers
@@ -75,14 +80,26 @@ def register_key_usage_monitor_factory(f: Callable[[], KeyUsageMonitor]):
   _registered_key_usage_monitor_factory = f
 
 
-def get_key_usage_monitor_or_none() -> Optional[KeyUsageMonitor]:
-  """Returns a new instance of a KeyUsageMonitor.
+def get_key_usage_monitor_or_none(
+    annotations: Optional[Annotations] = None,
+) -> Optional[KeyUsageMonitor]:
+  """Returns a new instance of a KeyUsageMonitor or None.
 
-  The instance is created using the registered factory. If no factory has been
-  registered, None is returned.
+  The instance is created using the registered factory, passing annotations
+  along. None is returned
+  in three cases:
+    1) No factory has been registered,
+    2) annotations is None
+    3) annotations is empty.
+
+  Args:
+    annotations: The annotations of the keyset.
+
+  Returns:
+    A new instance of a KeyUsageMonitor or None.
   """
   return (
-      _registered_key_usage_monitor_factory()
-      if _registered_key_usage_monitor_factory is not None
+      _registered_key_usage_monitor_factory(annotations)
+      if _registered_key_usage_monitor_factory is not None and annotations
       else None
   )
