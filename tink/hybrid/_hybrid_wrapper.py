@@ -35,8 +35,10 @@ class _WrappedHybridDecrypt(_hybrid_decrypt.HybridDecrypt):
 
   def decrypt(self, ciphertext: bytes, context_info: bytes) -> bytes:
     if len(ciphertext) > core.crypto_format.NON_RAW_PREFIX_SIZE:
-      prefix = ciphertext[:core.crypto_format.NON_RAW_PREFIX_SIZE]
-      ciphertext_no_prefix = ciphertext[core.crypto_format.NON_RAW_PREFIX_SIZE:]
+      prefix = ciphertext[: core.crypto_format.NON_RAW_PREFIX_SIZE]
+      ciphertext_no_prefix = ciphertext[
+          core.crypto_format.NON_RAW_PREFIX_SIZE :
+      ]
       for entry in self._primitive_set.primitive_from_identifier(prefix):
         try:
           result = entry.primitive.decrypt(ciphertext_no_prefix, context_info)
@@ -65,9 +67,11 @@ class _WrappedHybridDecrypt(_hybrid_decrypt.HybridDecrypt):
     raise core.TinkError('Decryption failed.')
 
 
-class HybridDecryptWrapper(core.PrimitiveWrapper[_hybrid_decrypt.HybridDecrypt,
-                                                 _hybrid_decrypt.HybridDecrypt]
-                          ):
+class HybridDecryptWrapper(
+    core.PrimitiveWrapper[
+        _hybrid_decrypt.HybridDecrypt, _hybrid_decrypt.HybridDecrypt
+    ]
+):
   """HybridDecryptWrapper is the PrimitiveWrapper for HybridDecrypt.
 
   The returned primitive works with a keyset (rather than a single key). To
@@ -85,13 +89,17 @@ class HybridDecryptWrapper(core.PrimitiveWrapper[_hybrid_decrypt.HybridDecrypt,
   def input_primitive_class(self) -> Type[_hybrid_decrypt.HybridDecrypt]:
     return _hybrid_decrypt.HybridDecrypt
 
-  def _wrap_with_annotations(
+  def _wrap_with_monitoring_info(
       self,
       pset: core.PrimitiveSet,
-      annotations: Optional[_monitoring.Annotations],
+      monitoring_keyset_info: _monitoring.MonitoringKeySetInfo,
   ) -> _hybrid_decrypt.HybridDecrypt:
     key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
-        annotations
+        _monitoring.MonitoringContext(
+            primitive='hybrid_decrypt',
+            api_function='decrypt',
+            keyset_info=monitoring_keyset_info,
+        )
     )
     return _WrappedHybridDecrypt(pset, key_usage_monitor)
 
@@ -122,9 +130,11 @@ class _WrappedHybridEncrypt(_hybrid_encrypt.HybridEncrypt):
     return result
 
 
-class HybridEncryptWrapper(core.PrimitiveWrapper[_hybrid_encrypt.HybridEncrypt,
-                                                 _hybrid_encrypt.HybridEncrypt]
-                          ):
+class HybridEncryptWrapper(
+    core.PrimitiveWrapper[
+        _hybrid_encrypt.HybridEncrypt, _hybrid_encrypt.HybridEncrypt
+    ]
+):
   """HybridEncryptWrapper is the PrimitiveWrapper for HybridEncrypt.
 
   The returned primitive works with a keyset (rather than a single key). To
@@ -141,12 +151,16 @@ class HybridEncryptWrapper(core.PrimitiveWrapper[_hybrid_encrypt.HybridEncrypt,
   def input_primitive_class(self) -> Type[_hybrid_encrypt.HybridEncrypt]:
     return _hybrid_encrypt.HybridEncrypt
 
-  def _wrap_with_annotations(
+  def _wrap_with_monitoring_info(
       self,
       pset: core.PrimitiveSet,
-      annotations: Optional[_monitoring.Annotations],
+      monitoring_keyset_info: _monitoring.MonitoringKeySetInfo,
   ) -> _hybrid_encrypt.HybridEncrypt:
     key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
-        annotations
+        _monitoring.MonitoringContext(
+            primitive='hybrid_encrypt',
+            api_function='encrypt',
+            keyset_info=monitoring_keyset_info,
+        )
     )
     return _WrappedHybridEncrypt(pset, key_usage_monitor)

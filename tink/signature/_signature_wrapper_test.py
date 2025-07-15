@@ -14,8 +14,6 @@
 
 """Tests for tink.python.tink.public_key_sign_wrapper."""
 
-from unittest import mock
-
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -24,6 +22,7 @@ from tink import _keyset_handle
 from tink import _monitoring
 from tink import core
 from tink import signature
+from tink.testing import fake_key_usage_monitor
 from tink.testing import keyset_builder
 
 
@@ -151,9 +150,14 @@ class KeyUsageMonitorTest(absltest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.key_usage_monitor = mock.MagicMock()
+    self.sign_key_usage_monitor = fake_key_usage_monitor.FakeKeyUsageMonitor()
+    self.verify_key_usage_monitor = fake_key_usage_monitor.FakeKeyUsageMonitor()
     _monitoring.register_key_usage_monitor_factory(
-        lambda annotations: self.key_usage_monitor
+        lambda context: (
+            self.sign_key_usage_monitor
+            if context.get_api_function() == 'sign'
+            else self.verify_key_usage_monitor
+        )
     )
 
   def test_key_usage_monitor_log(self):
@@ -167,16 +171,17 @@ class KeyUsageMonitorTest(absltest.TestCase):
     data_signature = sign_primitive.sign(b'data')
     verify_primitive.verify(data_signature, b'data')
 
-    self.assertEqual(self.key_usage_monitor.log.call_count, 2)
-    self.key_usage_monitor.log.assert_has_calls([
-        mock.call(
-            private_handle.keyset_info().key_info[0].key_id, len(b'data')
-        ),
-        mock.call(
+    self.assertSequenceEqual(
+        self.sign_key_usage_monitor.log_calls,
+        [(private_handle.keyset_info().key_info[0].key_id, len(b'data'))],
+    )
+    self.assertSequenceEqual(
+        self.verify_key_usage_monitor.log_calls,
+        [(
             public_handle.keyset_info().key_info[0].key_id,
             len(data_signature),
-        ),
-    ])
+        )],
+    )
 
   def test_key_usage_monitor_log_failure(self):
     private_handle = _keyset_handle._new_keyset_handle_with_annotations(
@@ -190,7 +195,7 @@ class KeyUsageMonitorTest(absltest.TestCase):
     except core.TinkError:
       pass
 
-    self.key_usage_monitor.log_failure.assert_called_once()
+    self.assertEqual(self.verify_key_usage_monitor.log_failure_calls_count, 1)
 
 
 if __name__ == '__main__':

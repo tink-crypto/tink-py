@@ -54,10 +54,10 @@ class PrimitiveWrapper(Generic[B, P], metaclass=abc.ABCMeta):
     """Returns the class of the primitive that gets wrapped."""
     raise NotImplementedError()
 
-  def _wrap_with_annotations(
+  def _wrap_with_monitoring_info(
       self,
       pset: _primitive_set.PrimitiveSet,
-      annotations: Optional[_monitoring.Annotations],
+      monitoring_keyset_info: _monitoring.MonitoringKeySetInfo,
   ) -> P:
     """Same as `wrap`, but passes along monitoring annotations.
 
@@ -66,16 +66,16 @@ class PrimitiveWrapper(Generic[B, P], metaclass=abc.ABCMeta):
 
     Args:
       pset: The PrimitiveSet to wrap.
-      annotations: The monitoring annotations to pass along.
+      monitoring_keyset_info: The monitoring information to pass along.
 
     Returns:
       The wrapped primitive.
     """
-    if annotations:
+    if monitoring_keyset_info.get_annotations():
       raise NotImplementedError(
-          'Support for monitoring annotations is not implemented for this'
+          'Support for monitoring is not implemented for this'
           ' primitive'
       )
-    # Monitoring annotations are optional and thus ignored by default.
-    del annotations
+    # Monitoring is optional and thus ignored by default.
+    del monitoring_keyset_info
     return self.wrap(pset)

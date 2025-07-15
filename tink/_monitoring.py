@@ -20,10 +20,51 @@ Defines entities related to monitoring of key usage.
 import abc
 from typing import Callable, Dict, Optional
 
+from tink.proto import tink_pb2
+
 
 Annotations = Dict[str, str]
 
-_registered_key_usage_monitor_factory = None
+
+class MonitoringKeySetInfo:
+  """Immutable representation of a KeySet in a certain point in time for the purpose of monitoring operations involving cryptographic keys."""
+
+  def __init__(
+      self,
+      annotations: Optional[Annotations],
+      keyset_info: tink_pb2.KeysetInfo,
+  ):
+    self._annotations = annotations
+    self._keyset_info = keyset_info
+
+  def get_annotations(self) -> Optional[Annotations]:
+    return self._annotations
+
+  def get_keyset_info(self) -> tink_pb2.KeysetInfo:
+    return self._keyset_info
+
+
+class MonitoringContext:
+  """Context for monitoring events, consisting of the primitive, API used and info on the keyset."""
+
+  def __init__(
+      self,
+      primitive: str,
+      api_function: str,
+      keyset_info: MonitoringKeySetInfo,
+  ):
+    self._primitive = primitive
+    self._api_function = api_function
+    self._keyset_info = keyset_info
+
+  def get_primitive(self) -> str:
+    return self._primitive
+
+  def get_api_function(self) -> str:
+    return self._api_function
+
+  def get_keyset_info(self) -> MonitoringKeySetInfo:
+    return self._keyset_info
 
 
 class KeyUsageMonitor(metaclass=abc.ABCMeta):
@@ -64,8 +105,13 @@ class KeyUsageMonitor(metaclass=abc.ABCMeta):
     pass
 
 
+_registered_key_usage_monitor_factory: Callable[
+    [MonitoringContext], KeyUsageMonitor
+] = None
+
+
 def register_key_usage_monitor_factory(
-    f: Callable[[Annotations], KeyUsageMonitor],
+    f: Callable[[MonitoringContext], KeyUsageMonitor],
 ):
   """Registers a factory for creating KeyUsageMonitor objects.
 
@@ -81,25 +127,21 @@ def register_key_usage_monitor_factory(
 
 
 def get_key_usage_monitor_or_none(
-    annotations: Optional[Annotations] = None,
+    monitoring_context: MonitoringContext,
 ) -> Optional[KeyUsageMonitor]:
   """Returns a new instance of a KeyUsageMonitor or None.
 
-  The instance is created using the registered factory, passing annotations
-  along. None is returned
-  in three cases:
-    1) No factory has been registered,
-    2) annotations is None
-    3) annotations is empty.
+  The instance is created using the registered factory, passing keyset_info
+  along. None is returned if there is no registered factory.
 
   Args:
-    annotations: The annotations of the keyset.
+    monitoring_context: Context object with all monitoring-related information.
 
   Returns:
     A new instance of a KeyUsageMonitor or None.
   """
   return (
-      _registered_key_usage_monitor_factory(annotations)
-      if _registered_key_usage_monitor_factory is not None and annotations
+      _registered_key_usage_monitor_factory(monitoring_context)
+      if _registered_key_usage_monitor_factory is not None
       else None
   )

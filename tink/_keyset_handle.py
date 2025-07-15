@@ -264,8 +264,10 @@ class KeysetHandle:
         if key.key_id == self._keyset.primary_key_id:
           pset.set_primary(entry)
     # pylint: disable-next=protected-access
-    return core.Registry._wrap_with_annotations(
-        pset, primitive_class, self._annotations
+    return core.Registry._wrap_with_monitoring_info(
+        pset,
+        primitive_class,
+        _monitoring.MonitoringKeySetInfo(self._annotations, self.keyset_info()),
     )
 
 

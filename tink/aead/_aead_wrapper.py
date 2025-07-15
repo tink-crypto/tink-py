@@ -27,10 +27,12 @@ class _WrappedAead(_aead.Aead):
   def __init__(
       self,
       pset: core.PrimitiveSet,
-      monitor: Optional[_monitoring.KeyUsageMonitor] = None,
+      encryption_monitor: Optional[_monitoring.KeyUsageMonitor] = None,
+      decryption_monitor: Optional[_monitoring.KeyUsageMonitor] = None,
   ):
     self._primitive_set = pset
-    self._monitor = monitor
+    self._encryption_monitor = encryption_monitor
+    self._decryption_monitor = decryption_monitor
 
   def encrypt(self, plaintext: bytes, associated_data: bytes) -> bytes:
     primary = self._primitive_set.primary()
@@ -38,8 +40,8 @@ class _WrappedAead(_aead.Aead):
         plaintext, associated_data
     )
 
-    if self._monitor:
-      self._monitor.log(primary.key_id, len(plaintext))
+    if self._encryption_monitor:
+      self._encryption_monitor.log(primary.key_id, len(plaintext))
 
     return result
 
@@ -54,8 +56,10 @@ class _WrappedAead(_aead.Aead):
           result = entry.primitive.decrypt(
               ciphertext_no_prefix, associated_data
           )
-          if self._monitor:
-            self._monitor.log(entry.key_id, len(ciphertext_no_prefix))
+          if self._decryption_monitor:
+            self._decryption_monitor.log(
+                entry.key_id, len(ciphertext_no_prefix)
+            )
           return result
         except core.TinkError:
           pass
@@ -63,15 +67,15 @@ class _WrappedAead(_aead.Aead):
     for entry in self._primitive_set.raw_primitives():
       try:
         result = entry.primitive.decrypt(ciphertext, associated_data)
-        if self._monitor:
-          self._monitor.log(entry.key_id, len(ciphertext))
+        if self._decryption_monitor:
+          self._decryption_monitor.log(entry.key_id, len(ciphertext))
         return result
       except core.TinkError:
         pass
 
     # nothing works.
-    if self._monitor:
-      self._monitor.log_failure()
+    if self._decryption_monitor:
+      self._decryption_monitor.log_failure()
 
     raise core.TinkError('Decryption failed.')
 
@@ -95,12 +99,25 @@ class AeadWrapper(core.PrimitiveWrapper[_aead.Aead, _aead.Aead]):
   def input_primitive_class(self) -> Type[_aead.Aead]:
     return _aead.Aead
 
-  def _wrap_with_annotations(
+  def _wrap_with_monitoring_info(
       self,
       pset: core.PrimitiveSet,
-      annotations: Optional[_monitoring.Annotations],
+      monitoring_keyset_info: _monitoring.MonitoringKeySetInfo,
   ) -> _aead.Aead:
-    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
-        annotations
+    encryption_key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        _monitoring.MonitoringContext(
+            primitive='aead',
+            api_function='encrypt',
+            keyset_info=monitoring_keyset_info,
+        )
     )
-    return _WrappedAead(pset, key_usage_monitor)
+    decryption_key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        _monitoring.MonitoringContext(
+            primitive='aead',
+            api_function='decrypt',
+            keyset_info=monitoring_keyset_info,
+        )
+    )
+    return _WrappedAead(
+        pset, encryption_key_usage_monitor, decryption_key_usage_monitor
+    )

@@ -83,6 +83,7 @@ py_test(
         "//tink:tink_python",
         "//tink/core",
         "//tink/proto:tink_py_pb2",
+        "//tink/testing:fake_key_usage_monitor",
         "//tink/testing:keyset_builder",
     ],
 )

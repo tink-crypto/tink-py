@@ -6,6 +6,16 @@ package(default_visibility = ["//visibility:public"])
 licenses(["notice"])
 
 py_library(
+    name = "fake_key_usage_monitor",
+    testonly = 1,
+    srcs = ["fake_key_usage_monitor.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//tink:_monitoring",
+    ],
+)
+
+py_library(
     name = "helper",
     srcs = ["helper.py"],
     srcs_version = "PY3",

@@ -14,8 +14,6 @@
 
 """Tests for tink.python.tink.aead_wrapper."""
 
-from unittest import mock
-
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -25,6 +23,7 @@ from tink import _monitoring
 from tink import core
 from tink import hybrid
 from tink import secret_key_access
+from tink.testing import fake_key_usage_monitor
 from tink.testing import keyset_builder
 
 
@@ -247,9 +246,18 @@ class KeyUsageMonitorTest(absltest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.key_usage_monitor = mock.MagicMock()
+    self.encrypt_key_usage_monitor = (
+        fake_key_usage_monitor.FakeKeyUsageMonitor()
+    )
+    self.decrypt_key_usage_monitor = (
+        fake_key_usage_monitor.FakeKeyUsageMonitor()
+    )
     _monitoring.register_key_usage_monitor_factory(
-        lambda annotations: self.key_usage_monitor
+        lambda context: (
+            self.encrypt_key_usage_monitor
+            if context.get_api_function() == 'encrypt'
+            else self.decrypt_key_usage_monitor
+        )
     )
 
   def test_key_usage_monitor_log(self):
@@ -263,16 +271,17 @@ class KeyUsageMonitorTest(absltest.TestCase):
     hybrid_dec = private_handle.primitive(hybrid.HybridDecrypt)
     hybrid_dec.decrypt(ciphertext, b'context')
 
-    self.assertEqual(self.key_usage_monitor.log.call_count, 2)
-    self.key_usage_monitor.log.assert_has_calls([
-        mock.call(
-            private_handle.keyset_info().key_info[0].key_id, len(b'plaintext')
-        ),
-        mock.call(
+    self.assertSequenceEqual(
+        self.encrypt_key_usage_monitor.log_calls,
+        [(private_handle.keyset_info().key_info[0].key_id, len(b'plaintext'))],
+    )
+    self.assertSequenceEqual(
+        self.decrypt_key_usage_monitor.log_calls,
+        [(
             public_handle.keyset_info().key_info[0].key_id,
             len(ciphertext) - core.crypto_format.NON_RAW_PREFIX_SIZE,
-        ),
-    ])
+        )],
+    )
 
   def test_key_usage_monitor_log_failure(self):
     private_handle = _keyset_handle._new_keyset_handle_with_annotations(
@@ -285,7 +294,7 @@ class KeyUsageMonitorTest(absltest.TestCase):
     except core.TinkError:
       pass
 
-    self.key_usage_monitor.log_failure.assert_called_once()
+    self.assertEqual(self.decrypt_key_usage_monitor.log_failure_calls_count, 1)
 
 
 if __name__ == '__main__':

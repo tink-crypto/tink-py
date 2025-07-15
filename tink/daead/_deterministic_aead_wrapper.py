@@ -27,10 +27,12 @@ class _WrappedDeterministicAead(_deterministic_aead.DeterministicAead):
   def __init__(
       self,
       pset: core.PrimitiveSet,
-      monitor: Optional[_monitoring.KeyUsageMonitor] = None,
+      encryption_monitor: Optional[_monitoring.KeyUsageMonitor] = None,
+      decryption_monitor: Optional[_monitoring.KeyUsageMonitor] = None,
   ):
     self._primitive_set = pset
-    self._monitor = monitor
+    self._encryption_monitor = encryption_monitor
+    self._decryption_monitor = decryption_monitor
 
   def encrypt_deterministically(
       self, plaintext: bytes, associated_data: bytes
@@ -40,8 +42,8 @@ class _WrappedDeterministicAead(_deterministic_aead.DeterministicAead):
         plaintext, associated_data
     )
 
-    if self._monitor:
-      self._monitor.log(primary.key_id, len(plaintext))
+    if self._encryption_monitor:
+      self._encryption_monitor.log(primary.key_id, len(plaintext))
 
     return result
 
@@ -59,8 +61,10 @@ class _WrappedDeterministicAead(_deterministic_aead.DeterministicAead):
               ciphertext_no_prefix, associated_data
           )
 
-          if self._monitor:
-            self._monitor.log(entry.key_id, len(ciphertext_no_prefix))
+          if self._decryption_monitor:
+            self._decryption_monitor.log(
+                entry.key_id, len(ciphertext_no_prefix)
+            )
 
           return result
         except core.TinkError:
@@ -72,16 +76,16 @@ class _WrappedDeterministicAead(_deterministic_aead.DeterministicAead):
             ciphertext, associated_data
         )
 
-        if self._monitor:
-          self._monitor.log(entry.key_id, len(ciphertext))
+        if self._decryption_monitor:
+          self._decryption_monitor.log(entry.key_id, len(ciphertext))
 
         return result
       except core.TinkError:
         pass
 
     # nothing works.
-    if self._monitor:
-      self._monitor.log_failure()
+    if self._decryption_monitor:
+      self._decryption_monitor.log_failure()
 
     raise core.TinkError('Decryption failed.')
 
@@ -115,12 +119,25 @@ class DeterministicAeadWrapper(
   ) -> Type[_deterministic_aead.DeterministicAead]:
     return _deterministic_aead.DeterministicAead
 
-  def _wrap_with_annotations(
+  def _wrap_with_monitoring_info(
       self,
       pset: core.PrimitiveSet,
-      annotations: Optional[_monitoring.Annotations],
+      monitoring_keyset_info: _monitoring.MonitoringKeySetInfo,
   ) -> _deterministic_aead.DeterministicAead:
-    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
-        annotations
+    encryption_key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        _monitoring.MonitoringContext(
+            primitive='daead',
+            api_function='encrypt',
+            keyset_info=monitoring_keyset_info,
+        )
     )
-    return _WrappedDeterministicAead(pset, key_usage_monitor)
+    decryption_key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        _monitoring.MonitoringContext(
+            primitive='daead',
+            api_function='decrypt',
+            keyset_info=monitoring_keyset_info,
+        )
+    )
+    return _WrappedDeterministicAead(
+        pset, encryption_key_usage_monitor, decryption_key_usage_monitor
+    )

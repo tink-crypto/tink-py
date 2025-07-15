@@ -14,8 +14,6 @@
 
 """Tests for tink.python.tink.aead_wrapper."""
 
-from unittest import mock
-
 from absl.testing import absltest
 from absl.testing import parameterized
 
@@ -24,6 +22,7 @@ from tink import _keyset_handle
 from tink import _monitoring
 from tink import core
 from tink import daead
+from tink.testing import fake_key_usage_monitor
 from tink.testing import keyset_builder
 
 
@@ -163,9 +162,18 @@ class KeyUsageMonitorTest(absltest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.key_usage_monitor = mock.MagicMock()
+    self.encryption_key_usage_monitor = (
+        fake_key_usage_monitor.FakeKeyUsageMonitor()
+    )
+    self.decryption_key_usage_monitor = (
+        fake_key_usage_monitor.FakeKeyUsageMonitor()
+    )
     _monitoring.register_key_usage_monitor_factory(
-        lambda annotations: self.key_usage_monitor
+        lambda context: (
+            self.encryption_key_usage_monitor
+            if context.get_api_function() == 'encrypt'
+            else self.decryption_key_usage_monitor
+        )
     )
 
   def test_key_usage_monitor_log(self):
@@ -179,16 +187,17 @@ class KeyUsageMonitorTest(absltest.TestCase):
     )
     primitive.decrypt_deterministically(ciphertext, b'associated_data')
 
-    self.assertEqual(self.key_usage_monitor.log.call_count, 2)
-    self.key_usage_monitor.log.assert_has_calls([
-        mock.call(
-            keyset_handle.keyset_info().key_info[0].key_id, len(b'plaintext')
-        ),
-        mock.call(
+    self.assertSequenceEqual(
+        self.encryption_key_usage_monitor.log_calls,
+        [(keyset_handle.keyset_info().key_info[0].key_id, len(b'plaintext'))],
+    )
+    self.assertSequenceEqual(
+        self.decryption_key_usage_monitor.log_calls,
+        [(
             keyset_handle.keyset_info().key_info[0].key_id,
             len(ciphertext) - core.crypto_format.NON_RAW_PREFIX_SIZE,
-        ),
-    ])
+        )],
+    )
 
   def test_key_usage_monitor_log_failure(self):
     keyset_handle = _keyset_handle._new_keyset_handle_with_annotations(
@@ -201,7 +210,9 @@ class KeyUsageMonitorTest(absltest.TestCase):
     except core.TinkError:
       pass
 
-    self.key_usage_monitor.log_failure.assert_called_once()
+    self.assertEqual(
+        self.decryption_key_usage_monitor.log_failure_calls_count, 1
+    )
 
 
 if __name__ == '__main__':

@@ -27,10 +27,12 @@ class _WrappedMac(_mac.Mac):
   def __init__(
       self,
       pset: core.PrimitiveSet,
-      monitor: Optional[_monitoring.KeyUsageMonitor] = None,
+      compute_monitor: Optional[_monitoring.KeyUsageMonitor] = None,
+      verify_monitor: Optional[_monitoring.KeyUsageMonitor] = None,
   ):
     self._primitive_set = pset
-    self._monitor = monitor
+    self._compute_monitor = compute_monitor
+    self._verify_monitor = verify_monitor
 
   def compute_mac(self, data: bytes) -> bytes:
     primary = self._primitive_set.primary()
@@ -41,15 +43,15 @@ class _WrappedMac(_mac.Mac):
     else:
       result = primary.identifier + primary.primitive.compute_mac(data)
 
-    if self._monitor:
-      self._monitor.log(primary.key_id, len(data))
+    if self._compute_monitor:
+      self._compute_monitor.log(primary.key_id, len(data))
 
     return result
 
   def verify_mac(self, mac_value: bytes, data: bytes) -> None:
     if len(mac_value) <= core.crypto_format.NON_RAW_PREFIX_SIZE:
-      if self._monitor:
-        self._monitor.log_failure()
+      if self._verify_monitor:
+        self._verify_monitor.log_failure()
       # This also rejects raw MAC with size of 4 bytes or fewer. Those MACs are
       # clearly insecure, thus should be discouraged.
       raise core.TinkError('tag too short')
@@ -63,8 +65,8 @@ class _WrappedMac(_mac.Mac):
           entry.primitive.verify_mac(mac_no_prefix, data)
 
         # If there is no exception, the MAC is valid and we can return.
-        if self._monitor:
-          self._monitor.log(entry.key_id, len(mac_no_prefix))
+        if self._verify_monitor:
+          self._verify_monitor.log(entry.key_id, len(mac_no_prefix))
         return
       except core.TinkError:
         pass
@@ -75,14 +77,14 @@ class _WrappedMac(_mac.Mac):
         entry.primitive.verify_mac(mac_value, data)
 
         # If there is no exception, the MAC is valid and we can return.
-        if self._monitor:
-          self._monitor.log(entry.key_id, len(mac_value))
+        if self._verify_monitor:
+          self._verify_monitor.log(entry.key_id, len(mac_value))
         return
       except core.TinkError:
         pass
 
-    if self._monitor:
-      self._monitor.log_failure()
+    if self._verify_monitor:
+      self._verify_monitor.log_failure()
 
     raise core.TinkError('invalid MAC')
 
@@ -107,12 +109,25 @@ class MacWrapper(core.PrimitiveWrapper[_mac.Mac, _mac.Mac]):
   def input_primitive_class(self) -> Type[_mac.Mac]:
     return _mac.Mac
 
-  def _wrap_with_annotations(
+  def _wrap_with_monitoring_info(
       self,
       pset: core.PrimitiveSet,
-      annotations: Optional[_monitoring.Annotations],
+      monitoring_keyset_info: _monitoring.MonitoringKeySetInfo,
   ) -> _mac.Mac:
-    key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
-        annotations
+    compute_key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        _monitoring.MonitoringContext(
+            primitive='mac',
+            api_function='compute_mac',
+            keyset_info=monitoring_keyset_info,
+        )
     )
-    return _WrappedMac(pset, key_usage_monitor)
+    verify_key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
+        _monitoring.MonitoringContext(
+            primitive='mac',
+            api_function='verify_mac',
+            keyset_info=monitoring_keyset_info,
+        )
+    )
+    return _WrappedMac(
+        pset, compute_key_usage_monitor, verify_key_usage_monitor
+    )

@@ -79,13 +79,17 @@ class PublicKeySignWrapper(
   def input_primitive_class(self) -> Type[_public_key_sign.PublicKeySign]:
     return _public_key_sign.PublicKeySign
 
-  def _wrap_with_annotations(
+  def _wrap_with_monitoring_info(
       self,
       primitives_set: core.PrimitiveSet,
-      annotations: Optional[_monitoring.Annotations],
+      monitoring_keyset_info: _monitoring.MonitoringKeySetInfo,
   ) -> _public_key_sign.PublicKeySign:
     key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
-        annotations
+        _monitoring.MonitoringContext(
+            primitive='public_key_sign',
+            api_function='sign',
+            keyset_info=monitoring_keyset_info,
+        )
     )
     return _WrappedPublicKeySign(primitives_set, key_usage_monitor)
 
@@ -177,12 +181,16 @@ class PublicKeyVerifyWrapper(
   def input_primitive_class(self) -> Type[_public_key_verify.PublicKeyVerify]:
     return _public_key_verify.PublicKeyVerify
 
-  def _wrap_with_annotations(
+  def _wrap_with_monitoring_info(
       self,
       primitives_set: core.PrimitiveSet,
-      annotations: Optional[_monitoring.Annotations],
+      monitoring_keyset_info: _monitoring.MonitoringKeySetInfo,
   ) -> _public_key_verify.PublicKeyVerify:
     key_usage_monitor = _monitoring.get_key_usage_monitor_or_none(
-        annotations
+        _monitoring.MonitoringContext(
+            primitive='public_key_verify',
+            api_function='verify',
+            keyset_info=monitoring_keyset_info,
+        )
     )
     return _WrappedPublicKeyVerify(primitives_set, key_usage_monitor)

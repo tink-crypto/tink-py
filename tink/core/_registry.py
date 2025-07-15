@@ -14,7 +14,7 @@
 
 """Tink Registry."""
 
-from typing import Any, Optional, Tuple, Type, TypeVar
+from typing import Any, Tuple, Type, TypeVar
 
 from tink.proto import tink_pb2
 from tink import _monitoring
@@ -193,9 +193,7 @@ class Registry:
     # pylint: disable-next=unidiomatic-typecheck
     if wrapper.primitive_class() in cls._wrappers and type(
         cls._wrappers[wrapper.primitive_class()]
-    ) != type(
-        wrapper
-    ):
+    ) != type(wrapper):
       raise _tink_error.TinkError(
           'A wrapper for primitive {} has already been added.'.format(
               wrapper.primitive_class().__name__
@@ -280,14 +278,16 @@ class Registry:
     return wrapper.wrap(primitive_set)
 
   @classmethod
-  def _wrap_with_annotations(
+  def _wrap_with_monitoring_info(
       cls,
       primitive_set: _primitive_set.PrimitiveSet,
       primitive_class: Type[P],
-      annotations: Optional[_monitoring.Annotations],
+      monitoring_keyset_info: _monitoring.MonitoringKeySetInfo,
   ) -> P:
-    """Same as `wrap`, but passes along monitoring annotations."""
+    """Same as `wrap`, but passes along monitoring information."""
 
     wrapper = cls._get_and_validate_wrapper(primitive_set, primitive_class)
     # pylint: disable-next=protected-access
-    return wrapper._wrap_with_annotations(primitive_set, annotations)
+    return wrapper._wrap_with_monitoring_info(
+        primitive_set, monitoring_keyset_info
+    )

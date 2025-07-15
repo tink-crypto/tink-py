@@ -110,7 +110,9 @@ py_test(
 py_library(
     name = "_monitoring",
     srcs = ["_monitoring.py"],
-    deps = [],
+    deps = [
+        "//tink/proto:tink_py_pb2",
+    ],
 )
 
 py_library(
