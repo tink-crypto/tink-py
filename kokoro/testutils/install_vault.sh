@@ -61,7 +61,7 @@ readonly VAULT_INSTALL_DIR="$(mktemp -dt vault.XXXXXX)"
       ;;
   esac
   readonly SHA256
-  echo "${SHA256} vault.zip" | sha256sum -c
+  echo "${SHA256} vault.zip" | sha256sum -c -
   unzip vault.zip
 )
 export PATH="${VAULT_INSTALL_DIR}:${PATH}"

@@ -51,7 +51,7 @@ fi
 readonly BAZELISK_URL
 readonly BAZELISK_SHA256
 curl -LsS "${BAZELISK_URL}" -o /usr/local/bin/bazelisk
-echo "${BAZELISK_SHA256} /usr/local/bin/bazelisk" | sha256sum -c
+echo "${BAZELISK_SHA256} /usr/local/bin/bazelisk" | sha256sum -c -
 chmod +x /usr/local/bin/bazelisk
 
 # Install protoc 30.2.
@@ -66,7 +66,7 @@ fi
 readonly PROTOC_URL
 readonly PROTOC_SHA256
 curl -LsS "${PROTOC_URL}" -o protoc.zip
-echo "${PROTOC_SHA256} protoc.zip" | sha256sum -c
+echo "${PROTOC_SHA256} protoc.zip" | sha256sum -c -
 unzip -o protoc.zip -d /usr/local bin/protoc
 
 # Required to fix https://github.com/pypa/manylinux/issues/357.
