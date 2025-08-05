@@ -42,7 +42,7 @@ class PythonFileObjectAdapter {
   // object is alreday at EOF.
   virtual absl::StatusOr<std::string> Read(int size) = 0;
 
-  virtual ~PythonFileObjectAdapter() {}
+  virtual ~PythonFileObjectAdapter() = default;
 };
 
 }  // namespace tink

@@ -93,7 +93,7 @@ void PythonInputStream::BackUp(int count) {
   position_ -= actual_count;
 }
 
-PythonInputStream::~PythonInputStream() {}
+PythonInputStream::~PythonInputStream() = default;
 
 int64_t PythonInputStream::Position() const { return position_; }
 
