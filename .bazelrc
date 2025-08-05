@@ -42,7 +42,7 @@ build:macos_arm64 --platforms=//:darwin_arm64
 # create_bdist.sh using sed in this case.
 build:macos --copt=-isystem/usr/local/include
 
-# https://github.com/bazelbuild/bazel/issues/25969
+# https://github.com/bazel-contrib/rules_python/issues/2947
 common --incompatible_default_to_explicit_init_py
 
 
