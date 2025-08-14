@@ -15,7 +15,9 @@
 ################################################################################
 set -euo pipefail
 
-echo "RUNNING tink-py TESTS IN kokoro/macos_external/bazel_kms/run_tests.sh"
+# Generated with openssl rand -hex 10
+echo "========================================================================="
+echo "Script ID: a04907578326ffc15fe7 (to quickly find the script from logs)"
 
 # When running under Kokoro, change into git/tink_py (or github/tink_py)
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
@@ -55,6 +57,12 @@ bazelisk build "${CACHE_FLAGS[@]}" -- ...
 echo "---------- TESTING EXAMPLES ($(date))"
 bazelisk test "${CACHE_FLAGS[@]}" -- ...
 
-# This currently only runs the non-kms tests, in order to increase the probability
-# that switching the kokoro build_dir works without a failure.
-# TODO (b/428261485): Also run the KMS tests.
+
+echo "---------- KMS Specific tests"
+TARGETS=$(bazel query 'attr(tags, requires_kms, ...) except attr(tags, tests_pip_install_tink, ...)')
+echo "${TARGETS}"
+
+echo "---------- BUILDING KMS Specific tests ($(date))"
+bazelisk build "${CACHE_FLAGS[@]}" -- $TARGETS
+echo "---------- TESTING KMS Specific tests ($(date))"
+bazelisk test "${CACHE_FLAGS[@]}" -- $TARGETS

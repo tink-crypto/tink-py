@@ -15,7 +15,9 @@
 ################################################################################
 set -euo pipefail
 
-echo "RUNNING tink-py TESTS IN kokoro/macos_external/bazel/run_tests.sh"
+# Generated with openssl rand -hex 10
+echo "========================================================================="
+echo "Script ID: 1b121d810c623b0c9cc8 (to quickly find the script from logs)"
 
 # When running under Kokoro, change into git/tink_py (or github/tink_py)
 if [[ -n "${KOKORO_ROOT:-}" ]]; then

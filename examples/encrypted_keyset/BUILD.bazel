@@ -35,7 +35,10 @@ sh_test(
         # Change this to your credential.
         "//testdata/gcp:credential.json",
     ],
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "requires_kms",
+    ],
 )
 
 # This runs the previous test, assuming the Tink python package has been
