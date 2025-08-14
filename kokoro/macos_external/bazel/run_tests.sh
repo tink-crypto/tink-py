@@ -17,9 +17,10 @@ set -euo pipefail
 
 echo "RUNNING tink-py TESTS IN kokoro/macos_external/bazel/run_tests.sh"
 
-# When running under Kokoro, change into git/tink_py.
+# When running under Kokoro, change into git/tink_py (or github/tink_py)
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
-  cd git/tink_py
+  cd "${KOKORO_ARTIFACTS_DIR}"
+  cd git*/tink_py
 fi
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
