@@ -31,3 +31,5 @@ build:macos_arm64 --macos_minimum_os=11.0
 
 # See https://github.com/bazelbuild/bazel/issues/10472
 build:macos --copt=-isystem/usr/local/include
+
+test --test_output=errors

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2022 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,12 +15,9 @@
 ################################################################################
 set -euo pipefail
 
-echo "RUNNING tink-py TESTS IN kokoro/macos_external/bazel/run_tests.sh"
+echo "RUNNING tink-py TESTS IN kokoro/macos_external/bazel_kms/run_tests.sh"
 
-# When running under Kokoro, change into git/tink_py.
-if [[ -n "${KOKORO_ROOT:-}" ]]; then
-  cd git/tink_py
-fi
+cd git/tink_py
 
 ./kokoro/testutils/copy_credentials.sh "testdata" "all"
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
@@ -43,3 +40,7 @@ echo "---------- BUILDING EXAMPLES ($(date))"
 bazelisk build "${CACHE_FLAGS[@]}" -- ...
 echo "---------- TESTING EXAMPLES ($(date))"
 bazelisk test "${CACHE_FLAGS[@]}" -- ...
+
+# This currently only runs the non-kms tests, in order to increase the probability
+# that switching the kokoro build_dir works without a failure.
+# TODO (b/428261485): Also run the KMS tests.

@@ -1,5 +1,5 @@
-load("@rules_python//python:defs.bzl", "py_binary")
 load("@pip_deps//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -49,5 +49,9 @@ sh_test(
         ":streaming_aead_cli",
         ":streaming_aead_cli.py",
         ":streaming_aead_keyset.json",
+    ],
+    tags = [
+        "manual",
+        "tests_pip_install_tink",
     ],
 )

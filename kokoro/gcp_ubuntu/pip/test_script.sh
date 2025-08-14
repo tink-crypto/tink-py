@@ -83,13 +83,13 @@ find tink/ "${TEST_EXCLUDE}" -type f -name "*_test.py" -print0 \
 # Install requirements for examples.
 python3 -m pip install --require-hashes --no-deps -r examples/requirements.txt
 if [[ "${RUN_KMS_TESTS}" == "true" ]]; then
-  # All *test_package targets, including manual ones.
+  # The targets which tests "pip install tink"
   EXAMPLE_TARGETS="$(cd examples && "${BAZEL_CMD}" query \
-    'filter(.*test_package, ...)')"
+    'attr(tags, tests_pip_install_tink, ...)')"
 else
-  # All non-manual *test_package targets.
+  # The targets which tests "pip install tink" except those which require KMS
   EXAMPLE_TARGETS="$(cd examples && "${BAZEL_CMD}" query \
-    'filter(.*test_package, ...) except attr(tags, manual, ...)')"
+    'attr(tags, tests_pip_install_tink, ...) except attr(tags, requires_kms, ...)')"
 fi
 readonly EXAMPLE_TARGETS
 

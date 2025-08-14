@@ -1,5 +1,5 @@
-load("@rules_python//python:defs.bzl", "py_binary")
 load("@pip_deps//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -73,5 +73,9 @@ sh_test(
         ":signature_cli.py",
         ":signature_test_private_keyset.json",
         ":signature_test_public_keyset.json",
+    ],
+    tags = [
+        "manual",
+        "tests_pip_install_tink",
     ],
 )

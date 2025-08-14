@@ -52,3 +52,5 @@ common --incompatible_default_to_explicit_init_py
 # in project code.
 build --per_file_copt=external/.*@-w
 build --host_per_file_copt=external/.*@-w
+
+test --test_output=errors
