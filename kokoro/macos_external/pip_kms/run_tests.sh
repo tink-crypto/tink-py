@@ -19,7 +19,7 @@ set -euo pipefail
 
 echo "================================================================================"
 # Generated with openssl rand -hex 10
-echo "Tink test Script ID: b3b74ca8f5d2efd5d330 (to quickly find the script from logs)"
+echo "Tink test Script ID: 8a1dad4b2664a07b4976 (to quickly find the script from logs)"
 echo "================================================================================"
 
 # If we are running on Kokoro cd into the repository.
@@ -28,7 +28,10 @@ if [[ -n "${KOKORO_ROOT:-}" ]]; then
   cd "${TINK_BASE_DIR}/tink_py"
 fi
 
-./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
+./kokoro/testutils/install_tink_via_pip.sh -a "$(pwd)"
+source ./kokoro/testutils/install_vault.sh
+source ./kokoro/testutils/run_hcvault_test_server.sh
+vault write -f transit/keys/key-1
 
 CACHE_FLAGS=()
 if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
@@ -55,8 +58,7 @@ export TINK_PYTHON_ROOT_PATH="$(pwd)"
 ./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
 
 echo "---------- RUNNING TEST WITH PYTHON ($(date))"
-find tink/ -not -path "*integration/*" -type f -name "*_test.py" -print0 \
-  | xargs -t -0 -n1 python3
+find tink/ -type f -name "*_test.py" -print0 | xargs -t -0 -n1 python3
 
 cd examples
 
