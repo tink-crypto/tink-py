@@ -15,12 +15,21 @@
 ################################################################################
 
 # Builds and installs tink-py via PIP and run tink-py and examples tests.
+echo "==========================================================================="
+# Generated with openssl rand -hex 10
+echo "Tink Script ID: 8a1dad4b2664a07b4976 (to quickly find the script from logs)"
+echo "==========================================================================="
 set -euox pipefail
 
-echo "================================================================================"
-# Generated with openssl rand -hex 10
-echo "Tink test Script ID: 8a1dad4b2664a07b4976 (to quickly find the script from logs)"
-echo "================================================================================"
+OS_VERSION=$(sw_vers -productVersion | cut -d'.' -f1)
+if [[ "${OS_VERSION}" -ge 15 ]]; then
+  # Remove the line build:macos --copt=-isystem/usr/local/include from .bazelrc.
+  # This isn't needed anymore on Sequoia and later.
+  # TODO (b/428261485): Remove this in the file.
+  sed -i .bak 'sXbuild:macos --copt=-isystem/usr/local/includeXXg' .bazelrc
+  sed -i .bak 'sXbuild:macos --copt=-isystem/usr/local/includeXXg' examples/.bazelrc
+fi
+cat .bazelrc
 
 # If we are running on Kokoro cd into the repository.
 if [[ -n "${KOKORO_ROOT:-}" ]]; then
@@ -43,16 +52,6 @@ if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
   CACHE_FLAGS+=("--google_credentials=$(realpath ./cache_key)")
 fi
 readonly CACHE_FLAGS
-
-OS_VERSION=$(sw_vers -productVersion | cut -d'.' -f1)
-if [[ "${OS_VERSION}" -ge 15 ]]; then
-  # Remove the line build:macos --copt=-isystem/usr/local/include from .bazelrc.
-  # This isn't needed anymore on Sequoia and later.
-  # TODO (b/428261485): Remove this in the file.
-  sed -i .bak 'sXbuild:macos --copt=-isystem/usr/local/includeXXg' .bazelrc
-  sed -i .bak 'sXbuild:macos --copt=-isystem/usr/local/includeXXg' examples/.bazelrc
-fi
-cat .bazelrc
 
 # testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
 export TINK_PYTHON_ROOT_PATH="$(pwd)"
