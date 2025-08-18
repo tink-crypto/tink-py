@@ -38,6 +38,9 @@ if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
 fi
 readonly CACHE_FLAGS
 
+# Sourcing required to update callers environment.
+source ./kokoro/testutils/install_protoc.sh "30.2"
+
 OS_VERSION=$(sw_vers -productVersion | cut -d'.' -f1)
 if [[ "${OS_VERSION}" -ge 15 ]]; then
   # Remove the line build:macos --copt=-isystem/usr/local/include from .bazelrc.
