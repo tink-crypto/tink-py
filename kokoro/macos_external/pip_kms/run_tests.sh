@@ -13,23 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ################################################################################
-
 # Builds and installs tink-py via PIP and run tink-py and examples tests.
-echo "==========================================================================="
+
 # Generated with openssl rand -hex 10
+echo "==========================================================================="
 echo "Tink Script ID: 8a1dad4b2664a07b4976 (to quickly find the script from logs)"
 echo "==========================================================================="
-set -euox pipefail
 
-OS_VERSION=$(sw_vers -productVersion | cut -d'.' -f1)
-if [[ "${OS_VERSION}" -ge 15 ]]; then
-  # Remove the line build:macos --copt=-isystem/usr/local/include from .bazelrc.
-  # This isn't needed anymore on Sequoia and later.
-  # TODO (b/428261485): Remove this in the file.
-  sed -i .bak 'sXbuild:macos --copt=-isystem/usr/local/includeXXg' .bazelrc
-  sed -i .bak 'sXbuild:macos --copt=-isystem/usr/local/includeXXg' examples/.bazelrc
-fi
-cat .bazelrc
+set -euox pipefail
 
 # If we are running on Kokoro cd into the repository.
 if [[ -n "${KOKORO_ROOT:-}" ]]; then

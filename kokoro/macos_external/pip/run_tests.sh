@@ -16,8 +16,8 @@
 
 # Builds and installs tink-py via PIP and run tink-py and examples tests.
 
-echo "================================================================================"
 # Generated with openssl rand -hex 10
+echo "================================================================================"
 echo "Tink Script ID: b3b74ca8f5d2efd5d330 (to quickly find the script from logs)"
 echo "================================================================================"
 
@@ -28,16 +28,6 @@ if [[ -n "${KOKORO_ROOT:-}" ]]; then
   readonly TINK_BASE_DIR="$(echo "${KOKORO_ARTIFACTS_DIR}"/git*)"
   cd "${TINK_BASE_DIR}/tink_py"
 fi
-
-OS_VERSION=$(sw_vers -productVersion | cut -d'.' -f1)
-if [[ "${OS_VERSION}" -ge 15 ]]; then
-  # Remove the line build:macos --copt=-isystem/usr/local/include from .bazelrc.
-  # This isn't needed anymore on Sequoia and later.
-  # TODO (b/428261485): Remove this in the file.
-  sed -i .bak 'sXbuild:macos --copt=-isystem/usr/local/includeXXg' .bazelrc
-  sed -i .bak 'sXbuild:macos --copt=-isystem/usr/local/includeXXg' examples/.bazelrc
-fi
-cat .bazelrc
 
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_protoc.sh "30.2"

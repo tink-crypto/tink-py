@@ -27,20 +27,10 @@ build:windows --define=protobuf_allow_msvc=true
 # [2] https://github.com/bazelbuild/bazel/issues/16932
 build:macos_x86_64 --macos_minimum_os=11.0
 build:macos_x86_64 --platforms=//:darwin_x86_64
-# See https://github.com/bazelbuild/bazel/issues/10472
-build:macos_x86_64 --copt=-isystem/usr/local/include
 
 # Configs for macOS on ARM64 (selected with --config=macos_arm64)
 build:macos_arm64 --macos_minimum_os=11.0
 build:macos_arm64 --platforms=//:darwin_arm64
-
-# General MacOS
-# This line is activated in normal test builds because we use
-# build --enable_platform_specific_config=true above.
-# However, we have to deactivate it during release builds for the config
-# macos_x86_64 (which is selected by a --config flag). We remove it in
-# create_bdist.sh using sed in this case.
-build:macos --copt=-isystem/usr/local/include
 
 # https://github.com/bazel-contrib/rules_python/issues/2947
 common --incompatible_default_to_explicit_init_py

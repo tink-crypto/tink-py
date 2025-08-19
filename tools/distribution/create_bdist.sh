@@ -14,9 +14,14 @@
 # limitations under the License.
 ################################################################################
 
-# This script creates binary wheels for Tink Python for Linux and macOS.
+# Generated with openssl rand -hex 10
+echo "================================================================================"
+echo "Tink Script ID: 87b6b958a7ce24607cca (to quickly find the script from logs)"
+echo "================================================================================"
 
 set -eEuox pipefail
+
+# This script creates binary wheels for Tink Python for Linux and macOS.
 
 readonly GCS_URL="https://storage.googleapis.com"
 
@@ -169,8 +174,6 @@ create_bdist_for_macos() {
     export TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL="${GCS_URL}/${BAZEL_CACHE_NAME}"
     export TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH="/tmp/cache_key"
   fi
-  # Remove the line build:macos --copt=-isystem/usr/local/include from .bazelrc.
-  sed -i .bak 'sXbuild:macos --copt=-isystem/usr/local/includeXXg' .bazelrc
   cat .bazelrc
   rm -rf release && mkdir -p release
   for python_version in "${PYTHON_VERSIONS[@]}"; do
