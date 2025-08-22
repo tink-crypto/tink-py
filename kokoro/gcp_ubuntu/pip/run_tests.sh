@@ -25,7 +25,12 @@
 #
 #   CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
 #     sh ./kokoro/gcp_ubuntu/pip/run_tests.sh
-#
+
+# Generated with openssl rand -hex 10
+echo "==========================================================================="
+echo "Tink Script ID: f1fd1aa35b8b0b08705c (to quickly find the script from logs)"
+echo "==========================================================================="
+
 set -eEuo pipefail
 
 IS_KOKORO="false"
