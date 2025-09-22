@@ -142,6 +142,15 @@ class GcpKmsClient(tink.KmsClient):
       )
     self._client = kms_v1.KeyManagementServiceClient(credentials=credentials)
 
+  def __enter__(self):
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    if hasattr(self._client, '__exit__'):
+      self._client.__exit__(exc_type, exc_value, traceback)
+    elif hasattr(self._client, 'transport'):
+      self._client.transport.channel.close()
+
   def does_support(self, key_uri: str) -> bool:
     """Returns true iff this client supports KMS key specified in 'key_uri'.
 
