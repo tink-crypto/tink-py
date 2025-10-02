@@ -1,7 +1,3 @@
 google-auth>=2.38.0
 google-api-core>=2.24.2
 google-cloud-kms>=3.4.1
-# We need to explicitly add rules for googleapis_common_protos and grpc-google-iam-v1
-# to be able to use protobuf>=6.
-googleapis_common_protos>=1.69.2
-grpc-google-iam-v1>=0.14.2

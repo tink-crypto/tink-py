@@ -1,3 +1,1 @@
 boto3>=1.37.32
-# We need to explicitly add a rule for proto-plus to be able to use protobuf>=5.
-proto-plus>=1.26.1
