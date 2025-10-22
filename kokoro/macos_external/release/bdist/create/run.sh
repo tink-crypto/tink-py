@@ -42,13 +42,6 @@ if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
 fi
 readonly CREATE_DIST_OPTIONS
 
-# Update pyenv.
-# The macOS image exports a PYENV_ROOT env variable.
-(
-  cd "${PYENV_ROOT:-"${HOME}/.pyenv"}"
-  git pull
-)
-
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_protoc.sh "30.2"
 
