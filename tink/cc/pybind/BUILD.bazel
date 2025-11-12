@@ -13,7 +13,7 @@ pybind_library(
     srcs = ["import_helper.cc"],
     hdrs = ["import_helper.h"],
     visibility = ["//visibility:private"],
-    deps = ["@com_google_absl//absl/strings"],
+    deps = ["@abseil-cpp//absl/strings"],
 )
 
 pybind_library(

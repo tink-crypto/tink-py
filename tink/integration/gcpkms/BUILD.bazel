@@ -32,9 +32,9 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":gcpkms",
-        "@com_google_protobuf//:protobuf_python",
         "//tink:tink_python",
         "//tink/testing:helper",
+        "@protobuf//:protobuf_python",
         requirement("absl-py"),
         requirement("google-api-core"),
         requirement("google-cloud-kms"),

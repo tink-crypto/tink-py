@@ -5,12 +5,12 @@ module(
 )
 
 bazel_dep(name = "rules_python", version = "1.4.0")
-bazel_dep(name = "abseil-cpp", version = "20250814.1", repo_name = "com_google_absl")
-bazel_dep(name = "rules_cc", version = "0.2.1")
+bazel_dep(name = "abseil-cpp", version = "20250814.1")
+bazel_dep(name = "rules_cc", version = "0.2.14")
 bazel_dep(name = "tink_cc", version = "2.4.0")
-bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
-bazel_dep(name = "pybind11_bazel", version = "2.13.6")
-bazel_dep(name = "protobuf", version = "30.1", repo_name = "com_google_protobuf")
+bazel_dep(name = "googletest", version = "1.17.0")
+bazel_dep(name = "pybind11_bazel", version = "3.0.0")
+bazel_dep(name = "protobuf", version = "30.1")
 bazel_dep(name = "platforms", version = "1.0.0")
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")

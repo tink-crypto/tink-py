@@ -1,20 +1,10 @@
-module(
-    name = "tink_py_examples",
-    version = "0.0.0",
-    compatibility_level = 1,
-)
+module(name = "tink_py_examples")
 
 bazel_dep(name = "rules_python", version = "1.4.0")
 bazel_dep(name = "tink_py")
 local_path_override(
     module_name = "tink_py",
     path = "..",
-)
-
-archive_override(
-    module_name = "tink_cc",
-    strip_prefix = "tink-cc-66fe913dc2edd0909e640afa5f05bb538c90b2d7",
-    urls = ["https://github.com/tink-crypto/tink-cc/archive/66fe913dc2edd0909e640afa5f05bb538c90b2d7.zip"],
 )
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
