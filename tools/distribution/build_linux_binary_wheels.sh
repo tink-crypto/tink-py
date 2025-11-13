@@ -37,15 +37,15 @@ readonly -A PYTHON_VERSIONS
 export TINK_PYTHON_ROOT_PATH="${PWD}"
 export ARCH="$(uname -m)"
 
-# Install Bazelisk 1.26.0.
-readonly BAZELISK_VERSION="1.26.0"
+# Install Bazelisk 1.27.0.
+readonly BAZELISK_VERSION="1.27.0"
 readonly BAZELISK_DOWNLOAD_URL="https://github.com/bazelbuild/bazelisk/releases/download"
 BAZELISK_URL="${BAZELISK_DOWNLOAD_URL}/v${BAZELISK_VERSION}/bazelisk-linux-amd64"
-BAZELISK_SHA256="6539c12842ad76966f3d493e8f80d67caa84ec4a000e220d5459833c967c12bc"
+BAZELISK_SHA256="e1508323f347ad1465a887bc5d2bfb91cffc232d11e8e997b623227c6b32fb76"
 
 if [[ "${ARCH}" == "aarch64" || "${ARCH}" == "arm64" ]]; then
   BAZELISK_URL="${BAZELISK_DOWNLOAD_URL}/v${BAZELISK_VERSION}/bazelisk-linux-arm64"
-  BAZELISK_SHA256="54f85ef4c23393f835252cc882e5fea596e8ef3c4c2056b059f8067cd19f0351"
+  BAZELISK_SHA256="bb608519a440d45d10304eb684a73a2b6bb7699c5b0e5434361661b25f113a5d"
 fi
 
 readonly BAZELISK_URL
@@ -81,7 +81,7 @@ for v in "${!PYTHON_VERSIONS[@]}"; do
     # pybind11_bazel to pick up the correct Python binary [1].
     #
     # [1] https://github.com/pybind/pybind11_bazel/blob/fc56ce8a8b51e3dd941139d329b63ccfea1d304b/python_configure.bzl#L434
-    export PATH="${PATH}:/opt/python/${PYTHON_VERSIONS[$v]}/bin"
+    export PATH="/opt/python/${PYTHON_VERSIONS[$v]}/bin:${PATH}"
     python3 -m pip wheel .
   )
 done
