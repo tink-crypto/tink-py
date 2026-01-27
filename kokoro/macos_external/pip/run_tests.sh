@@ -32,6 +32,11 @@ fi
 # Sourcing required to update callers environment.
 source ./kokoro/testutils/install_protoc.sh "30.2"
 
+# Make sure we use the latest supported Python version.
+eval "$(pyenv init -)"
+pyenv install -s 3.13
+pyenv shell 3.13
+
 ./kokoro/testutils/install_tink_via_pip.sh "$(pwd)"
 
 CACHE_FLAGS=()
@@ -45,20 +50,25 @@ readonly CACHE_FLAGS
 # testing/helper.py will look for testdata in TINK_PYTHON_ROOT_PATH/testdata.
 export TINK_PYTHON_ROOT_PATH="$(pwd)"
 
-./kokoro/testutils/copy_credentials.sh "testdata" "all"
-./kokoro/testutils/copy_credentials.sh "examples/testdata" "gcp"
-
 echo "---------- RUNNING TEST WITH PYTHON ($(date))"
 find tink/ -not -path "*integration/*" -type f -name "*_test.py" -print0 \
   | xargs -t -0 -n1 python3
 
 cd examples
 
-echo "--------- tests_pip_install_tink tests"
-TARGETS=$(bazel query 'attr(tags, tests_pip_install_tink, ...) except attr(tags, requires_kms, ...)')
+# We are running bash scripts that use the local python3 toolchain to run tests
+# against the locally installed tink-py. These are `sh_test` targets and we
+# run them with `bazelisk test` because it is more convenient.
+
+# Intall test requirements for the local python3 toolchain.
+python3 -m pip install --require-hashes --no-deps -r requirements.txt
+
+echo "--------- EXAMPLE TARGETS (tests_pip_install_tink, not requires_kms)"
+TARGETS=$(bazelisk query 'attr(tags, tests_pip_install_tink, ...) except attr(tags, requires_kms, ...)')
 echo "${TARGETS}"
 
-echo "---------- BUILDING KMS Specific tests ($(date))"
+echo "---------- BUILDING EXAMPLES ($(date))"
 bazelisk build "${CACHE_FLAGS[@]}" -- $TARGETS
-echo "---------- TESTING KMS Specific tests ($(date))"
-bazelisk test "${CACHE_FLAGS[@]}" -- $TARGETS
+echo "---------- TESTING EXAMPLES ($(date))"
+bazelisk test "${CACHE_FLAGS[@]}" \
+  --test_env=PYENV_VERSION="${PYENV_VERSION}" -- $TARGETS
