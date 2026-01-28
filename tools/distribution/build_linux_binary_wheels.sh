@@ -54,14 +54,14 @@ curl -LsS "${BAZELISK_URL}" -o /usr/local/bin/bazelisk
 echo "${BAZELISK_SHA256} /usr/local/bin/bazelisk" | sha256sum -c -
 chmod +x /usr/local/bin/bazelisk
 
-# Install protoc 30.2.
+# Install protoc 29.5.
 readonly PROTOC_DOWNLOAD_URL="https://github.com/protocolbuffers/protobuf/releases/download"
-readonly PROTOC_RELEASE_TAG="30.2"
+readonly PROTOC_RELEASE_TAG="29.5"
 PROTOC_URL="${PROTOC_DOWNLOAD_URL}/v${PROTOC_RELEASE_TAG}/protoc-${PROTOC_RELEASE_TAG}-linux-x86_64.zip"
-PROTOC_SHA256="327e9397c6fb3ea2a542513a3221334c6f76f7aa524a7d2561142b67b312a01f"
+PROTOC_SHA256="a3f094363cd205c6f7af0d1b9305cb4c8517043f265cdb188f098cae93e8b217"
 if [[ "${ARCH}" == "aarch64" || "${ARCH}" == "arm64" ]]; then
   PROTOC_URL="${PROTOC_DOWNLOAD_URL}/v${PROTOC_RELEASE_TAG}/protoc-${PROTOC_RELEASE_TAG}-linux-aarch_64.zip"
-  PROTOC_SHA256="a3173ea338ef91b1605b88c4f8120d6c8ccf36f744d9081991d595d0d4352996"
+  PROTOC_SHA256="25eb0848ff13a90a0b2d2a3b4a9d2babc7fbfe158f596c00d8c26a21028dd6f5"
 fi
 readonly PROTOC_URL
 readonly PROTOC_SHA256
