@@ -79,7 +79,7 @@ enable_py_version() {
 
   # The latest installed Python version that matches the partial version number
   # (e.g. "3.9.5").
-  local version="$(pyenv versions --bare | grep "${partial_version}" | tail -1)"
+  local version="$(pyenv versions --bare | grep "${partial_version}\." | tail -1)"
   if [[ -z "${version}" ]]; then
     # Install the latest available non-dev version.
     version="$(pyenv install --list | grep "  ${partial_version}\." | tail -1 \
