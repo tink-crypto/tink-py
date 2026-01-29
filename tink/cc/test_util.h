@@ -274,7 +274,7 @@ class DummyStreamingAead : public StreamingAead {
     absl::Status PRead(int64_t position, int count,
                        crypto::tink::util::Buffer* dest_buffer) override {
       {  // Initialize, if not initialized yet.
-        absl::MutexLock lock(&status_mutex_);
+        absl::MutexLock lock(status_mutex_);
         if (status_.code() == absl::StatusCode::kUnavailable) Initialize();
         if (!status_.ok()) return status_;
       }
@@ -286,7 +286,7 @@ class DummyStreamingAead : public StreamingAead {
 
     absl::StatusOr<int64_t> size() override {
       {  // Initialize, if not initialized yet.
-        absl::MutexLock lock(&status_mutex_);
+        absl::MutexLock lock(status_mutex_);
         if (status_.code() == absl::StatusCode::kUnavailable) Initialize();
         if (!status_.ok()) return status_;
       }
