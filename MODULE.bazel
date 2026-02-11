@@ -1,6 +1,6 @@
 module(
     name = "tink_py",
-    version = "1.13.1",
+    version = "1.14.0",
     compatibility_level = 1,
 )
 
