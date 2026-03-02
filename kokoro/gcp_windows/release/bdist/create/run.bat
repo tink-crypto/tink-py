@@ -60,6 +60,10 @@ SET OUT_WHEEL=tink-%TINK_VERSION%-cp313-cp313-win_amd64.whl
 CALL :BuildAndInstallWheel "3.13" || GOTO :Error
 CALL :RunTests "3.13" || GOTO :Error
 
+SET OUT_WHEEL=tink-%TINK_VERSION%-cp314-cp314-win_amd64.whl
+CALL :BuildAndInstallWheel "3.14" || GOTO :Error
+CALL :RunTests "3.14" || GOTO :Error
+
 GOTO :End
 
 @REM Builds repairs and installs the binary wheel, and places it in release/.
