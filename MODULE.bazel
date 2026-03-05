@@ -13,6 +13,14 @@ bazel_dep(name = "pybind11_bazel", version = "3.0.0")
 bazel_dep(name = "protobuf", version = "30.1")
 bazel_dep(name = "platforms", version = "1.0.0")
 
+# TODO(b/487603705): Remove this override once Tink v2.6.0 is available in
+# https://registry.bazel.build/.
+git_override(
+    module_name = "tink_cc",
+    commit = "f47507eb5f4f5ac3f446270e10df196f02c5c007",
+    remote = "https://github.com/tink-crypto/tink-cc",
+)
+
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 http_file(

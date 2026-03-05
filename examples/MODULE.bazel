@@ -1,10 +1,18 @@
 module(name = "tink_py_examples")
 
 bazel_dep(name = "rules_python", version = "1.4.0")
-bazel_dep(name = "tink_py")
+bazel_dep(name = "tink_py", version = "2.4.0")
 local_path_override(
     module_name = "tink_py",
     path = "..",
+)
+
+# TODO(b/487603705): Remove this override once Tink v2.6.0 is available in
+# https://registry.bazel.build/.
+git_override(
+    module_name = "tink_cc",
+    commit = "f47507eb5f4f5ac3f446270e10df196f02c5c007",
+    remote = "https://github.com/tink-crypto/tink-cc",
 )
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")

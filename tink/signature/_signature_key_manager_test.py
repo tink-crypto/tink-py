@@ -69,6 +69,8 @@ class PublicKeySignKeyManagerTest(parameterized.TestCase):
       signature.signature_key_templates.ECDSA_P384_SHA384_IEEE_P1363,
       signature.signature_key_templates.ECDSA_P521_IEEE_P1363,
       signature.signature_key_templates.ED25519,
+      signature.signature_key_templates.ML_DSA_65,
+      signature.signature_key_templates.ML_DSA_87,
       signature.signature_key_templates.RSA_SSA_PKCS1_3072_SHA256_F4,
       signature.signature_key_templates.RSA_SSA_PKCS1_4096_SHA512_F4,
       signature.signature_key_templates.RSA_SSA_PSS_3072_SHA256_SHA256_32_F4,
@@ -94,10 +96,13 @@ class PublicKeySignKeyManagerTest(parameterized.TestCase):
       signature.signature_key_templates.ECDSA_P384_SHA384_IEEE_P1363,
       signature.signature_key_templates.ECDSA_P521_IEEE_P1363,
       signature.signature_key_templates.ED25519,
+      signature.signature_key_templates.ML_DSA_65,
+      signature.signature_key_templates.ML_DSA_87,
       signature.signature_key_templates.RSA_SSA_PKCS1_3072_SHA256_F4,
       signature.signature_key_templates.RSA_SSA_PKCS1_4096_SHA512_F4,
       signature.signature_key_templates.RSA_SSA_PSS_3072_SHA256_SHA256_32_F4,
       signature.signature_key_templates.RSA_SSA_PSS_4096_SHA512_SHA512_64_F4,
+      signature.signature_key_templates.SLH_DSA_SHA2_128S,
   ])
   def test_verify_wrong_fails(self, template):
     private_handle = tink.new_keyset_handle(template)
