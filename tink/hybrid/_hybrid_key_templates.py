@@ -31,8 +31,10 @@ from tink import aead
 
 def _create_ecies_aead_hkdf_key_template(
     curve_type: common_pb2.EllipticCurveType,
-    ec_point_format: common_pb2.EcPointFormat, hash_type: common_pb2.HashType,
-    dem_key_template: tink_pb2.KeyTemplate) -> tink_pb2.KeyTemplate:
+    ec_point_format: common_pb2.EcPointFormat,
+    hash_type: common_pb2.HashType,
+    dem_key_template: tink_pb2.KeyTemplate,
+) -> tink_pb2.KeyTemplate:
   """Creates an ECIES-AEAD-HKDF KeyTemplate, and fills in its values."""
   key_format = ecies_aead_hkdf_pb2.EciesAeadHkdfKeyFormat()
   key_format.params.kem_params.curve_type = curve_type
@@ -42,16 +44,19 @@ def _create_ecies_aead_hkdf_key_template(
 
   key_template = tink_pb2.KeyTemplate()
   key_template.type_url = (
-      'type.googleapis.com/google.crypto.tink.EciesAeadHkdfPrivateKey')
+      'type.googleapis.com/google.crypto.tink.EciesAeadHkdfPrivateKey'
+  )
   key_template.value = key_format.SerializeToString()
   key_template.output_prefix_type = tink_pb2.TINK
   return key_template
 
 
 def _create_hpke_key_template(
-    hpke_kem: hpke_pb2.HpkeKem, hpke_kdf: hpke_pb2.HpkeKdf,
+    hpke_kem: hpke_pb2.HpkeKem,
+    hpke_kdf: hpke_pb2.HpkeKdf,
     hpke_aead: hpke_pb2.HpkeAead,
-    output_prefix_type: tink_pb2.OutputPrefixType) -> tink_pb2.KeyTemplate:
+    output_prefix_type: tink_pb2.OutputPrefixType,
+) -> tink_pb2.KeyTemplate:
   """Creates an HPKE KeyTemplate, and fills in its values."""
   key_format = hpke_pb2.HpkeKeyFormat()
   key_format.params.kem = hpke_kem
@@ -70,78 +75,113 @@ ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM = _create_ecies_aead_hkdf_key_template(
     curve_type=common_pb2.NIST_P256,
     ec_point_format=common_pb2.UNCOMPRESSED,
     hash_type=common_pb2.SHA256,
-    dem_key_template=aead.aead_key_templates.AES128_GCM)
+    dem_key_template=aead.aead_key_templates.AES128_GCM,
+)
 
-ECIES_P256_COMPRESSED_HKDF_HMAC_SHA256_AES128_GCM = _create_ecies_aead_hkdf_key_template(
-    curve_type=common_pb2.NIST_P256,
-    ec_point_format=common_pb2.COMPRESSED,
-    hash_type=common_pb2.SHA256,
-    dem_key_template=aead.aead_key_templates.AES128_GCM)
+ECIES_P256_COMPRESSED_HKDF_HMAC_SHA256_AES128_GCM = (
+    _create_ecies_aead_hkdf_key_template(
+        curve_type=common_pb2.NIST_P256,
+        ec_point_format=common_pb2.COMPRESSED,
+        hash_type=common_pb2.SHA256,
+        dem_key_template=aead.aead_key_templates.AES128_GCM,
+    )
+)
 
 ECIES_P256_HKDF_HMAC_SHA256_AES128_CTR_HMAC_SHA256 = (
     _create_ecies_aead_hkdf_key_template(
         curve_type=common_pb2.NIST_P256,
         ec_point_format=common_pb2.UNCOMPRESSED,
         hash_type=common_pb2.SHA256,
-        dem_key_template=aead.aead_key_templates.AES128_CTR_HMAC_SHA256))
+        dem_key_template=aead.aead_key_templates.AES128_CTR_HMAC_SHA256,
+    )
+)
 
 ECIES_P256_COMPRESSED_HKDF_HMAC_SHA256_AES128_CTR_HMAC_SHA256 = (
     _create_ecies_aead_hkdf_key_template(
         curve_type=common_pb2.NIST_P256,
         ec_point_format=common_pb2.COMPRESSED,
         hash_type=common_pb2.SHA256,
-        dem_key_template=aead.aead_key_templates.AES128_CTR_HMAC_SHA256))
+        dem_key_template=aead.aead_key_templates.AES128_CTR_HMAC_SHA256,
+    )
+)
 
-DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_128_GCM = (
-    _create_hpke_key_template(
-        hpke_kem=hpke_pb2.DHKEM_X25519_HKDF_SHA256,
-        hpke_kdf=hpke_pb2.HKDF_SHA256,
-        hpke_aead=hpke_pb2.AES_128_GCM,
-        output_prefix_type=tink_pb2.TINK))
+DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_128_GCM = _create_hpke_key_template(
+    hpke_kem=hpke_pb2.DHKEM_X25519_HKDF_SHA256,
+    hpke_kdf=hpke_pb2.HKDF_SHA256,
+    hpke_aead=hpke_pb2.AES_128_GCM,
+    output_prefix_type=tink_pb2.TINK,
+)
 
 DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_128_GCM_RAW = (
     _create_hpke_key_template(
         hpke_kem=hpke_pb2.DHKEM_X25519_HKDF_SHA256,
         hpke_kdf=hpke_pb2.HKDF_SHA256,
         hpke_aead=hpke_pb2.AES_128_GCM,
-        output_prefix_type=tink_pb2.RAW))
+        output_prefix_type=tink_pb2.RAW,
+    )
+)
 
-DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_256_GCM = (
-    _create_hpke_key_template(
-        hpke_kem=hpke_pb2.DHKEM_X25519_HKDF_SHA256,
-        hpke_kdf=hpke_pb2.HKDF_SHA256,
-        hpke_aead=hpke_pb2.AES_256_GCM,
-        output_prefix_type=tink_pb2.TINK))
+DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_256_GCM = _create_hpke_key_template(
+    hpke_kem=hpke_pb2.DHKEM_X25519_HKDF_SHA256,
+    hpke_kdf=hpke_pb2.HKDF_SHA256,
+    hpke_aead=hpke_pb2.AES_256_GCM,
+    output_prefix_type=tink_pb2.TINK,
+)
 
 DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_256_GCM_RAW = (
     _create_hpke_key_template(
         hpke_kem=hpke_pb2.DHKEM_X25519_HKDF_SHA256,
         hpke_kdf=hpke_pb2.HKDF_SHA256,
         hpke_aead=hpke_pb2.AES_256_GCM,
-        output_prefix_type=tink_pb2.RAW))
+        output_prefix_type=tink_pb2.RAW,
+    )
+)
 
 DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_CHACHA20_POLY1305 = (
     _create_hpke_key_template(
         hpke_kem=hpke_pb2.DHKEM_X25519_HKDF_SHA256,
         hpke_kdf=hpke_pb2.HKDF_SHA256,
         hpke_aead=hpke_pb2.CHACHA20_POLY1305,
-        output_prefix_type=tink_pb2.TINK))
+        output_prefix_type=tink_pb2.TINK,
+    )
+)
 
 DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_CHACHA20_POLY1305_RAW = (
     _create_hpke_key_template(
         hpke_kem=hpke_pb2.DHKEM_X25519_HKDF_SHA256,
         hpke_kdf=hpke_pb2.HKDF_SHA256,
         hpke_aead=hpke_pb2.CHACHA20_POLY1305,
-        output_prefix_type=tink_pb2.RAW))
+        output_prefix_type=tink_pb2.RAW,
+    )
+)
+
+X_WING_HKDF_SHA256_HKDF_SHA256_AES_256_GCM = _create_hpke_key_template(
+    hpke_kem=hpke_pb2.X_WING,
+    hpke_kdf=hpke_pb2.HKDF_SHA256,
+    hpke_aead=hpke_pb2.AES_256_GCM,
+    output_prefix_type=tink_pb2.TINK,
+)
+
+X_WING_HKDF_SHA256_HKDF_SHA256_AES_256_GCM_RAW = _create_hpke_key_template(
+    hpke_kem=hpke_pb2.X_WING,
+    hpke_kdf=hpke_pb2.HKDF_SHA256,
+    hpke_aead=hpke_pb2.AES_256_GCM,
+    output_prefix_type=tink_pb2.RAW,
+)
 
 
 # Deprecated. Use the predefined constant templates above instead.
 def create_ecies_aead_hkdf_key_template(
     curve_type: common_pb2.EllipticCurveType,
-    ec_point_format: common_pb2.EcPointFormat, hash_type: common_pb2.HashType,
-    dem_key_template: tink_pb2.KeyTemplate) -> tink_pb2.KeyTemplate:
+    ec_point_format: common_pb2.EcPointFormat,
+    hash_type: common_pb2.HashType,
+    dem_key_template: tink_pb2.KeyTemplate,
+) -> tink_pb2.KeyTemplate:
   warnings.warn(
       'The "create_ecies_aead_hkdf_key_template" function is deprecated.',
-      DeprecationWarning, 2)
-  return _create_ecies_aead_hkdf_key_template(curve_type, ec_point_format,
-                                              hash_type, dem_key_template)
+      DeprecationWarning,
+      2,
+  )
+  return _create_ecies_aead_hkdf_key_template(
+      curve_type, ec_point_format, hash_type, dem_key_template
+  )
