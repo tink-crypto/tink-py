@@ -206,6 +206,37 @@ def _generate_unused_key_id(keyset: tink_pb2.Keyset) -> int:
       return key_id
 
 
+def _get_required_str(key: Dict, name: str) -> str:
+  """Reads key[name], rejecting non-string types with tink.TinkError.
+
+  Without this helper, json.loads can produce non-str values (None, int,
+  list, dict, bool) for fields the spec requires to be strings, and the
+  downstream call sites (str.startswith, str.encode, protobuf string
+  assignment) raise AttributeError or TypeError instead of the
+  tink.TinkError documented as the only exception of to_public_keyset_handle.
+  """
+  if name not in key:
+    raise tink.TinkError('invalid JWK: %r not found' % name)
+  value = key[name]
+  if not isinstance(value, str):
+    raise tink.TinkError(
+        'invalid JWK: field %r must be a string, got %s'
+        % (name, type(value).__name__))
+  return value
+
+
+def _get_optional_str(key: Dict, name: str) -> Optional[str]:
+  """Same contract as _get_required_str but returns None when absent."""
+  if name not in key:
+    return None
+  value = key[name]
+  if not isinstance(value, str):
+    raise tink.TinkError(
+        'invalid JWK: field %r must be a string, got %s'
+        % (name, type(value).__name__))
+  return value
+
+
 def _reject_duplicate_keys(pairs):
   """object_pairs_hook for json.loads that rejects duplicate JSON keys.
 
@@ -250,11 +281,17 @@ def to_public_keyset_handle(jwk_set: str) -> tink.KeysetHandle:
     raise tink.TinkError('error parsing JWK set: %s' % e.msg)
   if 'keys' not in keys_dict:
     raise tink.TinkError('invalid JWK set: keys not found')
+  if not isinstance(keys_dict['keys'], list):
+    raise tink.TinkError(
+        'invalid JWK set: "keys" must be a list, got %s'
+        % type(keys_dict['keys']).__name__)
   proto_keyset = tink_pb2.Keyset()
   for key in keys_dict['keys']:
-    if 'alg' not in key:
-      raise tink.TinkError('invalid JWK: alg not found')
-    alg = key['alg']
+    if not isinstance(key, dict):
+      raise tink.TinkError(
+          'invalid JWK: each entry of "keys" must be an object, got %s'
+          % type(key).__name__)
+    alg = _get_required_str(key, 'alg')
     if alg.startswith('ES'):
       proto_key = _convert_to_ecdsa_key(key)
     elif alg.startswith('RS'):
@@ -297,7 +334,7 @@ def _convert_to_ecdsa_key(
     key: Dict[str, Union[str, List[str]]]) -> tink_pb2.Keyset.Key:
   """Converts a EC Json Web Key (JWK) into a tink_pb2.Keyset.Key."""
   ecdsa_public_key = jwt_ecdsa_pb2.JwtEcdsaPublicKey()
-  algorithm = _ECDSA_NAME_TO_ALGORITHM.get(cast(str, key['alg']), None)
+  algorithm = _ECDSA_NAME_TO_ALGORITHM.get(_get_required_str(key, 'alg'), None)
   if not algorithm:
     raise tink.TinkError('unknown ECDSA algorithm')
   if key.get('kty', None) != 'EC':
@@ -309,10 +346,11 @@ def _convert_to_ecdsa_key(
   if 'd' in key:
     raise tink.TinkError('cannot convert private ECDSA key')
   ecdsa_public_key.algorithm = algorithm
-  ecdsa_public_key.x = _base64_decode(cast(str, key['x']))
-  ecdsa_public_key.y = _base64_decode(cast(str, key['y']))
-  if 'kid' in key:
-    ecdsa_public_key.custom_kid.value = key['kid']
+  ecdsa_public_key.x = _base64_decode(_get_required_str(key, 'x'))
+  ecdsa_public_key.y = _base64_decode(_get_required_str(key, 'y'))
+  kid = _get_optional_str(key, 'kid')
+  if kid is not None:
+    ecdsa_public_key.custom_kid.value = kid
   proto_key = tink_pb2.Keyset.Key()
   proto_key.key_data.type_url = _JWT_ECDSA_PUBLIC_KEY_TYPE
   proto_key.key_data.value = ecdsa_public_key.SerializeToString()
@@ -326,7 +364,8 @@ def _convert_to_rsa_ssa_pkcs1_key(
     key: Dict[str, Union[str, List[str]]]) -> tink_pb2.Keyset.Key:
   """Converts a JWK into a JwtEcdsaPublicKey."""
   public_key = jwt_rsa_ssa_pkcs1_pb2.JwtRsaSsaPkcs1PublicKey()
-  algorithm = _RSA_SSA_PKCS1_NAME_TO_ALGORITHM.get(cast(str, key['alg']), None)
+  algorithm = _RSA_SSA_PKCS1_NAME_TO_ALGORITHM.get(
+      _get_required_str(key, 'alg'), None)
   if not algorithm:
     raise tink.TinkError('unknown RSA SSA PKCS1 algorithm')
   if key.get('kty', None) != 'RSA':
@@ -336,10 +375,11 @@ def _convert_to_rsa_ssa_pkcs1_key(
       'qi' in key):
     raise tink.TinkError('importing RSA private keys is not implemented')
   public_key.algorithm = algorithm
-  public_key.n = _base64_decode(cast(str, key['n']))
-  public_key.e = _base64_decode(cast(str, key['e']))
-  if 'kid' in key:
-    public_key.custom_kid.value = key['kid']
+  public_key.n = _base64_decode(_get_required_str(key, 'n'))
+  public_key.e = _base64_decode(_get_required_str(key, 'e'))
+  kid = _get_optional_str(key, 'kid')
+  if kid is not None:
+    public_key.custom_kid.value = kid
   proto_key = tink_pb2.Keyset.Key()
   proto_key.key_data.type_url = _JWT_RSA_SSA_PKCS1_PUBLIC_KEY_TYPE
   proto_key.key_data.value = public_key.SerializeToString()
@@ -353,7 +393,8 @@ def _convert_to_rsa_ssa_pss_key(
     key: Dict[str, Union[str, List[str]]]) -> tink_pb2.Keyset.Key:
   """Converts a JWK into a JwtEcdsaPublicKey."""
   public_key = jwt_rsa_ssa_pss_pb2.JwtRsaSsaPssPublicKey()
-  algorithm = _RSA_SSA_PSS_NAME_TO_ALGORITHM.get(cast(str, key['alg']), None)
+  algorithm = _RSA_SSA_PSS_NAME_TO_ALGORITHM.get(
+      _get_required_str(key, 'alg'), None)
   if not algorithm:
     raise tink.TinkError('unknown RSA SSA PSS algorithm')
   if key.get('kty', None) != 'RSA':
@@ -363,10 +404,11 @@ def _convert_to_rsa_ssa_pss_key(
       'qi' in key):
     raise tink.TinkError('importing RSA private keys is not implemented')
   public_key.algorithm = algorithm
-  public_key.n = _base64_decode(cast(str, key['n']))
-  public_key.e = _base64_decode(cast(str, key['e']))
-  if 'kid' in key:
-    public_key.custom_kid.value = cast(str, key['kid'])
+  public_key.n = _base64_decode(_get_required_str(key, 'n'))
+  public_key.e = _base64_decode(_get_required_str(key, 'e'))
+  kid = _get_optional_str(key, 'kid')
+  if kid is not None:
+    public_key.custom_kid.value = kid
   proto_key = tink_pb2.Keyset.Key()
   proto_key.key_data.type_url = _JWT_RSA_SSA_PSS_PUBLIC_KEY_TYPE
   proto_key.key_data.value = public_key.SerializeToString()
