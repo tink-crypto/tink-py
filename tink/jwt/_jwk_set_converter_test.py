@@ -807,5 +807,27 @@ class JwkSetConverterTest(parameterized.TestCase):
     with self.assertRaises(tink.TinkError):
       jwt.jwk_set_to_public_keyset_handle('invalid')
 
+  @parameterized.parameters(
+      # Duplicate "alg" — Python stdlib json silently picks second occurrence
+      # (last-wins); sibling Tink ports (tink-cc/tink-go/tink-java) reject
+      # via protobuf JSON parser. This brings tink-py to documented parity.
+      ('{"keys":[{"alg":"none","alg":"PS256","kty":"RSA",'
+       '"n":"AAAA","e":"AAAA"}]}',),
+      # Duplicate "kid"
+      ('{"keys":[{"alg":"PS256","kty":"RSA","n":"AAAA","e":"AAAA",'
+       '"kid":"victim_kid","kid":"attacker_kid"}]}',),
+      # Duplicate "kty" (first "EC", second "RSA")
+      ('{"keys":[{"alg":"PS256","kty":"EC","kty":"RSA",'
+       '"n":"AAAA","e":"AAAA"}]}',),
+      # Duplicate "n"
+      ('{"keys":[{"alg":"PS256","kty":"RSA","n":"AA","n":"AAAA",'
+       '"e":"AAAA"}]}',),
+      # Duplicate "keys" at top level
+      ('{"keys":[],"keys":[]}',),
+  )
+  def test_jwk_set_with_duplicate_json_keys_raises_tink_error(self, jwk_set):
+    with self.assertRaises(tink.TinkError):
+      jwt.jwk_set_to_public_keyset_handle(jwk_set)
+
 if __name__ == '__main__':
   absltest.main()

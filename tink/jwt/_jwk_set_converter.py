@@ -206,6 +206,25 @@ def _generate_unused_key_id(keyset: tink_pb2.Keyset) -> int:
       return key_id
 
 
+def _reject_duplicate_keys(pairs):
+  """object_pairs_hook for json.loads that rejects duplicate JSON keys.
+
+  Python's stdlib json.loads silently accepts duplicate JSON object keys
+  by last-value-wins; the sibling Tink ports (tink-cc, tink-go, tink-java)
+  use protobuf JSON parsers that strict-reject duplicate keys per RFC 8259
+  best practice. This hook brings tink-py's JWK Set parser to the same
+  strict behavior so a JWK Set that round-trips through tink-py and a
+  sibling port produces the same accept/reject decision.
+  """
+  seen = set()
+  for k, _ in pairs:
+    if k in seen:
+      raise tink.TinkError(
+          'invalid JWK set: duplicate JSON key %r' % k)
+    seen.add(k)
+  return dict(pairs)
+
+
 def to_public_keyset_handle(jwk_set: str) -> tink.KeysetHandle:
   """Converts a Json Web Key (JWK) set into a Tink KeysetHandle with JWT keys.
 
@@ -226,7 +245,7 @@ def to_public_keyset_handle(jwk_set: str) -> tink.KeysetHandle:
     TinkError if the key cannot be converted.
   """
   try:
-    keys_dict = json.loads(jwk_set)
+    keys_dict = json.loads(jwk_set, object_pairs_hook=_reject_duplicate_keys)
   except json.decoder.JSONDecodeError as e:
     raise tink.TinkError('error parsing JWK set: %s' % e.msg)
   if 'keys' not in keys_dict:
