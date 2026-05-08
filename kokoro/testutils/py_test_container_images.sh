@@ -25,12 +25,12 @@ _image_prefix() {
 
 # Linux x86_64 container image.
 readonly TINK_PY_BASE_IMAGE_NAME="linux-tink-py-base"
-readonly TINK_PY_BASE_IMAGE_HASH="b09e9b14001388e654fb077416d48faaf3b836b6db61c31cc18209d70ef75cab"
+readonly TINK_PY_BASE_IMAGE_HASH="09278ec58a294f5dbcccefaae2518559a1f5657aa6746be9ae116f67d1741b38"
 readonly TINK_PY_BASE_IMAGE="$(_image_prefix)/${TINK_PY_BASE_IMAGE_NAME}@sha256:${TINK_PY_BASE_IMAGE_HASH}"
 
 # Linux arm64 container image.
 readonly TINK_PY_BASE_ARM64_IMAGE_NAME="linux-tink-py-base-arm64"
-readonly TINK_PY_BASE_ARM64_IMAGE_HASH="3bc94696bd9ee438f752e6d23511c99bc7debc14b7b07c3ddffd1586e4eff922"
+readonly TINK_PY_BASE_ARM64_IMAGE_HASH="15e128a3462ed736a0691e1af6400c9a7b5ac137b413bd170c93d54feaa6671e"
 readonly TINK_PY_BASE_ARM64_IMAGE="$(_image_prefix)/${TINK_PY_BASE_ARM64_IMAGE_NAME}@sha256:${TINK_PY_BASE_ARM64_IMAGE_HASH}"
 
 unset -f _image_prefix
