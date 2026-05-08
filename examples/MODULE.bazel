@@ -1,7 +1,7 @@
 module(name = "tink_py_examples")
 
 bazel_dep(name = "rules_python", version = "1.4.0")
-bazel_dep(name = "tink_py", version = "2.4.0")
+bazel_dep(name = "tink_py", version = "1.14.1")
 local_path_override(
     module_name = "tink_py",
     path = "..",
@@ -25,13 +25,13 @@ http_file(
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     is_default = True,
-    python_version = "3.9",
+    python_version = "3.10",
 )
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
     hub_name = "pip_deps",
-    python_version = "3.9",
+    python_version = "3.10",
     requirements_lock = "@tink_py_examples//:requirements.txt",
 )
 use_repo(pip, "pip_deps")

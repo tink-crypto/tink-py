@@ -23,11 +23,10 @@ set -euo pipefail
 # The following assoicative array contains:
 #   ["<Python version>"]="<python tag>-<abi tag>"
 # where:
-#   <Python version> = language version, e.g "3.9"
+#   <Python version> = language version, e.g "3.10"
 #   <python tag>, <abi tag> = as defined at
-#       https://packaging.python.org/en/latest/specifications/, e.g. "cp39-cp39"
+#       https://packaging.python.org/en/latest/specifications/, e.g. "cp310-cp310"
 declare -A PYTHON_VERSIONS
-PYTHON_VERSIONS["3.9"]="cp39-cp39"
 PYTHON_VERSIONS["3.10"]="cp310-cp310"
 PYTHON_VERSIONS["3.11"]="cp311-cp311"
 PYTHON_VERSIONS["3.12"]="cp312-cp312"

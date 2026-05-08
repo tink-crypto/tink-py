@@ -70,7 +70,7 @@ install_dist_and_run_tests() {
 }
 
 enable_py_version() {
-  # A partial version number (e.g. "3.9").
+  # A partial version number (e.g. "3.10").
   local -r partial_version="$1"
   if [[ -z "${partial_version}" ]]; then
     echo "InvalidArgumentError: Partial version must be specified" >&2
@@ -78,7 +78,7 @@ enable_py_version() {
   fi
 
   # The latest installed Python version that matches the partial version number
-  # (e.g. "3.9.5").
+  # (e.g. "3.10.x").
   local version="$(pyenv versions --bare | grep "${partial_version}\." | tail -1)"
   if [[ -z "${version}" ]]; then
     # Install the latest available non-dev version.

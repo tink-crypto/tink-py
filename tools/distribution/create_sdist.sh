@@ -80,7 +80,7 @@ main() {
 
   # TODO(b/281635529): Use a container for a more hermetic testing environment.
   # The latest installed Python version that matches the partial version number
-  # (e.g. "3.9.5"). This is needed because PYTHON_VERSION may be only
+  # (e.g. "3.10.X"). This is needed because PYTHON_VERSION may be only
   # MAJOR.MINOR.
   local -r version="$(pyenv versions --bare | grep "${PYTHON_VERSION}" \
     | tail -1)"

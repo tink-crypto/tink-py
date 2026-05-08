@@ -25,7 +25,7 @@ set -eEuox pipefail
 
 readonly GCS_URL="https://storage.googleapis.com"
 
-readonly PYTHON_VERSIONS=( "3.9" "3.10" "3.11" "3.12" "3.13" "3.14" )
+readonly PYTHON_VERSIONS=( "3.10" "3.11" "3.12" "3.13" "3.14" )
 
 readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 
@@ -220,7 +220,7 @@ create_bdist_for_macos() {
 }
 
 enable_py_version() {
-  # A partial version number (e.g. "3.9").
+  # A partial version number (e.g. "3.10").
   local -r partial_version="$1"
   if [[ -z "${partial_version}" ]]; then
     echo "InvalidArgumentError: Partial version must be specified" >&2

@@ -259,7 +259,6 @@ def main() -> None:
       classifiers=[
           'Programming Language :: Python',
           'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3.10',
           'Programming Language :: Python :: 3.11',
           'Programming Language :: Python :: 3.12',
@@ -270,7 +269,7 @@ def main() -> None:
       options=options(),
       license='Apache 2.0',
       keywords='tink cryptography',
-      python_requires='>=3.9',
+      python_requires='>=3.10',
   )
 
 
