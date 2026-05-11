@@ -43,7 +43,10 @@ fi
 readonly CREATE_DIST_OPTIONS
 
 # Sourcing required to update callers environment.
-source ./kokoro/testutils/install_protoc.sh "30.2"
+# NOTE: See
+# https://github.com/tink-crypto/tink-py/issues/60#issuecomment-4405494880 for
+# why we need 5.29.5.
+source ./kokoro/testutils/install_protoc.sh "29.5"
 
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
 
