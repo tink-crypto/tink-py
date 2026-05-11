@@ -807,5 +807,81 @@ class JwkSetConverterTest(parameterized.TestCase):
     with self.assertRaises(tink.TinkError):
       jwt.jwk_set_to_public_keyset_handle('invalid')
 
+  @parameterized.parameters(
+      # Duplicate "alg" — Python stdlib json silently picks second occurrence
+      # (last-wins); sibling Tink ports (tink-cc/tink-go/tink-java) reject
+      # via protobuf JSON parser. This brings tink-py to documented parity.
+      ('{"keys":[{"alg":"none","alg":"PS256","kty":"RSA",'
+       '"n":"AAAA","e":"AAAA"}]}',),
+      # Duplicate "kid"
+      ('{"keys":[{"alg":"PS256","kty":"RSA","n":"AAAA","e":"AAAA",'
+       '"kid":"victim_kid","kid":"attacker_kid"}]}',),
+      # Duplicate "kty" (first "EC", second "RSA")
+      ('{"keys":[{"alg":"PS256","kty":"EC","kty":"RSA",'
+       '"n":"AAAA","e":"AAAA"}]}',),
+      # Duplicate "n"
+      ('{"keys":[{"alg":"PS256","kty":"RSA","n":"AA","n":"AAAA",'
+       '"e":"AAAA"}]}',),
+      # Duplicate "keys" at top level
+      ('{"keys":[],"keys":[]}',),
+  )
+  def test_jwk_set_with_duplicate_json_keys_raises_tink_error(self, jwk_set):
+    with self.assertRaises(tink.TinkError):
+      jwt.jwk_set_to_public_keyset_handle(jwk_set)
+
+  @parameterized.parameters(
+      # Non-string "alg" — without _get_required_str, alg.startswith()
+      # raises AttributeError; documented exception is tink.TinkError only.
+      ('{"keys":[{"alg":null,"kty":"RSA","n":"AQAB","e":"AQAB"}]}',),
+      ('{"keys":[{"alg":{},"kty":"RSA","n":"AQAB","e":"AQAB"}]}',),
+      ('{"keys":[{"alg":42,"kty":"RSA","n":"AQAB","e":"AQAB"}]}',),
+      ('{"keys":[{"alg":[],"kty":"RSA","n":"AQAB","e":"AQAB"}]}',),
+      # Non-string "n" / "e" — _base64_decode would raise on .encode().
+      ('{"keys":[{"alg":"RS256","kty":"RSA","n":null,"e":"AQAB"}]}',),
+      ('{"keys":[{"alg":"RS256","kty":"RSA","n":42,"e":"AQAB"}]}',),
+      ('{"keys":[{"alg":"RS256","kty":"RSA","n":"AQAB","e":null}]}',),
+      ('{"keys":[{"alg":"PS256","kty":"RSA","n":"AQAB","e":{}}]}',),
+      # Non-string "x" / "y" on ECDSA path.
+      ('{"keys":[{"alg":"ES256","kty":"EC","crv":"P-256",'
+       '"x":null,"y":"AQAB"}]}',),
+      ('{"keys":[{"alg":"ES256","kty":"EC","crv":"P-256",'
+       '"x":"AQAB","y":42}]}',),
+      # Non-string "kid" on each algorithm family.
+      ('{"keys":[{"alg":"RS256","kty":"RSA","n":"AQAB","e":"AQAB",'
+       '"kid":42}]}',),
+      ('{"keys":[{"alg":"PS256","kty":"RSA","n":"AQAB","e":"AQAB",'
+       '"kid":{}}]}',),
+      ('{"keys":[{"alg":"ES256","kty":"EC","crv":"P-256",'
+       '"x":"AQAB","y":"AQAB","kid":[]}]}',),
+  )
+  def test_jwk_set_with_non_string_field_raises_tink_error(self, jwk_set):
+    with self.assertRaises(tink.TinkError):
+      jwt.jwk_set_to_public_keyset_handle(jwk_set)
+
+  @parameterized.parameters(
+      # "keys" must be a list; non-list types previously raised a TypeError
+      # from "for key in keys_dict['keys']" (on dict it iterates keys, on
+      # int/None it raises TypeError leaking the type into the stack trace).
+      ('{"keys":"not-a-list"}',),
+      ('{"keys":42}',),
+      ('{"keys":null}',),
+      ('{"keys":{"a":"b"}}',),
+  )
+  def test_jwk_set_with_non_list_keys_field_raises_tink_error(self, jwk_set):
+    with self.assertRaises(tink.TinkError):
+      jwt.jwk_set_to_public_keyset_handle(jwk_set)
+
+  @parameterized.parameters(
+      # Each entry of "keys" must be a JSON object; non-objects previously
+      # leaked TypeError from the alg lookup.
+      ('{"keys":["not-a-key"]}',),
+      ('{"keys":[null]}',),
+      ('{"keys":[42]}',),
+      ('{"keys":[[]]}',),
+  )
+  def test_jwk_set_with_non_object_key_entry_raises_tink_error(self, jwk_set):
+    with self.assertRaises(tink.TinkError):
+      jwt.jwk_set_to_public_keyset_handle(jwk_set)
+
 if __name__ == '__main__':
   absltest.main()
