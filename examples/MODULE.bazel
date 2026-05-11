@@ -1,7 +1,7 @@
 module(name = "tink_py_examples")
 
 bazel_dep(name = "rules_python", version = "2.0.1")
-bazel_dep(name = "tink_py", version = "1.14.1")
+bazel_dep(name = "tink_py", version = "")
 local_path_override(
     module_name = "tink_py",
     path = "..",
