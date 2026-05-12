@@ -58,6 +58,20 @@ def _validate_output_prefix(
           )
       )
 
+  if type_url in (
+      'type.googleapis.com/google.crypto.tink.MlDsaPrivateKey',
+      'type.googleapis.com/google.crypto.tink.MlDsaPublicKey',
+  ):
+    if output_prefix_type not in [
+        tink_pb2.TINK,
+        tink_pb2.RAW,
+    ]:
+      raise core.TinkError(
+          'invalid output prefix type for ML-DSA: {}'.format(
+              output_prefix_type
+          )
+      )
+
 
 class KeysetHandle:
   """A KeysetHandle provides abstracted access to Keyset.

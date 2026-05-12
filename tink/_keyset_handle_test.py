@@ -25,6 +25,7 @@ from tink import aead
 from tink import core
 from tink import hybrid
 from tink import mac
+from tink import signature
 from tink import tink_config
 from tink.testing import helper
 
@@ -351,10 +352,22 @@ class KeysetHandleTest(absltest.TestCase):
       _ = pickle.dumps(handle)
 
   def test_key_template_with_invalid_output_prefix_type_fails(self):
+    # XAesGcm
     template = aead.aead_key_templates.XAES_256_GCM_160_BIT_NONCE_NO_PREFIX
     template.output_prefix_type = tink_pb2.LEGACY
     with self.assertRaises(tink.TinkError):
       tink.new_keyset_handle(template)
+
+    # ML-DSA
+    template_ml_dsa = tink_pb2.KeyTemplate()
+    template_ml_dsa.CopyFrom(signature.signature_key_templates.ML_DSA_65)
+
+    template_ml_dsa.output_prefix_type = tink_pb2.LEGACY
+    with self.assertRaises(tink.TinkError):
+      tink.new_keyset_handle(template_ml_dsa)
+    template_ml_dsa.output_prefix_type = tink_pb2.CRUNCHY
+    with self.assertRaises(tink.TinkError):
+      tink.new_keyset_handle(template_ml_dsa)
 
 
 if __name__ == '__main__':
