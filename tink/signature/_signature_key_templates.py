@@ -187,6 +187,7 @@ ED25519 = tink_pb2.KeyTemplate(
     type_url=_ED25519_KEY_TYPE_URL, output_prefix_type=tink_pb2.TINK
 )
 
+ML_DSA_44 = _create_ml_dsa_key_template(ml_dsa_pb2.MlDsaInstance.ML_DSA_44)
 ML_DSA_65 = _create_ml_dsa_key_template(ml_dsa_pb2.MlDsaInstance.ML_DSA_65)
 ML_DSA_87 = _create_ml_dsa_key_template(ml_dsa_pb2.MlDsaInstance.ML_DSA_87)
 
