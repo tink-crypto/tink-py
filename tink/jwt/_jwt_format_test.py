@@ -162,9 +162,14 @@ class JwtFormatTest(parameterized.TestCase):
     header = _json_util.json_loads('{"alg":"HS256","unknown":"header"}')
     _jwt_format.validate_header(header, 'HS256')
 
-  def test_validate_header_ignores_typ(self):
+  def test_validate_header_ignores_unknown_string_typ(self):
     header = _json_util.json_loads('{"alg":"HS256","typ":"unknown"}')
     _jwt_format.validate_header(header, 'HS256')
+
+  def test_validate_header_rejects_non_string_typ(self):
+    header = _json_util.json_loads('{"alg":"HS256","typ":123}')
+    with self.assertRaises(_jwt_error.JwtInvalidError):
+      _jwt_format.validate_header(header, 'HS256')
 
   def test_validate_header_rejects_crit(self):
     header = _json_util.json_loads(

@@ -189,6 +189,9 @@ def validate_header(header: Any,
     _validate_kid_header(header, tink_kid)
   if custom_kid is not None and 'kid' in header:
     _validate_kid_header(header, custom_kid)
+  if 'typ' in header:
+    if not isinstance(header['typ'], str):
+      raise _jwt_error.JwtInvalidError('typ header is not a string')
 
 
 def get_type_header(header: Any) -> Optional[str]:
