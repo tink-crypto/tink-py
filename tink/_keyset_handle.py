@@ -349,10 +349,11 @@ def _encrypt(
     )
     if keyset != keyset2:
       raise core.TinkError(
-          'cannot encrypt keyset: %s != %s' % (keyset, keyset2)
+          'cannot encrypt keyset -- decryption was different'
       )
+  # Do not rethrow to avoid leaking key material
   except message.DecodeError:
-    raise core.TinkError('invalid keyset, corrupted key material')
+    raise core.TinkError('invalid keyset, corrupted key material')  # pylint: disable=raise-missing-from
   return tink_pb2.EncryptedKeyset(
       encrypted_keyset=encrypted_keyset, keyset_info=_keyset_info(keyset)
   )
@@ -373,8 +374,9 @@ def _decrypt(
     # Check emptiness here too, in case the encrypted keys unwrapped to nothing?
     _assert_enough_key_material(keyset)
     return keyset
+    # Do not rethrow to avoid leaking key material
   except message.DecodeError:
-    raise core.TinkError('invalid keyset, corrupted key material')
+    raise core.TinkError('invalid keyset, corrupted key material')  # pylint: disable=raise-missing-from
 
 
 def _validate_keyset(keyset: tink_pb2.Keyset):
