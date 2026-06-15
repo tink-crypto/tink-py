@@ -448,3 +448,18 @@ py_proto_library(
     visibility = ["//visibility:public"],
     deps = [":slh_dsa_proto"],
 )
+
+proto_library(
+    name = "composite_ml_dsa_proto",
+    srcs = ["composite_ml_dsa.proto"],
+    deps = [
+        ":ml_dsa_proto",
+        ":tink_proto",
+    ],
+)
+
+py_proto_library(
+    name = "composite_ml_dsa_py_pb2",
+    visibility = ["//visibility:public"],
+    deps = [":composite_ml_dsa_proto"],
+)
