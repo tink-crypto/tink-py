@@ -7,6 +7,7 @@ module(
 bazel_dep(name = "rules_python", version = "2.0.1")
 bazel_dep(name = "abseil-cpp", version = "20260107.1")
 bazel_dep(name = "rules_cc", version = "0.2.14")
+bazel_dep(name = "rules_shell", version = "0.8.0")
 bazel_dep(name = "tink_cc", version = "2.7.0")
 bazel_dep(name = "googletest", version = "1.17.0")
 bazel_dep(name = "pybind11_bazel", version = "3.0.0")
