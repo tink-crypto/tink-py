@@ -20,9 +20,20 @@ from google.api_core import exceptions as core_exceptions
 from google.auth import credentials as auth_credentials
 from google.cloud import kms_v1
 from google.oauth2 import service_account
+import google_crc32c
 
 import tink
 from tink import aead
+
+
+def _crc32c(data: bytes) -> int:
+  """CRC32C checksum of `data` as an int.
+
+  The Cloud KMS request/response protobuf fields use
+  google.protobuf.Int64Value for crc32c values. The Python google-cloud-kms
+  client accepts a plain int for those fields.
+  """
+  return int.from_bytes(google_crc32c.Checksum(data).digest(), 'big')
 
 GCP_KEYURI_PREFIX = 'gcp-kms://'
 _KMS_KEY_REGEX = re.compile(
@@ -63,19 +74,59 @@ class _GcpKmsAead(aead.Aead):
     self.key_version_specified = bool(_KMS_KEY_VERSION_REGEX.match(key_name))
 
   def encrypt(self, plaintext: bytes, associated_data: bytes) -> bytes:
+    """Encrypts `plaintext` with `associated_data` via Cloud KMS.
+
+    Verifies request and response integrity per Cloud KMS Data Integrity
+    Guidelines (https://cloud.google.com/kms/docs/data-integrity-guidelines):
+    sets request CRC32C fields, then fails closed if the response indicates
+    the server did not verify the request, or if the returned ciphertext
+    CRC32C does not match the locally recomputed checksum.
+    """
     try:
       response = self.client.encrypt(
           request=kms_v1.types.service.EncryptRequest(
               name=self.name,
               plaintext=plaintext,
+              plaintext_crc32c=_crc32c(plaintext),
               additional_authenticated_data=associated_data,
+              additional_authenticated_data_crc32c=_crc32c(associated_data),
           )
       )
-      return response.ciphertext
+      if not response.verified_plaintext_crc32c:
+        raise tink.TinkError(
+            'Cloud KMS request for {} is missing the checksum field '
+            'plaintext_crc32c, and other information may be missing from the '
+            'response. Please retry a limited number of times in case the '
+            'error is transient.'.format(self.name)
+        )
+      if not response.verified_additional_authenticated_data_crc32c:
+        raise tink.TinkError(
+            'Cloud KMS request for {} is missing the checksum field '
+            'additional_authenticated_data_crc32c, and other information may '
+            'be missing from the response. Please retry a limited number of '
+            'times in case the error is transient.'.format(self.name)
+        )
+      ciphertext = response.ciphertext
+      if response.ciphertext_crc32c != _crc32c(ciphertext):
+        raise tink.TinkError(
+            'Cloud KMS response corrupted in transit for {}: the checksum in '
+            'field ciphertext_crc32c did not match the data in field '
+            'ciphertext. Please retry in case this is a transient error.'
+            .format(self.name)
+        )
+      return ciphertext
     except core_exceptions.GoogleAPIError as e:
       raise tink.TinkError(e)
 
   def decrypt(self, ciphertext: bytes, associated_data: bytes) -> bytes:
+    """Decrypts `ciphertext` with `associated_data` via Cloud KMS.
+
+    Verifies request and response integrity per Cloud KMS Data Integrity
+    Guidelines: sets request CRC32C fields, then fails closed if the
+    response indicates the server did not verify the request, or if the
+    returned plaintext CRC32C does not match the locally recomputed
+    checksum.
+    """
     if self.key_version_specified:
       raise tink.TinkError(
           'A CryptoKeyVersion was specified. Decryption is only supported when '
@@ -86,10 +137,34 @@ class _GcpKmsAead(aead.Aead):
          request=kms_v1.types.service.DecryptRequest(
              name=self.name,
              ciphertext=ciphertext,
-             additional_authenticated_data=associated_data
+             ciphertext_crc32c=_crc32c(ciphertext),
+             additional_authenticated_data=associated_data,
+             additional_authenticated_data_crc32c=_crc32c(associated_data),
          )
       )
-      return response.plaintext
+      if not response.verified_ciphertext_crc32c:
+        raise tink.TinkError(
+            'Cloud KMS request for {} is missing the checksum field '
+            'ciphertext_crc32c, and other information may be missing from '
+            'the response. Please retry a limited number of times in case '
+            'the error is transient.'.format(self.name)
+        )
+      if not response.verified_additional_authenticated_data_crc32c:
+        raise tink.TinkError(
+            'Cloud KMS request for {} is missing the checksum field '
+            'additional_authenticated_data_crc32c, and other information may '
+            'be missing from the response. Please retry a limited number of '
+            'times in case the error is transient.'.format(self.name)
+        )
+      plaintext = response.plaintext
+      if response.plaintext_crc32c != _crc32c(plaintext):
+        raise tink.TinkError(
+            'Cloud KMS response corrupted in transit for {}: the checksum in '
+            'field plaintext_crc32c did not match the data in field '
+            'plaintext. Please retry in case this is a transient error.'
+            .format(self.name)
+        )
+      return plaintext
     except core_exceptions.GoogleAPIError as e:
       raise tink.TinkError(e)
 

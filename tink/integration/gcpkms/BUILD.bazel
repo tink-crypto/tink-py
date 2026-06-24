@@ -23,6 +23,7 @@ py_library(
         requirement("google-auth"),
         requirement("google-api-core"),
         requirement("google-cloud-kms"),
+        requirement("google-crc32c"),
     ],
 )
 
