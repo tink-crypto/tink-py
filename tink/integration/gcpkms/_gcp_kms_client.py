@@ -65,11 +65,11 @@ class _GcpKmsAead(aead.Aead):
   def encrypt(self, plaintext: bytes, associated_data: bytes) -> bytes:
     try:
       response = self.client.encrypt(
-          request=kms_v1.types.service.EncryptRequest(
-              name=self.name,
-              plaintext=plaintext,
-              additional_authenticated_data=associated_data,
-          )
+          request={
+              'name': self.name,
+              'plaintext': plaintext,
+              'additional_authenticated_data': associated_data,
+          }
       )
       return response.ciphertext
     except core_exceptions.GoogleAPIError as e:
@@ -83,11 +83,11 @@ class _GcpKmsAead(aead.Aead):
       )
     try:
       response = self.client.decrypt(
-         request=kms_v1.types.service.DecryptRequest(
-             name=self.name,
-             ciphertext=ciphertext,
-             additional_authenticated_data=associated_data
-         )
+          request={
+              'name': self.name,
+              'ciphertext': ciphertext,
+              'additional_authenticated_data': associated_data,
+          }
       )
       return response.plaintext
     except core_exceptions.GoogleAPIError as e:
