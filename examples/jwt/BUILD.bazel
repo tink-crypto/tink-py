@@ -86,6 +86,7 @@ sh_test(
         ":jwt_verify_cli.py",
     ],
     tags = [
+        "local",
         "manual",
         "tests_pip_install_tink",
     ],

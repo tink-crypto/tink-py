@@ -33,6 +33,15 @@ fi
 source ./kokoro/testutils/install_protoc.sh "30.2"
 
 # Make sure we use the latest supported Python version.
+
+# The pre-installed pyenv on Kokoro macOS 15 images is too old
+# and fails to compile Python 3.13. We install a fresh
+# pyenv from GitHub into a temporary directory to get the latest patches.
+export PYENV_ROOT="/tmp/pyenv"
+if [ ! -d "${PYENV_ROOT}" ]; then
+  git clone https://github.com/pyenv/pyenv.git "${PYENV_ROOT}"
+fi
+export PATH="${PYENV_ROOT}/bin:${PATH}"
 eval "$(pyenv init -)"
 pyenv install -s 3.13
 pyenv shell 3.13
@@ -71,4 +80,4 @@ echo "---------- BUILDING EXAMPLES ($(date))"
 bazelisk build "${CACHE_FLAGS[@]}" -- $TARGETS
 echo "---------- TESTING EXAMPLES ($(date))"
 bazelisk test "${CACHE_FLAGS[@]}" \
-  --test_env=PYENV_VERSION="${PYENV_VERSION}" -- $TARGETS
+  --test_env=PYENV_VERSION="${PYENV_VERSION}" --test_env=PATH --test_env=HOME -- $TARGETS

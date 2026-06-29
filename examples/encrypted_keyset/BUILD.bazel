@@ -62,6 +62,7 @@ sh_test(
         "//testdata/gcp:credential.json",
     ],
     tags = [
+        "local",
         "manual",
         "requires_kms",
         "tests_pip_install_tink",

@@ -103,5 +103,5 @@ if [[ -n "${BAZEL_CACHE_NAME:-}" ]]; then
 fi
 readonly CACHE_FLAGS
 
-./kokoro/testutils/run_bazel_tests.sh -m "${CACHE_FLAGS[@]}" "examples" \
+./kokoro/testutils/run_bazel_tests.sh -m "${CACHE_FLAGS[@]}" -t "--test_env=PATH" "examples" \
   "${EXAMPLE_TARGETS_ARRAY[@]}"

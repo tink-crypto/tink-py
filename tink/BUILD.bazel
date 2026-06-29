@@ -37,10 +37,10 @@ py_library(
         ":_keyset_writer",
         ":_monitoring",
         ":secret_key_access",
-        requirement("protobuf"),
         "//tink/aead",
         "//tink/core",
         "//tink/proto:tink_py_pb2",
+        "@protobuf//:protobuf_python",
     ],
 )
 
@@ -66,9 +66,9 @@ py_library(
     srcs = ["_keyset_reader.py"],
     srcs_version = "PY3",
     deps = [
-        requirement("protobuf"),
         "//tink/core",
         "//tink/proto:tink_py_pb2",
+        "@protobuf//:protobuf_python",
     ],
 )
 
@@ -89,9 +89,9 @@ py_library(
     srcs = ["_keyset_writer.py"],
     srcs_version = "PY3",
     deps = [
-        requirement("protobuf"),
         "//tink/core",
         "//tink/proto:tink_py_pb2",
+        "@protobuf//:protobuf_python",
     ],
 )
 

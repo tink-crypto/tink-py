@@ -52,6 +52,7 @@ sh_test(
         ":streaming_aead_keyset.json",
     ],
     tags = [
+        "local",
         "manual",
         "tests_pip_install_tink",
     ],
