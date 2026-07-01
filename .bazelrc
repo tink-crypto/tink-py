@@ -44,3 +44,7 @@ build --per_file_copt=external/.*@-w
 build --host_per_file_copt=external/.*@-w
 
 test --test_output=errors
+
+# Use shell script wrappers instead of Python wrappers for executables.
+# This avoids requiring 'python3' on the host PATH inside the sandbox.
+build --@rules_python//python/config_settings:bootstrap_impl=script
