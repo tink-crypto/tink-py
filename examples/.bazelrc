@@ -30,3 +30,11 @@ build:macos_arm64 --macos_cpus=arm64
 build:macos_arm64 --macos_minimum_os=11.0
 
 test --test_output=errors
+
+# Prevent Bazel from generating empty __init__.py files that break namespace
+# e.g. the 'google' package namespace used by cloud client libraries.
+build --incompatible_default_to_explicit_init_py
+
+# Use shell script wrappers instead of Python wrappers for executables.
+# This avoids requiring 'python3' on the host PATH inside the sandbox.
+build --@rules_python//python/config_settings:bootstrap_impl=script
