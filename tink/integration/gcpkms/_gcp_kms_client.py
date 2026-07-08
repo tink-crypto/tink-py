@@ -23,6 +23,7 @@ from google.oauth2 import service_account
 
 import tink
 from tink import aead
+from tink.integration.gcpkms import _gcp_kms_util
 
 GCP_KEYURI_PREFIX = 'gcp-kms://'
 _KMS_KEY_REGEX = re.compile(
@@ -30,13 +31,6 @@ _KMS_KEY_REGEX = re.compile(
     'locations/([a-zA-Z0-9_-]{1,63})/'
     'keyRings/([a-zA-Z0-9_-]{1,63})/'
     'cryptoKeys/([a-zA-Z0-9_-]{1,63})$'
-)
-_KMS_KEY_VERSION_REGEX = re.compile(
-    'projects/([^/]+)/'
-    'locations/([a-zA-Z0-9_-]{1,63})/'
-    'keyRings/([a-zA-Z0-9_-]{1,63})/'
-    'cryptoKeys/([a-zA-Z0-9_-]{1,63})/'
-    'cryptoKeyVersions/([a-zA-Z0-9_-]{1,63})$'
 )
 
 
@@ -49,7 +43,8 @@ class _GcpKmsAead(aead.Aead):
     if not key_name:
       raise tink.TinkError('key_name cannot be null.')
     if not (
-        _KMS_KEY_REGEX.match(key_name) or _KMS_KEY_VERSION_REGEX.match(key_name)
+        _KMS_KEY_REGEX.match(key_name)
+        or _gcp_kms_util.KMS_KEY_VERSION_REGEX.match(key_name)
     ):
       raise tink.TinkError(
           'Invalid key_name format: {}.\nKMS keys should follow the format: '
@@ -60,7 +55,9 @@ class _GcpKmsAead(aead.Aead):
       raise tink.TinkError('client cannot be null.')
     self.client = client
     self.name = key_name
-    self.key_version_specified = bool(_KMS_KEY_VERSION_REGEX.match(key_name))
+    self.key_version_specified = bool(
+        _gcp_kms_util.KMS_KEY_VERSION_REGEX.match(key_name)
+    )
 
   def encrypt(self, plaintext: bytes, associated_data: bytes) -> bytes:
     try:

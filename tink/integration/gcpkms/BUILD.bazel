@@ -10,6 +10,7 @@ py_library(
     visibility = ["//visibility:public"],
     deps = [
         ":_gcp_kms_client",
+        ":_gcp_kms_mac",
     ],
 )
 
@@ -18,12 +19,31 @@ py_library(
     srcs = ["_gcp_kms_client.py"],
     srcs_version = "PY3",
     deps = [
+        ":_gcp_kms_util",
         "//tink:tink_python",
         "//tink/aead",
         requirement("google-auth"),
         requirement("google-api-core"),
         requirement("google-cloud-kms"),
     ],
+)
+
+py_library(
+    name = "_gcp_kms_mac",
+    srcs = ["_gcp_kms_mac.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_gcp_kms_util",
+        "//tink:tink_python",
+        "//tink/mac",
+        requirement("google-cloud-kms"),
+    ],
+)
+
+py_library(
+    name = "_gcp_kms_util",
+    srcs = ["_gcp_kms_util.py"],
+    srcs_version = "PY3",
 )
 
 py_test(
@@ -37,6 +57,18 @@ py_test(
         "@protobuf//:protobuf_python",
         requirement("absl-py"),
         requirement("google-api-core"),
+        requirement("google-cloud-kms"),
+    ],
+)
+
+py_test(
+    name = "_gcp_kms_mac_test",
+    srcs = ["_gcp_kms_mac_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":gcpkms",
+        "//tink:tink_python",
+        requirement("absl-py"),
         requirement("google-cloud-kms"),
     ],
 )
