@@ -369,6 +369,19 @@ class KeysetHandleTest(absltest.TestCase):
     with self.assertRaises(tink.TinkError):
       tink.new_keyset_handle(template_ml_dsa)
 
+    # SLH-DSA
+    template_slh_dsa = tink_pb2.KeyTemplate()
+    template_slh_dsa.CopyFrom(
+        signature.signature_key_templates.SLH_DSA_SHA2_128S
+    )
+
+    template_slh_dsa.output_prefix_type = tink_pb2.LEGACY
+    with self.assertRaises(tink.TinkError):
+      tink.new_keyset_handle(template_slh_dsa)
+    template_slh_dsa.output_prefix_type = tink_pb2.CRUNCHY
+    with self.assertRaises(tink.TinkError):
+      tink.new_keyset_handle(template_slh_dsa)
+
 
 if __name__ == '__main__':
   absltest.main()
