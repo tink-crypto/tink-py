@@ -14,11 +14,17 @@
 
 """A Mac primitive backed by Google Cloud KMS."""
 
+from google.api_core import exceptions as core_exceptions
 from google.cloud import kms_v1
+import google_crc32c
 
 import tink
 from tink import mac
 from tink.integration.gcpkms import _gcp_kms_util
+
+
+# Maximum size of the data that can be used for MAC computation/verification.
+_MAX_MAC_DATA_SIZE = 64 * 1024
 
 
 class _GcpKmsMac(mac.Mac):
@@ -42,7 +48,30 @@ class _GcpKmsMac(mac.Mac):
     self._name = key_name
 
   def compute_mac(self, data: bytes) -> bytes:
-    raise tink.TinkError('Not implemented.')
+    if len(data) > _MAX_MAC_DATA_SIZE:
+      raise tink.TinkError(
+          'The data size is larger than the allowed size:'
+          f' {_MAX_MAC_DATA_SIZE}.'
+      )
+    try:
+      response = self._client.mac_sign(
+          request=kms_v1.MacSignRequest(
+              name=self._name,
+              data=data,
+              data_crc32c=google_crc32c.value(data),
+          )
+      )
+    except core_exceptions.GoogleAPIError as e:
+      raise tink.TinkError(e) from e
+    if response.name != self._name:
+      raise tink.TinkError(
+          'The key name in the response does not match the requested key name.'
+      )
+    if not response.verified_data_crc32c:
+      raise tink.TinkError('Checking the input checksum failed.')
+    if response.mac_crc32c != google_crc32c.value(response.mac):
+      raise tink.TinkError('MAC checksum mismatch.')
+    return response.mac
 
   def verify_mac(self, mac_value: bytes, data: bytes) -> None:
     raise tink.TinkError('Not implemented.')

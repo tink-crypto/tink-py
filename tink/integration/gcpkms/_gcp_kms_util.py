@@ -26,3 +26,4 @@ KMS_KEY_VERSION_REGEX = re.compile(
     'cryptoKeys/([a-zA-Z0-9_-]{1,63})/'
     'cryptoKeyVersions/([a-zA-Z0-9_-]{1,63})$'
 )
+

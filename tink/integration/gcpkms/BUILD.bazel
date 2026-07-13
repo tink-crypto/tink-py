@@ -36,7 +36,9 @@ py_library(
         ":_gcp_kms_util",
         "//tink:tink_python",
         "//tink/mac",
+        requirement("google-api-core"),
         requirement("google-cloud-kms"),
+        requirement("google-crc32c"),
     ],
 )
 
@@ -66,10 +68,13 @@ py_test(
     srcs = ["_gcp_kms_mac_test.py"],
     srcs_version = "PY3",
     deps = [
-        ":gcpkms",
+        ":_gcp_kms_mac",
         "//tink:tink_python",
+        "@protobuf//:protobuf_python",
         requirement("absl-py"),
+        requirement("google-api-core"),
         requirement("google-cloud-kms"),
+        requirement("google-crc32c"),
     ],
 )
 
