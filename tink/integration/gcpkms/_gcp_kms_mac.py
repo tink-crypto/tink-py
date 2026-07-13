@@ -22,13 +22,20 @@ import tink
 from tink import mac
 from tink.integration.gcpkms import _gcp_kms_util
 
-
 # Maximum size of the data that can be used for MAC computation/verification.
 _MAX_MAC_DATA_SIZE = 64 * 1024
 
+# Maximum size of the MAC that can be verified.
+_MAX_MAC_VALUE_SIZE = 64
+
 
 class _GcpKmsMac(mac.Mac):
-  """Implements the Mac interface for GCP KMS."""
+  """Implements the Mac interface for GCP KMS.
+
+  MAC computation and verification are forwarded to a CryptoKeyVersion in
+  Google Cloud KMS via the MacSign and MacVerify RPCs. The integrity of each
+  request and response is protected with CRC32C checksums.
+  """
 
   def __init__(
       self, client: kms_v1.KeyManagementServiceClient, key_name: str
@@ -74,7 +81,40 @@ class _GcpKmsMac(mac.Mac):
     return response.mac
 
   def verify_mac(self, mac_value: bytes, data: bytes) -> None:
-    raise tink.TinkError('Not implemented.')
+    if len(data) > _MAX_MAC_DATA_SIZE:
+      raise tink.TinkError(
+          'The data size is larger than the allowed size:'
+          f' {_MAX_MAC_DATA_SIZE}.'
+      )
+    if len(mac_value) > _MAX_MAC_VALUE_SIZE:
+      raise tink.TinkError(
+          'The MAC size is larger than the allowed size:'
+          f' {_MAX_MAC_VALUE_SIZE}.'
+      )
+    try:
+      response = self._client.mac_verify(
+          request=kms_v1.MacVerifyRequest(
+              name=self._name,
+              data=data,
+              data_crc32c=google_crc32c.value(data),
+              mac=mac_value,
+              mac_crc32c=google_crc32c.value(mac_value),
+          )
+      )
+    except core_exceptions.GoogleAPIError as e:
+      raise tink.TinkError(e) from e
+    if response.name != self._name:
+      raise tink.TinkError(
+          'The key name in the response does not match the requested key name.'
+      )
+    if not response.verified_data_crc32c:
+      raise tink.TinkError('Checking the input data checksum failed.')
+    if not response.verified_mac_crc32c:
+      raise tink.TinkError('Checking the MAC checksum failed.')
+    if response.verified_success_integrity != response.success:
+      raise tink.TinkError('Checking the verification result integrity failed.')
+    if not response.success:
+      raise tink.TinkError('MAC verification failed.')
 
 
 def new_gcp_kms_mac(

@@ -47,6 +47,22 @@ def _mac_sign_response(
   )
 
 
+def _mac_verify_response(
+    name: str = KEY_VERSION,
+    success: bool = True,
+    verified_data_crc32c: bool = True,
+    verified_mac_crc32c: bool = True,
+    verified_success_integrity: bool = True,
+) -> kms_v1.types.MacVerifyResponse:
+  return kms_v1.types.MacVerifyResponse(
+      name=name,
+      success=success,
+      verified_data_crc32c=verified_data_crc32c,
+      verified_mac_crc32c=verified_mac_crc32c,
+      verified_success_integrity=verified_success_integrity,
+  )
+
+
 class GcpKmsMacTest(parameterized.TestCase):
 
   def setUp(self):
@@ -77,14 +93,20 @@ class GcpKmsMacTest(parameterized.TestCase):
           key_name, kms_v1.KeyManagementServiceClient()
       )
 
-  def test_compute_mac_works(self):
+  def test_compute_verify_mac_works(self):
     kms_v1.KeyManagementServiceClient().mac_sign.return_value = (
         _mac_sign_response()
+    )
+    kms_v1.KeyManagementServiceClient().mac_verify.return_value = (
+        _mac_verify_response()
     )
     gcp_mac = _gcp_kms_mac.new_gcp_kms_mac(
         KEY_VERSION, kms_v1.KeyManagementServiceClient()
     )
-    self.assertEqual(gcp_mac.compute_mac(DATA), MAC)
+    mac = gcp_mac.compute_mac(DATA)
+    self.assertEqual(mac, MAC)
+    # Does not raise.
+    gcp_mac.verify_mac(mac, DATA)
 
   def test_compute_mac_rpc_fails(self):
     kms_v1.KeyManagementServiceClient().mac_sign.side_effect = CustomException()
@@ -130,6 +152,81 @@ class GcpKmsMacTest(parameterized.TestCase):
     )
     with self.assertRaises(core.TinkError):
       gcp_mac.compute_mac(b'a' * (_gcp_kms_mac._MAX_MAC_DATA_SIZE + 1))
+
+  def test_verify_mac_rpc_fails(self):
+    kms_v1.KeyManagementServiceClient().mac_verify.side_effect = (
+        CustomException()
+    )
+    gcp_mac = _gcp_kms_mac.new_gcp_kms_mac(
+        KEY_VERSION, kms_v1.KeyManagementServiceClient()
+    )
+    with self.assertRaises(core.TinkError):
+      gcp_mac.verify_mac(MAC, DATA)
+
+  def test_verify_mac_response_key_name_mismatch_fails(self):
+    kms_v1.KeyManagementServiceClient().mac_verify.return_value = (
+        _mac_verify_response(name=OTHER_KEY_VERSION)
+    )
+    gcp_mac = _gcp_kms_mac.new_gcp_kms_mac(
+        KEY_VERSION, kms_v1.KeyManagementServiceClient()
+    )
+    with self.assertRaises(core.TinkError):
+      gcp_mac.verify_mac(MAC, DATA)
+
+  def test_verify_mac_data_crc32c_not_verified_fails(self):
+    kms_v1.KeyManagementServiceClient().mac_verify.return_value = (
+        _mac_verify_response(verified_data_crc32c=False)
+    )
+    gcp_mac = _gcp_kms_mac.new_gcp_kms_mac(
+        KEY_VERSION, kms_v1.KeyManagementServiceClient()
+    )
+    with self.assertRaises(core.TinkError):
+      gcp_mac.verify_mac(MAC, DATA)
+
+  def test_verify_mac_mac_crc32c_not_verified_fails(self):
+    kms_v1.KeyManagementServiceClient().mac_verify.return_value = (
+        _mac_verify_response(verified_mac_crc32c=False)
+    )
+    gcp_mac = _gcp_kms_mac.new_gcp_kms_mac(
+        KEY_VERSION, kms_v1.KeyManagementServiceClient()
+    )
+    with self.assertRaises(core.TinkError):
+      gcp_mac.verify_mac(MAC, DATA)
+
+  def test_verify_mac_success_integrity_mismatch_fails(self):
+    # success is True but verified_success_integrity is False.
+    kms_v1.KeyManagementServiceClient().mac_verify.return_value = (
+        _mac_verify_response(success=True, verified_success_integrity=False)
+    )
+    gcp_mac = _gcp_kms_mac.new_gcp_kms_mac(
+        KEY_VERSION, kms_v1.KeyManagementServiceClient()
+    )
+    with self.assertRaises(core.TinkError):
+      gcp_mac.verify_mac(MAC, DATA)
+
+  def test_verify_mac_invalid_signature_fails(self):
+    kms_v1.KeyManagementServiceClient().mac_verify.return_value = (
+        _mac_verify_response(success=False, verified_success_integrity=False)
+    )
+    gcp_mac = _gcp_kms_mac.new_gcp_kms_mac(
+        KEY_VERSION, kms_v1.KeyManagementServiceClient()
+    )
+    with self.assertRaises(core.TinkError):
+      gcp_mac.verify_mac(MAC, DATA)
+
+  def test_verify_mac_data_too_large_fails(self):
+    gcp_mac = _gcp_kms_mac.new_gcp_kms_mac(
+        KEY_VERSION, kms_v1.KeyManagementServiceClient()
+    )
+    with self.assertRaises(core.TinkError):
+      gcp_mac.verify_mac(MAC, b'a' * (_gcp_kms_mac._MAX_MAC_DATA_SIZE + 1))
+
+  def test_verify_mac_mac_too_large_fails(self):
+    gcp_mac = _gcp_kms_mac.new_gcp_kms_mac(
+        KEY_VERSION, kms_v1.KeyManagementServiceClient()
+    )
+    with self.assertRaises(core.TinkError):
+      gcp_mac.verify_mac(b'a' * (_gcp_kms_mac._MAX_MAC_VALUE_SIZE + 1), DATA)
 
 
 if __name__ == '__main__':
