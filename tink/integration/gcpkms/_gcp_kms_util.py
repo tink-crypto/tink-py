@@ -16,9 +16,9 @@
 
 import re
 
-# Matches the resource name of a CryptoKeyVersion in Cloud KMS. MAC operations
-# require a CryptoKeyVersion. See
-# https://cloud.google.com/kms/docs/object-hierarchy.
+import tink
+
+# Matches the resource name of a CryptoKeyVersion in Cloud KMS.
 KMS_KEY_VERSION_REGEX = re.compile(
     'projects/([^/]+)/'
     'locations/([a-zA-Z0-9_-]{1,63})/'
@@ -26,4 +26,28 @@ KMS_KEY_VERSION_REGEX = re.compile(
     'cryptoKeys/([a-zA-Z0-9_-]{1,63})/'
     'cryptoKeyVersions/([a-zA-Z0-9_-]{1,63})$'
 )
+
+
+def validate_kms_key_name(key_name: str) -> None:
+  """Validates that key_name is a valid Cloud KMS CryptoKeyVersion name.
+
+  MAC and Signing operations require a CryptoKeyVersion. See
+  https://cloud.google.com/kms/docs/object-hierarchy.
+
+  Args:
+    key_name: The KMS key resource name to validate.
+
+  Raises:
+    tink.TinkError: If key_name is null or does not match the expected format
+    for key versions.
+  """
+  if not key_name:
+    raise tink.TinkError('key_name cannot be null.')
+  if not KMS_KEY_VERSION_REGEX.match(key_name):
+    raise tink.TinkError(
+        f'Invalid key_name format: {key_name}. This operation requires'
+        ' a CryptoKeyVersion. KMS key versions should follow the format:'
+        ' "projects/<project-id>/locations/<location>/keyRings/<keyring>/'
+        'cryptoKeys/<key-name>/cryptoKeyVersions/<version>"'
+    )
 

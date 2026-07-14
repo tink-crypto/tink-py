@@ -40,15 +40,7 @@ class _GcpKmsMac(mac.Mac):
   def __init__(
       self, client: kms_v1.KeyManagementServiceClient, key_name: str
   ) -> None:
-    if not key_name:
-      raise tink.TinkError('key_name cannot be null.')
-    if not _gcp_kms_util.KMS_KEY_VERSION_REGEX.match(key_name):
-      raise tink.TinkError(
-          f'Invalid key_name format: {key_name}.\nMAC operations require a '
-          'CryptoKeyVersion. KMS key versions should follow the format: '
-          '"projects/<project-id>/locations/<location>/keyRings/<keyring>/'
-          'cryptoKeys/<key-name>/cryptoKeyVersions/<version>"'
-      )
+    _gcp_kms_util.validate_kms_key_name(key_name)
     if not client:
       raise tink.TinkError('client cannot be null.')
     self._client = client
