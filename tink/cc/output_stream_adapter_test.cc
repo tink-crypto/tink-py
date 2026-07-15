@@ -35,12 +35,12 @@ namespace {
 
 std::unique_ptr<OutputStreamAdapter> GetOutputStreamAdapter(
     int buffer_size, std::stringbuf** buffer_ref) {
-  auto string_stream = absl::make_unique<std::stringstream>();
+  auto string_stream = std::make_unique<std::stringstream>();
   // Reference to the stringstream buffer used for later validation.
   *buffer_ref = string_stream->rdbuf();
-  auto output_stream = absl::make_unique<util::OstreamOutputStream>(
+  auto output_stream = std::make_unique<util::OstreamOutputStream>(
       std::move(string_stream), buffer_size);
-  return absl::make_unique<OutputStreamAdapter>(std::move(output_stream));
+  return std::make_unique<OutputStreamAdapter>(std::move(output_stream));
 }
 
 TEST(OutputStreamAdapterTest, Basic) {

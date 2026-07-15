@@ -48,9 +48,9 @@ absl::Status ReadTillEnd(PythonInputStream* input_stream,
 TEST(PythonInputStreamTest, testReadingStreams) {
   for (int stream_size : {0, 10, 100, 1000, 10000, 100000, 1000000}) {
     std::string contents = subtle::Random::GetRandomBytes(stream_size);
-    auto input = absl::make_unique<test::TestReadableObject>(contents);
+    auto input = std::make_unique<test::TestReadableObject>(contents);
     EXPECT_EQ(stream_size, contents.size());
-    auto input_stream = absl::make_unique<PythonInputStream>(std::move(input));
+    auto input_stream = std::make_unique<PythonInputStream>(std::move(input));
     std::string stream_contents;
     auto status = ReadTillEnd(input_stream.get(), &stream_contents);
     EXPECT_EQ(absl::StatusCode::kOutOfRange, status.code());
@@ -63,10 +63,10 @@ TEST(PythonInputStreamTest, testCustomBufferSizes) {
   int stream_size = 100000;
   for (int buffer_size : {1, 10, 100, 1000, 10000}) {
     std::string contents = subtle::Random::GetRandomBytes(stream_size);
-    auto input = absl::make_unique<test::TestReadableObject>(contents);
+    auto input = std::make_unique<test::TestReadableObject>(contents);
     EXPECT_EQ(stream_size, contents.size());
     auto input_stream =
-        absl::make_unique<PythonInputStream>(std::move(input), buffer_size);
+        std::make_unique<PythonInputStream>(std::move(input), buffer_size);
     const void* buffer;
     auto next_result = input_stream->Next(&buffer);
     EXPECT_TRUE(next_result.ok()) << next_result.status();
@@ -81,12 +81,12 @@ TEST(PythonInputStreamTest, testBackupAndPosition) {
   int buffer_size = 1234;
   const void* buffer;
   std::string contents = subtle::Random::GetRandomBytes(stream_size);
-  auto input = absl::make_unique<test::TestReadableObject>(contents);
+  auto input = std::make_unique<test::TestReadableObject>(contents);
   EXPECT_EQ(stream_size, contents.size());
 
   // Prepare the stream and do the first call to Next().
   auto input_stream =
-      absl::make_unique<PythonInputStream>(std::move(input), buffer_size);
+      std::make_unique<PythonInputStream>(std::move(input), buffer_size);
   EXPECT_EQ(0, input_stream->Position());
   auto next_result = input_stream->Next(&buffer);
   EXPECT_TRUE(next_result.ok()) << next_result.status();

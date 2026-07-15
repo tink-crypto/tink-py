@@ -35,7 +35,7 @@ absl::StatusOr<std::unique_ptr<OutputStreamAdapter>> NewCcEncryptingStream(
   // Get a destination OutputStream from the destination
   // PythonFileObjectAdapter.
   std::unique_ptr<OutputStream> destination_os =
-      absl::make_unique<PythonOutputStream>(ciphertext_destination);
+      std::make_unique<PythonOutputStream>(ciphertext_destination);
 
   // Get an EncryptingStream from the destination OutputStream.
   auto result =
@@ -45,7 +45,7 @@ absl::StatusOr<std::unique_ptr<OutputStreamAdapter>> NewCcEncryptingStream(
   }
 
   // Get an OutputStreamAdapter from the EncryptingStream
-  return absl::make_unique<OutputStreamAdapter>(std::move(result.value()));
+  return std::make_unique<OutputStreamAdapter>(std::move(result.value()));
 }
 
 absl::StatusOr<std::unique_ptr<InputStreamAdapter>> NewCcDecryptingStream(
@@ -53,7 +53,7 @@ absl::StatusOr<std::unique_ptr<InputStreamAdapter>> NewCcDecryptingStream(
     std::shared_ptr<PythonFileObjectAdapter> ciphertext_source) {
   // Get a source InputStream from the source PythonFileObjectAdapter.
   std::unique_ptr<InputStream> source_os =
-      absl::make_unique<PythonInputStream>(ciphertext_source);
+      std::make_unique<PythonInputStream>(ciphertext_source);
 
   // Get a DecryptingStream from the source InputStream.
   auto result = streaming_aead->NewDecryptingStream(std::move(source_os), aad);
@@ -62,7 +62,7 @@ absl::StatusOr<std::unique_ptr<InputStreamAdapter>> NewCcDecryptingStream(
   }
 
   // Get an InputStreamAdapter from the DecryptingStream
-  return absl::make_unique<InputStreamAdapter>(std::move(result.value()));
+  return std::make_unique<InputStreamAdapter>(std::move(result.value()));
 }
 
 }  // namespace tink

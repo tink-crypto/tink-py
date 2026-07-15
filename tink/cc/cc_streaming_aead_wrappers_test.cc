@@ -30,7 +30,7 @@ using crypto::tink::test::DummyStreamingAead;
 TEST(CcStreamingAeadWrappersTest, BasicNewCcEncryptingStream) {
   DummyStreamingAead dummy_saead = DummyStreamingAead("Some streaming AEAD");
   std::unique_ptr<PythonFileObjectAdapter> output =
-      absl::make_unique<test::TestWritableObject>();
+      std::make_unique<test::TestWritableObject>();
 
   auto result =
       NewCcEncryptingStream(&dummy_saead, "associated data", std::move(output));
@@ -41,7 +41,7 @@ TEST(CcStreamingAeadWrappersTest, BasicNewCcEncryptingStream) {
 TEST(CcStreamingAeadWrappersTest, BasicNewCcDecryptingStream) {
   DummyStreamingAead dummy_saead = DummyStreamingAead("Some streaming AEAD");
   std::unique_ptr<PythonFileObjectAdapter> input =
-      absl::make_unique<test::TestReadableObject>("data");
+      std::make_unique<test::TestReadableObject>("data");
 
   auto result =
       NewCcDecryptingStream(&dummy_saead, "associated data", std::move(input));

@@ -33,11 +33,11 @@ namespace {
 
 std::unique_ptr<InputStreamAdapter> GetInputStreamAdapter(
     int buffer_size, const std::string& data) {
-  auto string_stream = absl::make_unique<std::stringstream>();
+  auto string_stream = std::make_unique<std::stringstream>();
   string_stream->write(data.data(), data.size());
-  auto input_stream = absl::make_unique<util::IstreamInputStream>(
+  auto input_stream = std::make_unique<util::IstreamInputStream>(
       std::move(string_stream), buffer_size);
-  return absl::make_unique<InputStreamAdapter>(std::move(input_stream));
+  return std::make_unique<InputStreamAdapter>(std::move(input_stream));
 }
 
 TEST(InputStreamAdapterTest, BasicRead) {

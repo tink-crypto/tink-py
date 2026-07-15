@@ -65,10 +65,10 @@ TEST(PythonOutputStreamTest, WritingStreams) {
   for (size_t stream_size : {0, 10, 100, 1000, 10000, 100000, 1000000}) {
     SCOPED_TRACE(absl::StrCat("stream_size = ", stream_size));
     std::string stream_contents = subtle::Random::GetRandomBytes(stream_size);
-    auto output = absl::make_unique<test::TestWritableObject>();
+    auto output = std::make_unique<test::TestWritableObject>();
     std::string* output_buffer = output->GetBuffer();
     auto output_stream =
-        absl::make_unique<PythonOutputStream>(std::move(output));
+        std::make_unique<PythonOutputStream>(std::move(output));
     auto status = WriteToStream(output_stream.get(), stream_contents);
     EXPECT_TRUE(status.ok()) << status;
     EXPECT_EQ(stream_size, output_buffer->size());
@@ -81,10 +81,10 @@ TEST(PythonOutputStreamTest, CustomBufferSizes) {
   std::string stream_contents = subtle::Random::GetRandomBytes(stream_size);
   for (int buffer_size : {1, 10, 100, 1000, 10000, 100000, 1000000}) {
     SCOPED_TRACE(absl::StrCat("buffer_size = ", buffer_size));
-    auto output = absl::make_unique<test::TestWritableObject>();
+    auto output = std::make_unique<test::TestWritableObject>();
     std::string* output_buffer = output->GetBuffer();
     auto output_stream =
-        absl::make_unique<PythonOutputStream>(std::move(output), buffer_size);
+        std::make_unique<PythonOutputStream>(std::move(output), buffer_size);
     void* buffer;
     auto next_result = output_stream->Next(&buffer);
     EXPECT_TRUE(next_result.ok()) << next_result.status();
@@ -102,12 +102,12 @@ TEST(PythonOutputStreamTest, BackupAndPosition) {
   int buffer_size = 1234;
   void* buffer;
   std::string stream_contents = subtle::Random::GetRandomBytes(stream_size);
-  auto output = absl::make_unique<test::TestWritableObject>();
+  auto output = std::make_unique<test::TestWritableObject>();
   std::string* output_buffer = output->GetBuffer();
 
   // Prepare the stream and do the first call to Next().
   auto output_stream =
-      absl::make_unique<PythonOutputStream>(std::move(output), buffer_size);
+      std::make_unique<PythonOutputStream>(std::move(output), buffer_size);
   EXPECT_EQ(0, output_stream->Position());
   auto next_result = output_stream->Next(&buffer);
   EXPECT_TRUE(next_result.ok()) << next_result.status();

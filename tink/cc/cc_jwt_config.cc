@@ -32,25 +32,25 @@ namespace tink {
 
 absl::Status CcJwtConfigRegister() {
   absl::Status status = Registry::RegisterKeyTypeManager(
-      absl::make_unique<jwt_internal::RawJwtHmacKeyManager>(), true);
+      std::make_unique<jwt_internal::RawJwtHmacKeyManager>(), true);
   if (!status.ok()) {
     return status;
   }
   status = Registry::RegisterAsymmetricKeyManagers(
-      absl::make_unique<jwt_internal::RawJwtEcdsaSignKeyManager>(),
-      absl::make_unique<jwt_internal::RawJwtEcdsaVerifyKeyManager>(), true);
+      std::make_unique<jwt_internal::RawJwtEcdsaSignKeyManager>(),
+      std::make_unique<jwt_internal::RawJwtEcdsaVerifyKeyManager>(), true);
   if (!status.ok()) {
     return status;
   }
   status = Registry::RegisterAsymmetricKeyManagers(
-      absl::make_unique<RawJwtRsaSsaPkcs1SignKeyManager>(),
-      absl::make_unique<RawJwtRsaSsaPkcs1VerifyKeyManager>(), true);
+      std::make_unique<RawJwtRsaSsaPkcs1SignKeyManager>(),
+      std::make_unique<RawJwtRsaSsaPkcs1VerifyKeyManager>(), true);
   if (!status.ok()) {
     return status;
   }
   return Registry::RegisterAsymmetricKeyManagers(
-      absl::make_unique<RawJwtRsaSsaPssSignKeyManager>(),
-      absl::make_unique<RawJwtRsaSsaPssVerifyKeyManager>(), true);
+      std::make_unique<RawJwtRsaSsaPssSignKeyManager>(),
+      std::make_unique<RawJwtRsaSsaPssVerifyKeyManager>(), true);
 }
 
 }  // namespace tink
