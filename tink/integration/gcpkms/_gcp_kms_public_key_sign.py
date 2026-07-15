@@ -14,6 +14,9 @@
 
 """A PublicKeySign primitive backed by Google Cloud KMS."""
 
+import hashlib
+from typing import TypeAlias
+
 from google.api_core import exceptions as core_exceptions
 from google.cloud import kms_v1
 import google_crc32c
@@ -25,10 +28,37 @@ from tink.integration.gcpkms import _gcp_kms_util
 # Maximum size of the data that can be signed.
 _MAX_SIGN_DATA_SIZE = 64 * 1024
 
-# KMS algorithms supported for signing. Grows as classical and
-# post-quantum algorithms are added together with their request-building logic
-# in _GcpKmsPublicKeySign._build_asymmetric_sign_request.
-_SUPPORTED_ALGORITHMS = frozenset()
+_Algorithm: TypeAlias = kms_v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm
+
+# Digest-based signing algorithms mapped to the hash used to compute the digest.
+# The hashlib name (e.g. "sha256") is also the kms_v1.Digest oneof field name,
+# so this single mapping drives both digest computation and request building.
+_DIGEST_ALGORITHM_TO_HASH = {
+    _Algorithm.EC_SIGN_P256_SHA256: 'sha256',
+    _Algorithm.EC_SIGN_SECP256K1_SHA256: 'sha256',
+    _Algorithm.RSA_SIGN_PSS_2048_SHA256: 'sha256',
+    _Algorithm.RSA_SIGN_PSS_3072_SHA256: 'sha256',
+    _Algorithm.RSA_SIGN_PSS_4096_SHA256: 'sha256',
+    _Algorithm.RSA_SIGN_PKCS1_2048_SHA256: 'sha256',
+    _Algorithm.RSA_SIGN_PKCS1_3072_SHA256: 'sha256',
+    _Algorithm.RSA_SIGN_PKCS1_4096_SHA256: 'sha256',
+    _Algorithm.EC_SIGN_P384_SHA384: 'sha384',
+    _Algorithm.RSA_SIGN_PSS_4096_SHA512: 'sha512',
+    _Algorithm.RSA_SIGN_PKCS1_4096_SHA512: 'sha512',
+}
+
+# Algorithms that sign the raw data instead of a digest.
+_DATA_BASED_ALGORITHMS = frozenset({
+    _Algorithm.EC_SIGN_ED25519,
+    _Algorithm.RSA_SIGN_RAW_PKCS1_2048,
+    _Algorithm.RSA_SIGN_RAW_PKCS1_3072,
+    _Algorithm.RSA_SIGN_RAW_PKCS1_4096,
+})
+
+# KMS algorithms supported for signing.
+_SUPPORTED_ALGORITHMS = (
+    frozenset(_DIGEST_ALGORITHM_TO_HASH) | _DATA_BASED_ALGORITHMS
+)
 
 
 class _GcpKmsPublicKeySign(signature.PublicKeySign):
@@ -75,13 +105,19 @@ class _GcpKmsPublicKeySign(signature.PublicKeySign):
       raise tink.TinkError('The GetPublicKey checksum does not match.')
     return response
 
+  def _requires_data_for_sign(self) -> bool:
+    """Returns whether signing operates on the raw data rather than a digest."""
+    if self._public_key.algorithm in _DATA_BASED_ALGORITHMS:
+      return True
+    return self._public_key.protection_level in (
+        kms_v1.ProtectionLevel.EXTERNAL,
+        kms_v1.ProtectionLevel.EXTERNAL_VPC,
+    )
+
   def _build_asymmetric_sign_request(
       self, data: bytes
   ) -> kms_v1.AsymmetricSignRequest:
     """Builds the AsymmetricSign request for the configured algorithm.
-
-    Later it will be extended with the per-algorithm digest, raw-data, and
-    external-mu request-building logic.
 
     Args:
       data: The data to be signed.
@@ -90,10 +126,31 @@ class _GcpKmsPublicKeySign(signature.PublicKeySign):
       The AsymmetricSignRequest.
 
     Raises:
-      tink.TinkError: If the public key algorithm is not supported.
+      tink.TinkError: If the public key algorithm is not supported, or if the
+        data size is larger than the allowed size when signing raw data.
     """
-    raise tink.TinkError(
-        f'The algorithm {self._public_key.algorithm.name} is not supported.'
+    if self._requires_data_for_sign():
+      if len(data) > _MAX_SIGN_DATA_SIZE:
+        raise tink.TinkError(
+            'The data size is larger than the allowed size:'
+            f' {_MAX_SIGN_DATA_SIZE}.'
+        )
+      return kms_v1.AsymmetricSignRequest(
+          name=self._name,
+          data=data,
+          data_crc32c=google_crc32c.value(data),
+      )
+    hash_name = _DIGEST_ALGORITHM_TO_HASH.get(self._public_key.algorithm)
+    if hash_name is None:
+      raise tink.TinkError(
+          f'The algorithm {self._public_key.algorithm.name} does not support'
+          ' digests.'
+      )
+    digest = hashlib.new(hash_name, data).digest()
+    return kms_v1.AsymmetricSignRequest(
+        name=self._name,
+        digest=kms_v1.Digest(**{hash_name: digest}),
+        digest_crc32c=google_crc32c.value(digest),
     )
 
   def _verify_sign_response(
@@ -122,11 +179,6 @@ class _GcpKmsPublicKeySign(signature.PublicKeySign):
       raise tink.TinkError('Signature checksum mismatch.')
 
   def sign(self, data: bytes) -> bytes:
-    if len(data) > _MAX_SIGN_DATA_SIZE:
-      raise tink.TinkError(
-          'The data size is larger than the allowed size:'
-          f' {_MAX_SIGN_DATA_SIZE}.'
-      )
     request = self._build_asymmetric_sign_request(data)
     try:
       response = self._client.asymmetric_sign(request=request)
