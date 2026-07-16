@@ -24,3 +24,4 @@ except ImportError as import_error:
   ) from import_error
 
 GcpKmsClient = _gcp_kms_client.GcpKmsClient
+new_client = _gcp_kms_client.new_client

@@ -202,3 +202,47 @@ class GcpKmsClient(tink.KmsClient):
           set, the default credentials are used.
     """
     tink.register_kms_client(GcpKmsClient(key_uri, credentials_path))
+
+
+class _KmsClient(tink.KmsClient):
+  """KMS client returned by new_client."""
+
+  def __init__(
+      self,
+      kms_v1_client: kms_v1.KeyManagementServiceClient,
+      key_uri: Optional[str],
+  ) -> None:
+    if not key_uri:
+      self._key_uri = None
+    elif key_uri.startswith(GCP_KEYURI_PREFIX):
+      self._key_uri = key_uri
+    else:
+      raise tink.TinkError('Invalid key_uri.')
+    if not kms_v1_client:
+      raise tink.TinkError('Invalid kms_v1_client.')
+    self._client = kms_v1_client
+
+  def does_support(self, key_uri: str) -> bool:
+    if not self._key_uri:
+      return key_uri.startswith(GCP_KEYURI_PREFIX)
+    return key_uri == self._key_uri
+
+  def get_aead(self, key_uri: str) -> aead.Aead:
+    if self._key_uri and self._key_uri != key_uri:
+      raise tink.TinkError(
+          'This client is bound to %s and cannot use key %s'
+          % (self._key_uri, key_uri)
+      )
+    if not key_uri.startswith(GCP_KEYURI_PREFIX):
+      raise tink.TinkError('Invalid key_uri.')
+    key_id = key_uri[len(GCP_KEYURI_PREFIX) :]
+    return _GcpKmsAead(self._client, key_id)
+
+
+def new_client(
+    *,
+    kms_v1_client: kms_v1.KeyManagementServiceClient,
+    key_uri: Optional[str] = None,
+) -> tink.KmsClient:
+  """Creates a new Tink KmsClient from a KeyManagementServiceClient."""
+  return _KmsClient(kms_v1_client, key_uri)

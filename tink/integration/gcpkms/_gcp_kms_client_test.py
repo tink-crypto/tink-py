@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for tink.python.tink.integration.gcp_kms_client."""
+"""Tests for the Tink Python GCP KMS client integration."""
 
 import os
 
@@ -24,7 +24,6 @@ from google.cloud import kms_v1
 from tink import core
 from tink.integration import gcpkms
 from tink.testing import helper
-
 
 KEY_URI1 = 'gcp-kms://projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck1'
 KEY_URI2 = 'gcp-kms://projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck2'
@@ -148,6 +147,75 @@ class GcpKmsClientTest(parameterized.TestCase):
     gcp_aead = gcp_client.get_aead(KEY_URI3)
     with self.assertRaises(core.TinkError):
       gcp_aead.decrypt(CIPHERTEXT, ASSOCIATED_DATA)
+
+  def test_unbound_new_client_does_the_same_as_gcp_kms_client(self):
+    want_gcp_client = gcpkms.GcpKmsClient(None, CREDENTIAL_PATH)
+    kms_client = kms_v1.KeyManagementServiceClient()
+    gcp_client = gcpkms.new_client(kms_v1_client=kms_client)
+    self.assertEqual(
+        gcp_client.does_support(KEY_URI1),
+        want_gcp_client.does_support(KEY_URI1),
+    )
+    self.assertEqual(
+        gcp_client.does_support(KEY_URI2),
+        want_gcp_client.does_support(KEY_URI2),
+    )
+    self.assertEqual(
+        gcp_client.does_support(AWS_KEY_URI),
+        want_gcp_client.does_support(AWS_KEY_URI),
+    )
+    self.assertEqual(
+        gcp_client.does_support(''), want_gcp_client.does_support('')
+    )
+
+  def test_bound_new_client_does_the_same_as_gcp_kms_client(self):
+    want_gcp_client = gcpkms.GcpKmsClient(KEY_URI1, CREDENTIAL_PATH)
+    kms_client = kms_v1.KeyManagementServiceClient()
+    gcp_client = gcpkms.new_client(kms_v1_client=kms_client, key_uri=KEY_URI1)
+    self.assertEqual(
+        gcp_client.does_support(KEY_URI1),
+        want_gcp_client.does_support(KEY_URI1),
+    )
+    self.assertEqual(
+        gcp_client.does_support(KEY_URI2),
+        want_gcp_client.does_support(KEY_URI2),
+    )
+    self.assertEqual(
+        gcp_client.does_support(AWS_KEY_URI),
+        want_gcp_client.does_support(AWS_KEY_URI),
+    )
+    self.assertEqual(
+        gcp_client.does_support(''), want_gcp_client.does_support('')
+    )
+
+  def test_new_client_aead_encryption_works(self):
+    kms_v1.KeyManagementServiceClient().encrypt.return_value = (
+        kms_v1.types.EncryptResponse(ciphertext=CIPHERTEXT)
+    )
+    kms_client = kms_v1.KeyManagementServiceClient()
+    gcp_client = gcpkms.new_client(kms_v1_client=kms_client, key_uri=KEY_URI1)
+    gcp_aead = gcp_client.get_aead(KEY_URI1)
+    ciphertext = gcp_aead.encrypt(PLAINTEXT, ASSOCIATED_DATA)
+    self.assertEqual(ciphertext, CIPHERTEXT)
+
+  def test_new_client_aead_decryption_works(self):
+    kms_v1.KeyManagementServiceClient().decrypt.return_value = (
+        kms_v1.types.DecryptResponse(plaintext=PLAINTEXT)
+    )
+    kms_client = kms_v1.KeyManagementServiceClient()
+    gcp_client = gcpkms.new_client(kms_v1_client=kms_client, key_uri=KEY_URI1)
+    gcp_aead = gcp_client.get_aead(KEY_URI1)
+    plaintext = gcp_aead.decrypt(CIPHERTEXT, ASSOCIATED_DATA)
+    self.assertEqual(plaintext, PLAINTEXT)
+
+  def test_new_client_invalid_key_uri_fails(self):
+    kms_client = kms_v1.KeyManagementServiceClient()
+    with self.assertRaises(core.TinkError):
+      gcpkms.new_client(kms_v1_client=kms_client, key_uri=AWS_KEY_URI)
+
+  def test_new_client_null_client_fails(self):
+    with self.assertRaises(core.TinkError):
+      gcpkms.new_client(kms_v1_client=None)
 
 
 if __name__ == '__main__':
