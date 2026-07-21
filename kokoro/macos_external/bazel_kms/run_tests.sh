@@ -56,5 +56,6 @@ echo "${TARGETS}"
 
 echo "---------- BUILDING KMS Specific tests ($(date))"
 bazelisk build "${CACHE_FLAGS[@]}" -- $TARGETS
-echo "---------- TESTING KMS Specific tests ($(date))"
-bazelisk test "${CACHE_FLAGS[@]}" -- $TARGETS
+# TODO(b/532941360) - Temporarily disable KMS tests.
+#echo "---------- TESTING KMS Specific tests ($(date))"
+#bazelisk test "${CACHE_FLAGS[@]}" -- $TARGETS

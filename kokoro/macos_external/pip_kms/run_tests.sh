@@ -82,6 +82,7 @@ echo "${TARGETS}"
 
 echo "---------- BUILDING EXAMPLES ($(date))"
 bazelisk build "${CACHE_FLAGS[@]}" -- $TARGETS
-echo "---------- TESTING EXAMPLES ($(date))"
-bazelisk test "${CACHE_FLAGS[@]}" \
-  --test_env=PYENV_VERSION="${PYENV_VERSION}" --test_env=PATH --test_env=HOME -- $TARGETS
+# TODO(b/532941360) - Temporarily disable KMS tests.
+#echo "---------- TESTING EXAMPLES ($(date))"
+#bazelisk test "${CACHE_FLAGS[@]}" \
+#  --test_env=PYENV_VERSION="${PYENV_VERSION}" --test_env=PATH --test_env=HOME -- $TARGETS

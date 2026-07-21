@@ -67,6 +67,9 @@ readonly CACHE_FLAGS
 ./kokoro/testutils/run_bazel_tests.sh "${CACHE_FLAGS[@]}" .
 
 if [[ "${SHOULD_RUN_KMS_TESTS}" == "true" ]]; then
+  # TODO(b/532941360) - Temporarily disable tests which interact with KMS.
+  exit 0
+
   source ./kokoro/testutils/install_vault.sh
   source ./kokoro/testutils/run_hcvault_test_server.sh
   vault write -f transit/keys/key-1

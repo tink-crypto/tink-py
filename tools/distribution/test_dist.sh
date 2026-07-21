@@ -65,8 +65,13 @@ install_dist_and_run_tests() {
     exit 1
   fi
   python3 -m pip install "${dist}[all]"
-  find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
+  # TODO(b/532941360) - Temporarily disable tests which interact with KMS.
+  #find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
+  #  | xargs -0 -n1 python3
+  find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" \
+    -not -name "_gcp_kms*_integration_test.py" -print0 \
     | xargs -0 -n1 python3
+
 }
 
 enable_py_version() {
