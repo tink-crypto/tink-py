@@ -45,6 +45,7 @@ _DIGEST_ALGORITHM_TO_HASH = {
     _Algorithm.EC_SIGN_P384_SHA384: 'sha384',
     _Algorithm.RSA_SIGN_PSS_4096_SHA512: 'sha512',
     _Algorithm.RSA_SIGN_PKCS1_4096_SHA512: 'sha512',
+    _Algorithm.PQ_SIGN_HASH_SLH_DSA_SHA2_128S_SHA256: 'sha256',
 }
 
 # Algorithms that sign the raw data instead of a digest.
@@ -53,6 +54,10 @@ _DATA_BASED_ALGORITHMS = frozenset({
     _Algorithm.RSA_SIGN_RAW_PKCS1_2048,
     _Algorithm.RSA_SIGN_RAW_PKCS1_3072,
     _Algorithm.RSA_SIGN_RAW_PKCS1_4096,
+    _Algorithm.PQ_SIGN_ML_DSA_44,
+    _Algorithm.PQ_SIGN_ML_DSA_65,
+    _Algorithm.PQ_SIGN_ML_DSA_87,
+    _Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S,
 })
 
 # KMS algorithms supported for signing.
@@ -84,7 +89,17 @@ class _GcpKmsPublicKeySign(signature.PublicKeySign):
       )
 
   def _fetch_public_key(self) -> kms_v1.PublicKey:
-    """Fetches the public key from KMS and verifies its integrity."""
+    """Fetches the public key from KMS and verifies its integrity.
+
+    The key is requested in PEM format, except for keys that do not support PEM
+    (e.g. SLH-DSA), which are served only in NIST_PQC format.
+
+    Returns:
+      The verified public key.
+
+    Raises:
+      tink.TinkError: If the RPC fails or the key name or checksum do not match.
+    """
     try:
       response = self._client.get_public_key(
           request=kms_v1.GetPublicKeyRequest(
@@ -93,7 +108,19 @@ class _GcpKmsPublicKeySign(signature.PublicKeySign):
           )
       )
     except core_exceptions.GoogleAPIError as e:
-      raise tink.TinkError(e) from e
+      # Keys that do not support PEM (e.g. SLH-DSA) report this; the raw key is
+      # served in NIST_PQC format instead.
+      if 'Only NIST_PQC format is supported' not in str(e):
+        raise tink.TinkError(e) from e
+      try:
+        response = self._client.get_public_key(
+            request=kms_v1.GetPublicKeyRequest(
+                name=self._name,
+                public_key_format=kms_v1.PublicKey.PublicKeyFormat.NIST_PQC,
+            )
+        )
+      except core_exceptions.GoogleAPIError as nist_error:
+        raise tink.TinkError(nist_error) from nist_error
     if response.name != self._name:
       raise tink.TinkError(
           'The key name in the GetPublicKey response does not match the'

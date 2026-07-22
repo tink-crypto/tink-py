@@ -39,7 +39,7 @@ _Algorithm: TypeAlias = kms_v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm
 
 def _public_key_response(
     name: str = _KEY_VERSION,
-    algorithm: kms_v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm = _Algorithm.EC_SIGN_P256_SHA256,
+    algorithm: _Algorithm = _Algorithm.EC_SIGN_P256_SHA256,
     protection_level: kms_v1.ProtectionLevel = kms_v1.ProtectionLevel.SOFTWARE,
     data: bytes = _PUBLIC_KEY_DATA,
     crc32c_checksum: int | None = None,
@@ -74,7 +74,7 @@ def _sign_response(
   )
 
 
-class CustomException(core_exceptions.GoogleAPIError):
+class _MockGoogleApiError(core_exceptions.GoogleAPIError):
   pass
 
 
@@ -82,28 +82,23 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
 
   def setUp(self):
     super().setUp()
-    mock.patch.object(kms_v1, 'KeyManagementServiceClient').start()
-    kms_v1.KeyManagementServiceClient().get_public_key.return_value = (
-        _public_key_response()
+    self.mock_kms_client_cls = self.enter_context(
+        mock.patch.object(kms_v1, 'KeyManagementServiceClient', autospec=True)
     )
-
-  def tearDown(self):
-    mock.patch.stopall()
-    super().tearDown()
+    self.mock_client = self.mock_kms_client_cls.return_value
+    self.mock_client.get_public_key.return_value = _public_key_response()
 
   def _new_signer(
       self,
-      algorithm: kms_v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm = _Algorithm.EC_SIGN_P256_SHA256,
+      algorithm: _Algorithm = _Algorithm.EC_SIGN_P256_SHA256,
       protection_level: kms_v1.ProtectionLevel = kms_v1.ProtectionLevel.SOFTWARE,
   ) -> _gcp_kms_public_key_sign._GcpKmsPublicKeySign:
     """Builds a signer for the given algorithm and protection level."""
-    kms_v1.KeyManagementServiceClient().get_public_key.return_value = (
-        _public_key_response(
-            algorithm=algorithm, protection_level=protection_level
-        )
+    self.mock_client.get_public_key.return_value = _public_key_response(
+        algorithm=algorithm, protection_level=protection_level
     )
     return _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-        _KEY_VERSION, kms_v1.KeyManagementServiceClient()
+        _KEY_VERSION, self.mock_client
     )
 
   def test_client_null(self):
@@ -125,49 +120,76 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
         core.TinkError, r'key_name cannot be null|Invalid key_name format'
     ):
       _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-          key_name, kms_v1.KeyManagementServiceClient()
+          key_name, self.mock_client
       )
 
   def test_construction_unsupported_algorithm_fails(self):
-    kms_v1.KeyManagementServiceClient().get_public_key.return_value = (
-        _public_key_response(algorithm=_Algorithm.GOOGLE_SYMMETRIC_ENCRYPTION)
+    self.mock_client.get_public_key.return_value = _public_key_response(
+        algorithm=_Algorithm.GOOGLE_SYMMETRIC_ENCRYPTION
     )
     with self.assertRaisesRegex(core.TinkError, r'is not supported'):
       _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-          _KEY_VERSION, kms_v1.KeyManagementServiceClient()
+          _KEY_VERSION, self.mock_client
       )
 
   def test_get_public_key_rpc_fails(self):
-    kms_v1.KeyManagementServiceClient().get_public_key.side_effect = (
-        CustomException()
-    )
+    self.mock_client.get_public_key.side_effect = _MockGoogleApiError()
     with self.assertRaises(core.TinkError):
       _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-          _KEY_VERSION, kms_v1.KeyManagementServiceClient()
+          _KEY_VERSION, self.mock_client
       )
 
   def test_get_public_key_response_key_name_mismatch_fails(self):
-    kms_v1.KeyManagementServiceClient().get_public_key.return_value = (
-        _public_key_response(name=_OTHER_KEY_VERSION)
+    self.mock_client.get_public_key.return_value = _public_key_response(
+        name=_OTHER_KEY_VERSION
     )
     with self.assertRaisesRegex(
         core.TinkError,
         r'The key name in the GetPublicKey response does not match',
     ):
       _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-          _KEY_VERSION, kms_v1.KeyManagementServiceClient()
+          _KEY_VERSION, self.mock_client
       )
 
   def test_get_public_key_checksum_mismatch_fails(self):
-    kms_v1.KeyManagementServiceClient().get_public_key.return_value = (
-        _public_key_response(crc32c_checksum=1)
+    self.mock_client.get_public_key.return_value = _public_key_response(
+        crc32c_checksum=1
     )
     with self.assertRaisesRegex(
         core.TinkError, r'The GetPublicKey checksum does not match'
     ):
       _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-          _KEY_VERSION, kms_v1.KeyManagementServiceClient()
+          _KEY_VERSION, self.mock_client
       )
+
+  def test_get_public_key_falls_back_to_nist_pqc(self):
+    self.mock_client.get_public_key.side_effect = [
+        _MockGoogleApiError(
+            'Only NIST_PQC format is supported for this algorithm.'
+        ),
+        _public_key_response(algorithm=_Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S),
+    ]
+
+    signer = _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
+        _KEY_VERSION, self.mock_client
+    )
+
+    self.assertIsNotNone(signer)
+    self.assertEqual(self.mock_client.get_public_key.call_count, 2)
+    request = self.mock_client.get_public_key.call_args.kwargs['request']
+    self.assertEqual(
+        request.public_key_format, kms_v1.PublicKey.PublicKeyFormat.NIST_PQC
+    )
+
+  def test_get_public_key_non_pem_error_not_retried_fails(self):
+    self.mock_client.get_public_key.side_effect = _MockGoogleApiError(
+        'some other error'
+    )
+    with self.assertRaisesRegex(core.TinkError, r'some other error'):
+      _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
+          _KEY_VERSION, self.mock_client
+      )
+    self.assertEqual(self.mock_client.get_public_key.call_count, 1)
 
   def test_construction_succeeds_for_supported_algorithm(self):
     self.assertIsNotNone(self._new_signer())
@@ -181,17 +203,13 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
       signer.sign(b'a' * (_gcp_kms_public_key_sign._MAX_SIGN_DATA_SIZE + 1))
 
   def test_sign_large_data_succeeds_for_digest_based_algorithm(self):
-    kms_v1.KeyManagementServiceClient().asymmetric_sign.return_value = (
-        _sign_response()
-    )
+    self.mock_client.asymmetric_sign.return_value = _sign_response()
     signer = self._new_signer(algorithm=_Algorithm.EC_SIGN_P256_SHA256)
     large_data = b'a' * (_gcp_kms_public_key_sign._MAX_SIGN_DATA_SIZE + 1)
     self.assertEqual(signer.sign(large_data), _SIGNATURE)
 
   def test_sign_rpc_fails(self):
-    kms_v1.KeyManagementServiceClient().asymmetric_sign.side_effect = (
-        CustomException()
-    )
+    self.mock_client.asymmetric_sign.side_effect = _MockGoogleApiError()
     signer = self._new_signer()
     with self.assertRaises(core.TinkError):
       signer.sign(_DATA)
@@ -227,13 +245,12 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
       *_gcp_kms_public_key_sign._DIGEST_ALGORITHM_TO_HASH.items()
   )
   def test_sign_digest_based_algorithm(self, algorithm, hash_name):
-    client = kms_v1.KeyManagementServiceClient()
-    client.asymmetric_sign.return_value = _sign_response()
+    self.mock_client.asymmetric_sign.return_value = _sign_response()
     signer = self._new_signer(algorithm=algorithm)
 
     self.assertEqual(signer.sign(_DATA), _SIGNATURE)
 
-    request = client.asymmetric_sign.call_args.kwargs['request']
+    request = self.mock_client.asymmetric_sign.call_args.kwargs['request']
     expected_digest = hashlib.new(hash_name, _DATA).digest()
     self.assertEqual(request.name, _KEY_VERSION)
     self.assertEqual(getattr(request.digest, hash_name), expected_digest)
@@ -244,15 +261,14 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
 
   @parameterized.parameters(*_gcp_kms_public_key_sign._DATA_BASED_ALGORITHMS)
   def test_sign_data_based_algorithm(self, algorithm):
-    client = kms_v1.KeyManagementServiceClient()
-    client.asymmetric_sign.return_value = _sign_response(
+    self.mock_client.asymmetric_sign.return_value = _sign_response(
         verified_data_crc32c=True, verified_digest_crc32c=False
     )
     signer = self._new_signer(algorithm=algorithm)
 
     self.assertEqual(signer.sign(_DATA), _SIGNATURE)
 
-    request = client.asymmetric_sign.call_args.kwargs['request']
+    request = self.mock_client.asymmetric_sign.call_args.kwargs['request']
     self.assertEqual(request.name, _KEY_VERSION)
     self.assertEqual(request.data, _DATA)
     self.assertEqual(request.data_crc32c, google_crc32c.value(_DATA))
@@ -266,8 +282,7 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
       kms_v1.ProtectionLevel.EXTERNAL_VPC,
   )
   def test_sign_external_protection_uses_data_path(self, protection_level):
-    client = kms_v1.KeyManagementServiceClient()
-    client.asymmetric_sign.return_value = _sign_response(
+    self.mock_client.asymmetric_sign.return_value = _sign_response(
         verified_data_crc32c=True, verified_digest_crc32c=False
     )
     # A digest-based algorithm on an EXTERNAL key signs the raw data.
@@ -278,7 +293,7 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
 
     self.assertEqual(signer.sign(_DATA), _SIGNATURE)
 
-    request = client.asymmetric_sign.call_args.kwargs['request']
+    request = self.mock_client.asymmetric_sign.call_args.kwargs['request']
     self.assertEqual(request.data, _DATA)
     self.assertEqual(request.data_crc32c, google_crc32c.value(_DATA))
     self.assertEqual(request.digest.sha256, b'')
