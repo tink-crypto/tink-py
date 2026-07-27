@@ -266,6 +266,14 @@ pybind_extension(
     name = "tink_bindings",
     srcs = ["tink_bindings.cc"],
     linkopts = select({
+        # Clang on Mac OS makes all static symbols global weak symbols by default.
+        # This flag ensures that the Python interpreter only loads in the PyInit
+        # symbol, turning the global weak symbols into locals. This prevents clashes
+        # between static variable initializers coming from one version of libprotobuf,
+        # and the runtime code coming from another.
+        # See the following GitHub links for relevant discussion:
+        # https://github.com/grpc/grpc/pull/24992
+        # https://github.com/protocolbuffers/protobuf/pull/8346
         "@platforms//os:macos": ["-Wl,-exported_symbol,_PyInit_tink_bindings"],
         "//conditions:default": [],
     }),
