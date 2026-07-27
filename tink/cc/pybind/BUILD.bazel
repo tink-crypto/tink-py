@@ -265,6 +265,10 @@ _PYBIND_EXTENSION_DEPS = [
 pybind_extension(
     name = "tink_bindings",
     srcs = ["tink_bindings.cc"],
+    linkopts = select({
+        "@platforms//os:macos": ["-Wl,-exported_symbol,_PyInit_tink_bindings"],
+        "//conditions:default": [],
+    }),
     deps = _PYBIND_EXTENSION_DEPS,
 )
 
