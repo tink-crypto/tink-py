@@ -14,17 +14,12 @@
 
 """A PublicKeySign primitive backed by Google Cloud KMS."""
 
-import base64
-import binascii
 import hashlib
 from typing import TypeAlias
 
 from google.api_core import exceptions as core_exceptions
 from google.cloud import kms_v1
 import google_crc32c
-from pyasn1.codec.der import decoder as der_decoder
-from pyasn1.error import PyAsn1Error
-from pyasn1_modules import rfc5280
 
 import tink
 from tink import signature
@@ -65,15 +60,6 @@ _DATA_BASED_ALGORITHMS: frozenset[_Algorithm | int] = frozenset({
     _Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S,
 })
 
-# ML-DSA external-mu algorithms mapped to (public key OID, raw key size in
-# bytes). These algorithms sign an externally computed message representative
-# (mu) instead of a plain digest of the data.
-_ML_DSA_EXTERNAL_MU_PARAMS: dict[_Algorithm | int, tuple[str, int]] = {
-    _Algorithm.PQ_SIGN_ML_DSA_44_EXTERNAL_MU: ('2.16.840.1.101.3.4.3.17', 1312),
-    _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU: ('2.16.840.1.101.3.4.3.18', 1952),
-    _Algorithm.PQ_SIGN_ML_DSA_87_EXTERNAL_MU: ('2.16.840.1.101.3.4.3.19', 2592),
-}
-
 # Byte length of tr = SHAKE256(public key, 64) and of the ML-DSA message
 # representative (mu).
 _ML_DSA_HASH_SIZE = 64
@@ -82,62 +68,8 @@ _ML_DSA_HASH_SIZE = 64
 _SUPPORTED_ALGORITHMS: frozenset[_Algorithm | int] = (
     frozenset(_DIGEST_ALGORITHM_TO_HASH)
     | _DATA_BASED_ALGORITHMS
-    | frozenset(_ML_DSA_EXTERNAL_MU_PARAMS)
+    | frozenset(_gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS)
 )
-
-# RFC 7468 textual-encoding boundary tokens.
-_PEM_BEGIN = b'-----BEGIN '
-_PEM_END = b'-----END '
-_PEM_MARKER = b'-----'
-_PEM_PUBLIC_KEY = b'PUBLIC KEY'
-
-
-def _pem_to_der(public_key_pem: bytes) -> bytes:
-  """Decodes the base64 body of a PUBLIC KEY PEM into DER bytes.
-
-  Follows RFC 7468: content before the BEGIN boundary and after the matching
-  END boundary is discarded, the encapsulated type must be a PUBLIC KEY, and
-  header fields (which RFC 7468 forbids in the textual encoding) are rejected.
-
-  Args:
-    public_key_pem: The PEM-encoded public key.
-
-  Returns:
-    The DER-encoded bytes recovered from the PEM body.
-
-  Raises:
-    ValueError: If public_key_pem is not a well-formed PUBLIC KEY PEM.
-  """
-  lines = public_key_pem.splitlines()
-  index = 0
-  # Discard everything before the BEGIN boundary.
-  while index < len(lines) and not lines[index].startswith(_PEM_BEGIN):
-    index += 1
-  if index == len(lines):
-    raise ValueError("Could not find a line starting with '-----BEGIN '.")
-
-  rest = lines[index].strip()[len(_PEM_BEGIN) :]
-  marker = rest.find(_PEM_MARKER)
-  if marker < 0:
-    raise ValueError("Could not find the closing '-----' on the BEGIN line.")
-  pem_type = rest[:marker]
-  if _PEM_PUBLIC_KEY not in pem_type:
-    raise ValueError('Not a PUBLIC KEY PEM.')
-
-  end_marker = _PEM_END + pem_type + _PEM_MARKER
-  contents = []
-  for line in lines[index + 1 :]:
-    if end_marker in line:
-      # Any content after the matching END boundary is discarded.
-      try:
-        return base64.b64decode(b''.join(contents), validate=True)
-      except binascii.Error as e:
-        raise ValueError('Invalid base64 encoding in PEM.') from e
-    # RFC 7468 forbids header fields in the textual encoding.
-    if b':' in line:
-      raise ValueError('Found a header field in the PEM.')
-    contents.append(line.strip())
-  raise ValueError("Could not find the matching '-----END ' boundary.")
 
 
 class _GcpKmsPublicKeySign(signature.PublicKeySign):
@@ -156,7 +88,7 @@ class _GcpKmsPublicKeySign(signature.PublicKeySign):
       raise tink.TinkError('client cannot be null.')
     self._client = client
     self._name = key_name
-    self._public_key = self._fetch_public_key()
+    self._public_key = _gcp_kms_util.fetch_public_key(self._client, self._name)
     if self._public_key.algorithm not in _SUPPORTED_ALGORITHMS:
       raise tink.TinkError(
           f'The algorithm {self._public_key.algorithm.name} is not supported.'
@@ -164,96 +96,25 @@ class _GcpKmsPublicKeySign(signature.PublicKeySign):
     # External-mu ML-DSA signs a message representative derived from tr, the
     # hash of the public key. tr is computed once and reused for every request.
     self._ml_dsa_public_key_hash = None
-    if self._public_key.algorithm in _ML_DSA_EXTERNAL_MU_PARAMS:
+    if self._public_key.algorithm in _gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS:
       self._ml_dsa_public_key_hash = self._compute_ml_dsa_public_key_hash()
-
-  def _fetch_public_key(self) -> kms_v1.PublicKey:
-    """Fetches the public key from KMS and verifies its integrity.
-
-    The key is requested in PEM format, except for keys that do not support PEM
-    (e.g. SLH-DSA), which are served only in NIST_PQC format.
-
-    Returns:
-      The verified public key.
-
-    Raises:
-      tink.TinkError: If the RPC fails or the key name or checksum do not match.
-    """
-    try:
-      response = self._client.get_public_key(
-          request=kms_v1.GetPublicKeyRequest(
-              name=self._name,
-              public_key_format=kms_v1.PublicKey.PublicKeyFormat.PEM,
-          )
-      )
-    except core_exceptions.GoogleAPIError as e:
-      # Keys that do not support PEM (e.g. SLH-DSA) report this; the raw key is
-      # served in NIST_PQC format instead.
-      if 'Only NIST_PQC format is supported' not in str(e):
-        raise tink.TinkError(e) from e
-      try:
-        response = self._client.get_public_key(
-            request=kms_v1.GetPublicKeyRequest(
-                name=self._name,
-                public_key_format=kms_v1.PublicKey.PublicKeyFormat.NIST_PQC,
-            )
-        )
-      except core_exceptions.GoogleAPIError as nist_error:
-        raise tink.TinkError(nist_error) from nist_error
-    if response.name != self._name:
-      raise tink.TinkError(
-          'The key name in the GetPublicKey response does not match the'
-          ' requested key name.'
-      )
-    if response.public_key.crc32c_checksum != google_crc32c.value(
-        response.public_key.data
-    ):
-      raise tink.TinkError('The GetPublicKey checksum does not match.')
-    return response
 
   def _compute_ml_dsa_public_key_hash(self) -> bytes:
     """Recovers the raw ML-DSA public key from the PEM and returns its hash.
-
-    The raw key (rho || t1) is the subjectPublicKey of the PEM-encoded
-    SubjectPublicKeyInfo. Its algorithm OID and length are checked against the
-    expected values for the key's algorithm before hashing.
 
     Returns:
       tr = SHAKE256(public key, 64).
 
     Raises:
       tink.TinkError: If the PEM cannot be parsed, or the OID or key length do
-        not match the expected values.
+        not match the expected values for the key's algorithm.
     """
-    expected_oid, expected_size = _ML_DSA_EXTERNAL_MU_PARAMS[
+    expected_oid, expected_size = _gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS[
         self._public_key.algorithm
     ]
-    try:
-      der = _pem_to_der(self._public_key.public_key.data)
-      decoded = der_decoder.decode(der, asn1Spec=rfc5280.SubjectPublicKeyInfo())
-      if not decoded or len(decoded) != 2:
-        raise ValueError(
-            f'Error decoding for {self._public_key.algorithm.name}'
-        )
-      # Extract the parsed SubjectPublicKeyInfo object from the decoder output.
-      spki, _ = decoded
-      oid = str(spki['algorithm']['algorithm'])
-      raw_public_key = spki['subjectPublicKey'].asOctets()
-    except (PyAsn1Error, ValueError) as e:
-      raise tink.TinkError(
-          'Failed to parse the ML-DSA public key for'
-          f' {self._public_key.algorithm.name}.'
-      ) from e
-    if oid != expected_oid:
-      raise tink.TinkError(
-          f'Unexpected public key OID {oid} for'
-          f' {self._public_key.algorithm.name}.'
-      )
-    if len(raw_public_key) != expected_size:
-      raise tink.TinkError(
-          f'Incorrect public key size for {self._public_key.algorithm.name}:'
-          f' got {len(raw_public_key)} bytes, want {expected_size}.'
-      )
+    raw_public_key = _gcp_kms_util.extract_raw_ml_dsa_public_key(
+        self._public_key.public_key.data, expected_oid, expected_size
+    )
     return hashlib.shake_256(raw_public_key).digest(_ML_DSA_HASH_SIZE)
 
   def _requires_data_for_sign(self) -> bool:
@@ -292,7 +153,7 @@ class _GcpKmsPublicKeySign(signature.PublicKeySign):
           data_crc32c=google_crc32c.value(data),
       )
     if (
-        self._public_key.algorithm in _ML_DSA_EXTERNAL_MU_PARAMS
+        self._public_key.algorithm in _gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS
         and self._ml_dsa_public_key_hash is not None
     ):
       # mu = SHAKE256(tr || 0x00 || 0x00 || data, 64), the FIPS-204 message

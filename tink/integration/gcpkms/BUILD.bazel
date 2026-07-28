@@ -54,8 +54,6 @@ py_library(
         requirement("google-api-core"),
         requirement("google-cloud-kms"),
         requirement("google-crc32c"),
-        requirement("pyasn1"),
-        requirement("pyasn1-modules"),
     ],
 )
 
@@ -63,7 +61,14 @@ py_library(
     name = "_gcp_kms_util",
     srcs = ["_gcp_kms_util.py"],
     srcs_version = "PY3",
-    deps = ["//tink:tink_python"],
+    deps = [
+        "//tink:tink_python",
+        requirement("google-api-core"),
+        requirement("google-cloud-kms"),
+        requirement("google-crc32c"),
+        requirement("pyasn1"),
+        requirement("pyasn1-modules"),
+    ],
 )
 
 py_test(
@@ -102,14 +107,27 @@ py_test(
     srcs_version = "PY3",
     deps = [
         ":_gcp_kms_public_key_sign",
+        ":_gcp_kms_util",
         "//tink:tink_python",
         "@protobuf//:protobuf_python",
         requirement("absl-py"),
         requirement("google-api-core"),
         requirement("google-cloud-kms"),
         requirement("google-crc32c"),
-        requirement("pyasn1"),
-        requirement("pyasn1-modules"),
+    ],
+)
+
+py_test(
+    name = "_gcp_kms_util_test",
+    srcs = ["_gcp_kms_util_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_gcp_kms_util",
+        "//tink:tink_python",
+        requirement("absl-py"),
+        requirement("google-api-core"),
+        requirement("google-cloud-kms"),
+        requirement("google-crc32c"),
     ],
 )
 

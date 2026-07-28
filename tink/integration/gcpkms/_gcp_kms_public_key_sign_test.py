@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import base64
 import hashlib
-import textwrap
 from typing import TypeAlias
 from unittest import mock
 
@@ -23,12 +21,10 @@ from absl.testing import parameterized
 from google.api_core import exceptions as core_exceptions
 from google.cloud import kms_v1
 import google_crc32c
-from pyasn1.codec.der import encoder as der_encoder
-from pyasn1.type import univ
-from pyasn1_modules import rfc5280
 
 from tink import core
 from tink.integration.gcpkms import _gcp_kms_public_key_sign
+from tink.integration.gcpkms import _gcp_kms_util
 
 _KEY_VERSION = 'projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck1/cryptoKeyVersions/1'
 _OTHER_KEY_VERSION = 'projects/p1/locations/global/keyRings/kr1/cryptoKeys/ck1/cryptoKeyVersions/2'
@@ -39,11 +35,6 @@ _PUBLIC_KEY_DATA = (
 )
 
 _Algorithm: TypeAlias = kms_v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm
-
-# OID and raw key size of ML-DSA-65 used for testing.
-_ML_DSA_OID, _ML_DSA_SIZE = _gcp_kms_public_key_sign._ML_DSA_EXTERNAL_MU_PARAMS[
-    _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU
-]
 
 
 # Data signed in the external-mu known-answer test, and the resulting values of
@@ -72,19 +63,6 @@ _ML_DSA_EXTERNAL_MU_HEX = {
 def _ml_dsa_test_public_key(size: int) -> bytes:
   """Returns deterministic bytes of the given size to stand in for a raw key."""
   return bytes(i % 251 for i in range(size))
-
-
-def _raw_ml_dsa_public_key_to_pem(oid: str, raw_public_key: bytes) -> bytes:
-  """Builds a PEM-encoded SubjectPublicKeyInfo for an ML-DSA public key."""
-  spki = rfc5280.SubjectPublicKeyInfo()
-  spki['algorithm']['algorithm'] = univ.ObjectIdentifier(oid)
-  spki['subjectPublicKey'] = univ.BitString(hexValue=raw_public_key.hex())
-  der = der_encoder.encode(spki)
-  body = base64.b64encode(der).decode()
-  wrapped_body = '\n'.join(textwrap.wrap(body, width=64))
-  return (
-      f'-----BEGIN PUBLIC KEY-----\n{wrapped_body}\n-----END PUBLIC KEY-----'
-  ).encode()
 
 
 def _public_key_response(
@@ -158,10 +136,10 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
       algorithm: _Algorithm = _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU,
   ) -> bytes:
     """Returns the mu the signer sends for an ML-DSA external-mu key."""
-    oid, _ = _gcp_kms_public_key_sign._ML_DSA_EXTERNAL_MU_PARAMS[algorithm]
+    oid, _ = _gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS[algorithm]
     self.mock_client.get_public_key.return_value = _public_key_response(
         algorithm=algorithm,
-        data=_raw_ml_dsa_public_key_to_pem(oid, raw_public_key),
+        data=_gcp_kms_util.raw_ml_dsa_public_key_to_pem(oid, raw_public_key),
     )
     self.mock_client.asymmetric_sign.return_value = _sign_response()
     signer = _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
@@ -210,18 +188,6 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
           _KEY_VERSION, self.mock_client
       )
 
-  def test_get_public_key_response_key_name_mismatch_fails(self):
-    self.mock_client.get_public_key.return_value = _public_key_response(
-        name=_OTHER_KEY_VERSION
-    )
-    with self.assertRaisesRegex(
-        core.TinkError,
-        r'The key name in the GetPublicKey response does not match',
-    ):
-      _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-          _KEY_VERSION, self.mock_client
-      )
-
   def test_get_public_key_checksum_mismatch_fails(self):
     self.mock_client.get_public_key.return_value = _public_key_response(
         crc32c_checksum=1
@@ -232,35 +198,6 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
       _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
           _KEY_VERSION, self.mock_client
       )
-
-  def test_get_public_key_falls_back_to_nist_pqc(self):
-    self.mock_client.get_public_key.side_effect = [
-        _MockGoogleApiError(
-            'Only NIST_PQC format is supported for this algorithm.'
-        ),
-        _public_key_response(algorithm=_Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S),
-    ]
-
-    signer = _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-        _KEY_VERSION, self.mock_client
-    )
-
-    self.assertIsNotNone(signer)
-    self.assertEqual(self.mock_client.get_public_key.call_count, 2)
-    request = self.mock_client.get_public_key.call_args.kwargs['request']
-    self.assertEqual(
-        request.public_key_format, kms_v1.PublicKey.PublicKeyFormat.NIST_PQC
-    )
-
-  def test_get_public_key_non_pem_error_not_retried_fails(self):
-    self.mock_client.get_public_key.side_effect = _MockGoogleApiError(
-        'some other error'
-    )
-    with self.assertRaisesRegex(core.TinkError, r'some other error'):
-      _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-          _KEY_VERSION, self.mock_client
-      )
-    self.assertEqual(self.mock_client.get_public_key.call_count, 1)
 
   def test_construction_succeeds_for_supported_algorithm(self):
     self.assertIsNotNone(self._new_signer())
@@ -370,14 +307,14 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
     self.assertEqual(request.digest.sha256, b'')
 
   @parameterized.parameters(
-      *_gcp_kms_public_key_sign._ML_DSA_EXTERNAL_MU_PARAMS.items()
+      *_gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS.items()
   )
   def test_sign_external_mu_algorithm(self, algorithm, params):
     oid, size = params
     raw_public_key = bytes(size)
     self.mock_client.get_public_key.return_value = _public_key_response(
         algorithm=algorithm,
-        data=_raw_ml_dsa_public_key_to_pem(oid, raw_public_key),
+        data=_gcp_kms_util.raw_ml_dsa_public_key_to_pem(oid, raw_public_key),
     )
     self.mock_client.asymmetric_sign.return_value = _sign_response()
     signer = _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
@@ -397,8 +334,10 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
 
   @parameterized.parameters(*_ML_DSA_EXTERNAL_MU_HEX.items())
   def test_sign_external_mu_known_answer(self, algorithm, expected_mu_hex):
-    oid, size = _gcp_kms_public_key_sign._ML_DSA_EXTERNAL_MU_PARAMS[algorithm]
-    pem = _raw_ml_dsa_public_key_to_pem(oid, _ml_dsa_test_public_key(size))
+    oid, size = _gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS[algorithm]
+    pem = _gcp_kms_util.raw_ml_dsa_public_key_to_pem(
+        oid, _ml_dsa_test_public_key(size)
+    )
     self.mock_client.get_public_key.return_value = _public_key_response(
         algorithm=algorithm, data=pem
     )
@@ -413,7 +352,7 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
     self.assertEqual(request.digest.external_mu.hex(), expected_mu_hex)
 
   def test_sign_external_mu_differs_by_public_key_and_data(self):
-    size = _gcp_kms_public_key_sign._ML_DSA_EXTERNAL_MU_PARAMS[
+    size = _gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS[
         _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU
     ][1]
     mu = self._external_mu(bytes(size), _DATA)
@@ -425,8 +364,8 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
   def test_sign_external_mu_differs_by_algorithm(self):
     algo_44 = _Algorithm.PQ_SIGN_ML_DSA_44_EXTERNAL_MU
     algo_65 = _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU
-    size_44 = _gcp_kms_public_key_sign._ML_DSA_EXTERNAL_MU_PARAMS[algo_44][1]
-    size_65 = _gcp_kms_public_key_sign._ML_DSA_EXTERNAL_MU_PARAMS[algo_65][1]
+    size_44 = _gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS[algo_44][1]
+    size_65 = _gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS[algo_65][1]
 
     mu_44 = self._external_mu(bytes(size_44), _DATA, algorithm=algo_44)
     mu_65 = self._external_mu(bytes(size_65), _DATA, algorithm=algo_65)
@@ -435,102 +374,13 @@ class GcpKmsPublicKeySignTest(parameterized.TestCase):
 
   def test_construction_wrong_ml_dsa_key_size_fails(self):
     algorithm = _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU
-    oid, size = _gcp_kms_public_key_sign._ML_DSA_EXTERNAL_MU_PARAMS[algorithm]
+    oid, size = _gcp_kms_util.ML_DSA_EXTERNAL_MU_PARAMS[algorithm]
     # The raw key is one byte shorter than the algorithm expects.
-    pem = _raw_ml_dsa_public_key_to_pem(oid, bytes(size - 1))
-    self.mock_client.get_public_key.return_value = _public_key_response(
-        algorithm=algorithm, data=pem
-    )
-    with self.assertRaisesRegex(core.TinkError, r'Incorrect public key size'):
-      _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-          _KEY_VERSION, self.mock_client
-      )
-
-  def test_construction_wrong_ml_dsa_oid_fails(self):
-    algorithm = _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU
-    _, size = _gcp_kms_public_key_sign._ML_DSA_EXTERNAL_MU_PARAMS[algorithm]
-    # The OID of ML-DSA-87 does not match the ML-DSA-65 algorithm.
-    wrong_oid, _ = _gcp_kms_public_key_sign._ML_DSA_EXTERNAL_MU_PARAMS[
-        _Algorithm.PQ_SIGN_ML_DSA_87_EXTERNAL_MU
-    ]
     self.mock_client.get_public_key.return_value = _public_key_response(
         algorithm=algorithm,
-        data=_raw_ml_dsa_public_key_to_pem(wrong_oid, bytes(size)),
+        data=_gcp_kms_util.raw_ml_dsa_public_key_to_pem(oid, bytes(size - 1)),
     )
-    with self.assertRaisesRegex(core.TinkError, r'Unexpected public key OID'):
-      _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-          _KEY_VERSION, self.mock_client
-      )
-
-  def test_construction_malformed_ml_dsa_pem_fails(self):
-    self.mock_client.get_public_key.return_value = _public_key_response(
-        algorithm=_Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU,
-        data=b'-----BEGIN PUBLIC KEY-----\n'
-        + base64.b64encode(b'not a valid spki')
-        + b'\n-----END PUBLIC KEY-----',
-    )
-    with self.assertRaisesRegex(
-        core.TinkError, r'Failed to parse the ML-DSA public key'
-    ):
-      _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
-          _KEY_VERSION, self.mock_client
-      )
-
-  def test_content_outside_markers_is_discarded(self):
-    raw_public_key = _ml_dsa_test_public_key(_ML_DSA_SIZE)
-    pem = _raw_ml_dsa_public_key_to_pem(_ML_DSA_OID, raw_public_key)
-    # Wrap the PEM with a preamble before BEGIN and trailing bytes after END.
-    padded_pem = b'preamble to ignore\n' + pem + b'\ntrailing to ignore'
-
-    self.assertEqual(
-        _gcp_kms_public_key_sign._pem_to_der(padded_pem),
-        _gcp_kms_public_key_sign._pem_to_der(pem),
-    )
-
-  @parameterized.named_parameters(
-      (
-          'not_a_public_key',
-          b'-----BEGIN CERTIFICATE-----\n'
-          + base64.b64encode(b'body')
-          + b'\n-----END CERTIFICATE-----',
-      ),
-      (
-          'missing_begin',
-          base64.b64encode(b'body') + b'\n-----END PUBLIC KEY-----',
-      ),
-      (
-          'missing_end',
-          b'-----BEGIN PUBLIC KEY-----\n' + base64.b64encode(b'body'),
-      ),
-      (
-          'mismatched_boundary',
-          b'-----BEGIN PUBLIC KEY-----\n'
-          + base64.b64encode(b'body')
-          + b'\n-----END CERTIFICATE-----',
-      ),
-      (
-          'header_field',
-          b'-----BEGIN PUBLIC KEY-----\nProc-Type: 4,ENCRYPTED\n'
-          + base64.b64encode(b'body')
-          + b'\n-----END PUBLIC KEY-----',
-      ),
-      (
-          'invalid_base64',
-          (
-              b'-----BEGIN PUBLIC KEY-----\n'
-              b'not!!!valid???base64\n'
-              b'-----END PUBLIC KEY-----'
-          ),
-      ),
-  )
-  def test_invalid_pem_structure_fails(self, pem: bytes):
-    self.mock_client.get_public_key.return_value = _public_key_response(
-        algorithm=_Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU,
-        data=pem,
-    )
-    with self.assertRaisesRegex(
-        core.TinkError, r'Failed to parse the ML-DSA public key'
-    ):
+    with self.assertRaisesRegex(core.TinkError, r'Incorrect public key size'):
       _gcp_kms_public_key_sign.new_gcp_kms_public_key_sign(
           _KEY_VERSION, self.mock_client
       )
