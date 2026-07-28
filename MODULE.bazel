@@ -31,30 +31,32 @@ python.toolchain(python_version = "3.12")
 python.toolchain(python_version = "3.13")
 python.toolchain(python_version = "3.14")
 
+_HUB_NAME = "p"  # short to keep paths short which is needed on Windows.
+
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
-    hub_name = "tink_py_pip_deps",
+    hub_name = _HUB_NAME,
     python_version = "3.10",
     requirements_lock = "@tink_py//:requirements_all.txt",
 )
 pip.parse(
-    hub_name = "tink_py_pip_deps",
+    hub_name = _HUB_NAME,
     python_version = "3.11",
     requirements_lock = "@tink_py//:requirements_all.txt",
 )
 pip.parse(
-    hub_name = "tink_py_pip_deps",
+    hub_name = _HUB_NAME,
     python_version = "3.12",
     requirements_lock = "@tink_py//:requirements_all.txt",
 )
 pip.parse(
-    hub_name = "tink_py_pip_deps",
+    hub_name = _HUB_NAME,
     python_version = "3.13",
     requirements_lock = "@tink_py//:requirements_all.txt",
 )
 pip.parse(
-    hub_name = "tink_py_pip_deps",
+    hub_name = _HUB_NAME,
     python_version = "3.14",
     requirements_lock = "@tink_py//:requirements_all.txt",
 )
-use_repo(pip, "tink_py_pip_deps")
+use_repo(pip, tink_py_pip_deps = _HUB_NAME)
