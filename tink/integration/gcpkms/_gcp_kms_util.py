@@ -182,6 +182,29 @@ def _pem_to_der(public_key_pem: bytes) -> bytes:
   raise ValueError("Could not find the matching '-----END ' boundary.")
 
 
+def parse_spki_pem(public_key_pem: bytes) -> rfc5280.SubjectPublicKeyInfo:
+  """Decodes the PEM-encoded SubjectPublicKeyInfo returned by Cloud KMS.
+
+  Args:
+    public_key_pem: The PEM-encoded public key.
+
+  Returns:
+    The decoded SubjectPublicKeyInfo.
+
+  Raises:
+    tink.TinkError: If the PEM cannot be parsed.
+  """
+  try:
+    der = _pem_to_der(public_key_pem)
+    decoded = der_decoder.decode(der, asn1Spec=rfc5280.SubjectPublicKeyInfo())
+    if not decoded or len(decoded) != 2:
+      raise ValueError(f'Unexpected decode result: {decoded}')
+    spki, _ = decoded
+  except (PyAsn1Error, ValueError) as e:
+    raise tink.TinkError('Failed to parse the public key PEM.') from e
+  return spki
+
+
 def extract_raw_ml_dsa_public_key(
     public_key_pem: bytes, expected_oid: str, expected_size: int
 ) -> bytes:
@@ -204,14 +227,10 @@ def extract_raw_ml_dsa_public_key(
       match the expected values.
   """
   try:
-    der = _pem_to_der(public_key_pem)
-    decoded = der_decoder.decode(der, asn1Spec=rfc5280.SubjectPublicKeyInfo())
-    if not decoded or len(decoded) != 2:
-      raise ValueError(f'Unexpected decode result: {decoded}')
-    spki, _ = decoded
+    spki = parse_spki_pem(public_key_pem)
     oid = str(spki['algorithm']['algorithm'])
     raw_public_key = spki['subjectPublicKey'].asOctets()
-  except (PyAsn1Error, ValueError) as e:
+  except (PyAsn1Error, ValueError, tink.TinkError) as e:
     raise tink.TinkError('Failed to parse the ML-DSA public key.') from e
   if oid != expected_oid:
     raise tink.TinkError(f'Unexpected public key OID {oid}.')

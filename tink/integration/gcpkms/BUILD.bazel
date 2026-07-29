@@ -12,6 +12,7 @@ py_library(
         ":_gcp_kms_client",
         ":_gcp_kms_mac",
         ":_gcp_kms_public_key_sign",
+        ":_gcp_kms_public_key_verify",
     ],
 )
 
@@ -54,6 +55,26 @@ py_library(
         requirement("google-api-core"),
         requirement("google-cloud-kms"),
         requirement("google-crc32c"),
+    ],
+)
+
+py_library(
+    name = "_gcp_kms_public_key_verify",
+    srcs = ["_gcp_kms_public_key_verify.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_gcp_kms_util",
+        "//tink:tink_python",
+        "//tink/internal:big_integer_util",
+        "//tink/proto:common_py_pb2",
+        "//tink/proto:ecdsa_py_pb2",
+        "//tink/proto:rsa_ssa_pkcs1_py_pb2",
+        "//tink/proto:rsa_ssa_pss_py_pb2",
+        "//tink/proto:tink_py_pb2",
+        "//tink/signature",
+        requirement("google-cloud-kms"),
+        requirement("pyasn1"),
+        requirement("pyasn1-modules"),
     ],
 )
 
@@ -108,6 +129,21 @@ py_test(
     deps = [
         ":_gcp_kms_public_key_sign",
         ":_gcp_kms_util",
+        "//tink:tink_python",
+        "@protobuf//:protobuf_python",
+        requirement("absl-py"),
+        requirement("google-api-core"),
+        requirement("google-cloud-kms"),
+        requirement("google-crc32c"),
+    ],
+)
+
+py_test(
+    name = "_gcp_kms_public_key_verify_test",
+    srcs = ["_gcp_kms_public_key_verify_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_gcp_kms_public_key_verify",
         "//tink:tink_python",
         "@protobuf//:protobuf_python",
         requirement("absl-py"),

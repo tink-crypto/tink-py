@@ -224,6 +224,85 @@ class FetchPublicKeyTest(parameterized.TestCase):
     self.assertEqual(client.get_public_key.call_count, 2)
 
 
+class ParseSpkiPemTest(parameterized.TestCase):
+
+  def test_valid_pem_returns_spki(self):
+    spki = _gcp_kms_util.parse_spki_pem(_ML_DSA_65_OPENSSL_SPKI_PEM)
+    self.assertIsNotNone(spki)
+    self.assertEqual(str(spki['algorithm']['algorithm']), _ML_DSA_65_OID)
+
+  def test_content_outside_markers_is_discarded(self):
+    spki = _gcp_kms_util.parse_spki_pem(_ML_DSA_65_OPENSSL_SPKI_PEM)
+    padded_pem = (
+        b'preamble to ignore\n'
+        + _ML_DSA_65_OPENSSL_SPKI_PEM
+        + b'\ntrailing to ignore'
+    )
+    self.assertEqual(
+        _gcp_kms_util.parse_spki_pem(padded_pem),
+        spki,
+    )
+
+  def test_malformed_pem_fails(self):
+    pem = (
+        b'-----BEGIN PUBLIC KEY-----\n'
+        + base64.b64encode(b'not a valid spki')
+        + b'\n-----END PUBLIC KEY-----'
+    )
+    with self.assertRaisesRegex(
+        core.TinkError, r'Failed to parse the public key PEM'
+    ):
+      _gcp_kms_util.parse_spki_pem(pem)
+
+  @parameterized.named_parameters(
+      (
+          'not_a_public_key',
+          (
+              b'-----BEGIN CERTIFICATE-----\n'
+              + base64.b64encode(b'body')
+              + b'\n-----END CERTIFICATE-----'
+          ),
+      ),
+      (
+          'missing_begin',
+          base64.b64encode(b'body') + b'\n-----END PUBLIC KEY-----',
+      ),
+      (
+          'missing_end',
+          b'-----BEGIN PUBLIC KEY-----\n' + base64.b64encode(b'body'),
+      ),
+      (
+          'mismatched_boundary',
+          (
+              b'-----BEGIN PUBLIC KEY-----\n'
+              + base64.b64encode(b'body')
+              + b'\n-----END CERTIFICATE-----'
+          ),
+      ),
+      (
+          'header_field',
+          (
+              b'-----BEGIN PUBLIC KEY-----\nProc-Type: 4,ENCRYPTED\n'
+              + base64.b64encode(b'body')
+              + b'\n-----END PUBLIC KEY-----'
+          ),
+      ),
+      (
+          'invalid_base64',
+          (
+              b'-----BEGIN PUBLIC KEY-----\n'
+              b'not!!!valid???base64\n'
+              b'-----END PUBLIC KEY-----'
+          ),
+      ),
+  )
+  def test_invalid_pem_structure_fails(self, pem: bytes):
+    with self.assertRaisesRegex(
+        core.TinkError, r'Failed to parse the public key PEM'
+    ):
+      _gcp_kms_util.parse_spki_pem(pem)
+
+
 class ExtractRawMlDsaPublicKeyTest(parameterized.TestCase):
 
   def test_valid_pem_returns_raw_key(self):
@@ -271,82 +350,6 @@ class ExtractRawMlDsaPublicKeyTest(parameterized.TestCase):
         ),
         _ml_dsa_test_public_key(_ML_DSA_65_KEY_SIZE),
     )
-
-  def test_malformed_pem_fails(self):
-    pem = (
-        b'-----BEGIN PUBLIC KEY-----\n'
-        + base64.b64encode(b'not a valid spki')
-        + b'\n-----END PUBLIC KEY-----'
-    )
-    with self.assertRaisesRegex(
-        core.TinkError, r'Failed to parse the ML-DSA public key'
-    ):
-      _gcp_kms_util.extract_raw_ml_dsa_public_key(
-          pem, _ML_DSA_65_OID, _ML_DSA_65_KEY_SIZE
-      )
-
-  def test_content_outside_markers_is_discarded(self):
-    raw_public_key = _ml_dsa_test_public_key(_ML_DSA_65_KEY_SIZE)
-    pem = _gcp_kms_util.raw_ml_dsa_public_key_to_pem(
-        _ML_DSA_65_OID, raw_public_key
-    )
-    # Wrap the PEM with a preamble before BEGIN and trailing bytes after END.
-    padded_pem = b'preamble to ignore\n' + pem + b'\ntrailing to ignore'
-
-    self.assertEqual(
-        _gcp_kms_util._pem_to_der(padded_pem),
-        _gcp_kms_util._pem_to_der(pem),
-    )
-
-  @parameterized.named_parameters(
-      (
-          'not_a_public_key',
-          (
-              b'-----BEGIN CERTIFICATE-----\n'
-              + base64.b64encode(b'body')
-              + b'\n-----END CERTIFICATE-----'
-          ),
-      ),
-      (
-          'missing_begin',
-          base64.b64encode(b'body') + b'\n-----END PUBLIC KEY-----',
-      ),
-      (
-          'missing_end',
-          b'-----BEGIN PUBLIC KEY-----\n' + base64.b64encode(b'body'),
-      ),
-      (
-          'mismatched_boundary',
-          (
-              b'-----BEGIN PUBLIC KEY-----\n'
-              + base64.b64encode(b'body')
-              + b'\n-----END CERTIFICATE-----'
-          ),
-      ),
-      (
-          'header_field',
-          (
-              b'-----BEGIN PUBLIC KEY-----\nProc-Type: 4,ENCRYPTED\n'
-              + base64.b64encode(b'body')
-              + b'\n-----END PUBLIC KEY-----'
-          ),
-      ),
-      (
-          'invalid_base64',
-          (
-              b'-----BEGIN PUBLIC KEY-----\n'
-              b'not!!!valid???base64\n'
-              b'-----END PUBLIC KEY-----'
-          ),
-      ),
-  )
-  def test_invalid_pem_structure_fails(self, pem: bytes):
-    with self.assertRaisesRegex(
-        core.TinkError, r'Failed to parse the ML-DSA public key'
-    ):
-      _gcp_kms_util.extract_raw_ml_dsa_public_key(
-          pem, _ML_DSA_65_OID, _ML_DSA_65_KEY_SIZE
-      )
 
 
 class RawMlDsaPublicKeyToPemTest(parameterized.TestCase):
