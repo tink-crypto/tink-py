@@ -23,8 +23,10 @@ from pyasn1_modules import rfc3447
 
 from tink.proto import common_pb2
 from tink.proto import ecdsa_pb2
+from tink.proto import ml_dsa_pb2
 from tink.proto import rsa_ssa_pkcs1_pb2
 from tink.proto import rsa_ssa_pss_pb2
+from tink.proto import slh_dsa_pb2
 from tink.proto import tink_pb2
 import tink
 from tink import signature as tink_signature
@@ -41,6 +43,8 @@ _RSA_SSA_PKCS1_TYPE_URL = (
 _RSA_SSA_PSS_TYPE_URL = (
     'type.googleapis.com/google.crypto.tink.RsaSsaPssPublicKey'
 )
+_ML_DSA_TYPE_URL = 'type.googleapis.com/google.crypto.tink.MlDsaPublicKey'
+_SLH_DSA_TYPE_URL = 'type.googleapis.com/google.crypto.tink.SlhDsaPublicKey'
 
 # ECDSA algorithms mapped to (curve, hash, coordinate length in bytes). KMS
 # emits DER-encoded ECDSA signatures.
@@ -76,6 +80,33 @@ _RSA_PSS_PARAMS: dict[_Algorithm | int, tuple[common_pb2.HashType, int]] = {
     _Algorithm.RSA_SIGN_PSS_4096_SHA256: (common_pb2.SHA256, 32),
     _Algorithm.RSA_SIGN_PSS_4096_SHA512: (common_pb2.SHA512, 64),
 }
+
+# ML-DSA algorithms mapped to (Tink instance, public key OID, raw key size in
+# bytes). Cloud KMS serves these in PEM format; the raw key (rho || t1) is the
+# subjectPublicKey.
+_ML_DSA_PARAMS: dict[
+    _Algorithm | int,
+    tuple[ml_dsa_pb2.MlDsaInstance, str, int],
+] = {
+    _Algorithm.PQ_SIGN_ML_DSA_44: (
+        ml_dsa_pb2.ML_DSA_44,
+        '2.16.840.1.101.3.4.3.17',
+        1312,
+    ),
+    _Algorithm.PQ_SIGN_ML_DSA_65: (
+        ml_dsa_pb2.ML_DSA_65,
+        '2.16.840.1.101.3.4.3.18',
+        1952,
+    ),
+    _Algorithm.PQ_SIGN_ML_DSA_87: (
+        ml_dsa_pb2.ML_DSA_87,
+        '2.16.840.1.101.3.4.3.19',
+        2592,
+    ),
+}
+
+# Private key size in bytes for SLH-DSA-SHA2-128s
+_SLH_DSA_PRIVATE_KEY_SIZE = 64
 
 # Fixed key ID for the single-key keyset. KMS produces raw signatures with no
 # Tink output prefix, so the key ID does not appear in the signature.
@@ -200,6 +231,57 @@ def _rsa_ssa_pss_public_key(
   return public_key.SerializeToString()
 
 
+def _ml_dsa_public_key(public_key_pem: bytes, algorithm: _Algorithm) -> bytes:
+  """Builds a serialized MlDsaPublicKey proto from a PEM public key.
+
+  Args:
+    public_key_pem: The PEM-encoded ML-DSA public key returned by Cloud KMS.
+    algorithm: The CryptoKeyVersion algorithm of the public key.
+
+  Returns:
+    The serialized MlDsaPublicKey proto bytes.
+
+  Raises:
+    tink.TinkError: If the PEM cannot be parsed or has an unexpected OID or
+      size.
+  """
+  instance, oid, size = _ML_DSA_PARAMS[algorithm]
+  raw_public_key = _gcp_kms_util.extract_raw_ml_dsa_public_key(
+      public_key_pem, oid, size
+  )
+  public_key = ml_dsa_pb2.MlDsaPublicKey(
+      version=0,
+      key_value=raw_public_key,
+      params=ml_dsa_pb2.MlDsaParams(ml_dsa_instance=instance),
+  )
+  return public_key.SerializeToString()
+
+
+def _slh_dsa_public_key(raw_public_key: bytes) -> bytes:
+  """Builds a serialized SlhDsaPublicKey proto from a raw public key.
+
+  Unlike the other algorithms, Cloud KMS serves SLH-DSA only in NIST_PQC format,
+  so the input is the raw public key rather than a PEM. Its length is validated
+  by the key manager when the verifier is built.
+
+  Args:
+    raw_public_key: The raw SLH-DSA public key bytes from Cloud KMS.
+
+  Returns:
+    The serialized SlhDsaPublicKey proto bytes.
+  """
+  public_key = slh_dsa_pb2.SlhDsaPublicKey(
+      version=0,
+      key_value=raw_public_key,
+      params=slh_dsa_pb2.SlhDsaParams(
+          key_size=_SLH_DSA_PRIVATE_KEY_SIZE,
+          hash_type=slh_dsa_pb2.SHA2,
+          sig_type=slh_dsa_pb2.SMALL_SIGNATURE,
+      ),
+  )
+  return public_key.SerializeToString()
+
+
 def _verifier_from_key_data(
     type_url: str, value: bytes
 ) -> tink_signature.PublicKeyVerify:
@@ -247,7 +329,7 @@ def _internal_verifier(
 
   Args:
     algorithm: The CryptoKeyVersion algorithm of the public key.
-    public_key_data: The PEM-encoded public key returned by Cloud KMS.
+    public_key_data: The public key as returned by Cloud KMS.
 
   Returns:
     A PublicKeyVerify primitive for the public key.
@@ -265,6 +347,12 @@ def _internal_verifier(
   elif algorithm in _RSA_PSS_PARAMS:
     value = _rsa_ssa_pss_public_key(public_key_data, algorithm)
     type_url = _RSA_SSA_PSS_TYPE_URL
+  elif algorithm in _ML_DSA_PARAMS:
+    value = _ml_dsa_public_key(public_key_data, algorithm)
+    type_url = _ML_DSA_TYPE_URL
+  elif algorithm == _Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S:
+    value = _slh_dsa_public_key(public_key_data)
+    type_url = _SLH_DSA_TYPE_URL
   else:
     raise tink.TinkError(f'The algorithm {algorithm.name} is not supported.')
   return _verifier_from_key_data(type_url, value)
@@ -279,9 +367,11 @@ class _GcpKmsPublicKeyVerify(tink_signature.PublicKeyVerify):
   """
 
   def __init__(self, verifier: tink_signature.PublicKeyVerify) -> None:
+    """Initializes the verification instance."""
     self._verifier = verifier
 
   def verify(self, signature: bytes, data: bytes) -> None:  # pytype: disable=signature-mismatch
+    """See base class."""
     self._verifier.verify(signature, data)
 
 
@@ -327,7 +417,8 @@ def new_gcp_kms_public_key_verify_no_rpc(
 
   Args:
     public_key: The public key previously returned by Cloud KMS GetPublicKey for
-      the algorithm (the PEM-encoded key for classical algorithms).
+      the algorithm. This is the PEM-encoded key for classical and ML-DSA
+      algorithms, and the raw NIST_PQC key for SLH-DSA.
     algorithm: The CryptoKeyVersion algorithm of the public key.
 
   Returns:
