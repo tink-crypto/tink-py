@@ -776,6 +776,24 @@ _PEM_TEST_VECTORS = {
         _ml_dsa_pem(_Algorithm.PQ_SIGN_ML_DSA_87, _ML_DSA_87_RAW_PUBLIC_KEY),
         _ML_DSA_87_SIG,
     ),
+    _Algorithm.PQ_SIGN_ML_DSA_44_EXTERNAL_MU: (
+        _ml_dsa_pem(
+            _Algorithm.PQ_SIGN_ML_DSA_44_EXTERNAL_MU, _ML_DSA_44_RAW_PUBLIC_KEY
+        ),
+        _ML_DSA_44_SIG,
+    ),
+    _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU: (
+        _ml_dsa_pem(
+            _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU, _ML_DSA_65_RAW_PUBLIC_KEY
+        ),
+        _ML_DSA_65_SIG,
+    ),
+    _Algorithm.PQ_SIGN_ML_DSA_87_EXTERNAL_MU: (
+        _ml_dsa_pem(
+            _Algorithm.PQ_SIGN_ML_DSA_87_EXTERNAL_MU, _ML_DSA_87_RAW_PUBLIC_KEY
+        ),
+        _ML_DSA_87_SIG,
+    ),
 }
 
 # Every supported algorithm mapped to (public key material, signature), where
@@ -848,10 +866,14 @@ class GcpKmsPublicKeyVerifyTest(parameterized.TestCase):
     self.assertIsNone(verifier.verify(_SLH_DSA_SIG, _MESSAGE))
     self.assertEqual(self.mock_client.get_public_key.call_count, 2)
 
-  def test_verify_ml_dsa_fetches_pem_only(self):
-    # ML-DSA is served as PEM and parsed locally, so unlike SLH-DSA it needs a
-    # single GetPublicKey call with no NIST_PQC re-fetch.
-    algorithm = _Algorithm.PQ_SIGN_ML_DSA_65
+  @parameterized.parameters(
+      _Algorithm.PQ_SIGN_ML_DSA_65,
+      _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU,
+  )
+  def test_verify_ml_dsa_fetches_pem_only(self, algorithm):
+    # ML-DSA (including external-mu) is served as PEM and parsed locally, so
+    # unlike SLH-DSA it needs a single GetPublicKey call with no NIST_PQC
+    # re-fetch.
     pem, _ = _PEM_TEST_VECTORS[algorithm]
     self.mock_client.get_public_key.return_value = _public_key_response(
         algorithm=algorithm, data=pem

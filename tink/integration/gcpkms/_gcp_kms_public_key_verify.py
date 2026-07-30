@@ -83,12 +83,18 @@ _RSA_PSS_PARAMS: dict[_Algorithm | int, tuple[common_pb2.HashType, int]] = {
 
 # ML-DSA algorithms mapped to (Tink instance, public key OID, raw key size in
 # bytes). Cloud KMS serves these in PEM format; the raw key (rho || t1) is the
-# subjectPublicKey.
+# subjectPublicKey. The external-mu algorithms map to the same ML-DSA instances,
+# since an external-mu signature over a message is byte-identical to a plain
+# ML-DSA signature over it.
 _ML_DSA_PARAMS: dict[
-    _Algorithm | int,
-    tuple[ml_dsa_pb2.MlDsaInstance, str, int],
+    _Algorithm | int, tuple[ml_dsa_pb2.MlDsaInstance, str, int]
 ] = {
     _Algorithm.PQ_SIGN_ML_DSA_44: (
+        ml_dsa_pb2.ML_DSA_44,
+        '2.16.840.1.101.3.4.3.17',
+        1312,
+    ),
+    _Algorithm.PQ_SIGN_ML_DSA_44_EXTERNAL_MU: (
         ml_dsa_pb2.ML_DSA_44,
         '2.16.840.1.101.3.4.3.17',
         1312,
@@ -98,7 +104,17 @@ _ML_DSA_PARAMS: dict[
         '2.16.840.1.101.3.4.3.18',
         1952,
     ),
+    _Algorithm.PQ_SIGN_ML_DSA_65_EXTERNAL_MU: (
+        ml_dsa_pb2.ML_DSA_65,
+        '2.16.840.1.101.3.4.3.18',
+        1952,
+    ),
     _Algorithm.PQ_SIGN_ML_DSA_87: (
+        ml_dsa_pb2.ML_DSA_87,
+        '2.16.840.1.101.3.4.3.19',
+        2592,
+    ),
+    _Algorithm.PQ_SIGN_ML_DSA_87_EXTERNAL_MU: (
         ml_dsa_pb2.ML_DSA_87,
         '2.16.840.1.101.3.4.3.19',
         2592,
