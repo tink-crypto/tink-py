@@ -2,7 +2,10 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
 
-exports_files(srcs = ["credential.json"])
+exports_files(srcs = [
+    "credential.json",
+    "signature_key_public.pem",
+])
 
 filegroup(
     name = "credentials",
