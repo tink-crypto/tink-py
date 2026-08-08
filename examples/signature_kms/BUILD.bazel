@@ -1,0 +1,75 @@
+load("@pip_deps//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+package(default_visibility = ["//visibility:private"])
+
+licenses(["notice"])
+
+py_binary(
+    name = "signature_kms_cli",
+    srcs = ["signature_kms_cli.py"],
+    python_version = "PY3",
+    deps = [
+        requirement("absl-py"),
+        requirement("google-auth"),
+        "@tink_py//tink:tink_python",
+        "@tink_py//tink/integration/gcpkms",
+    ],
+)
+
+# In order to run this test, use your own Cloud KMS key and credential:
+sh_test(
+    name = "signature_kms_test",
+    size = "small",
+    srcs = ["signature_kms_cli_test.sh"],
+    args = [
+        "$(rootpath :signature_kms_cli)",
+        # Change this to your CryptoKeyVersion (an asymmetric signing key).
+        "projects/tink-test-infrastructure/locations/global/keyRings/unit-and-integration-testing/cryptoKeys/signature-key/cryptoKeyVersions/1",
+        # Change this to your credential.
+        "$(rootpath //testdata/gcp:credential.json)",
+        "$(rootpath //testdata/gcp:signature_key_public.pem)",
+    ],
+    data = [
+        ":signature_kms_cli",
+        "@google_root_pem//file",
+        # Change this to your credential.
+        "//testdata/gcp:credential.json",
+        # Change this to your public key.
+        "//testdata/gcp:signature_key_public.pem",
+    ],
+    tags = [
+        "manual",
+        "requires-network",
+    ],
+)
+
+# This runs the previous test, assuming the Tink python package has been
+# installed previously with pip3 install.
+sh_test(
+    name = "signature_kms_test_package",
+    size = "small",
+    srcs = ["signature_kms_cli_test.sh"],
+    args = [
+        "'python3 $(rootpath :signature_kms_cli.py)'",
+        # Change this to your CryptoKeyVersion (an asymmetric signing key).
+        "projects/tink-test-infrastructure/locations/global/keyRings/unit-and-integration-testing/cryptoKeys/signature-key/cryptoKeyVersions/1",
+        # Change this to your credential.
+        "$(rootpath //testdata/gcp:credential.json)",
+        "$(rootpath //testdata/gcp:signature_key_public.pem)",
+    ],
+    data = [
+        ":signature_kms_cli.py",
+        "@google_root_pem//file",
+        # Change this to your credential.
+        "//testdata/gcp:credential.json",
+        # Change this to your public key.
+        "//testdata/gcp:signature_key_public.pem",
+    ],
+    tags = [
+        "local",
+        "manual",
+        "requires-network",
+    ],
+)
