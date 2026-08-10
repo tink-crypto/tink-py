@@ -221,3 +221,23 @@ py_test(
         requirement("absl-py"),
     ],
 )
+
+py_test(
+    name = "_gcp_kms_mac_integration_test",
+    srcs = ["_gcp_kms_mac_integration_test.py"],
+    data = [
+        "//testdata/gcp:credentials",
+        "@google_root_pem//file",
+    ],
+    srcs_version = "PY3",
+    tags = ["manual"],
+    deps = [
+        ":_gcp_kms_mac",
+        ":gcpkms",
+        "//tink:tink_python",
+        "//tink/testing:helper",
+        requirement("absl-py"),
+        requirement("google-auth"),
+        requirement("google-cloud-kms"),
+    ],
+)
