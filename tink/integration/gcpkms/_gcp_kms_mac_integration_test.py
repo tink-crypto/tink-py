@@ -57,7 +57,12 @@ class GcpKmsMacIntegrationTest(absltest.TestCase):
   @classmethod
   def tearDownClass(cls):
     # Closes the underlying transport explicitly.
-    cls.kms_client.close()
+    if hasattr(cls.kms_client, 'close'):
+      cls.kms_client.close()
+    elif hasattr(cls.kms_client, 'transport') and hasattr(
+        cls.kms_client.transport, 'close'
+    ):
+      cls.kms_client.transport.close()
     super().tearDownClass()
 
   def test_compute_and_verify_mac_works(self):
