@@ -1,0 +1,69 @@
+load("@pip_deps//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+package(default_visibility = ["//visibility:private"])
+
+licenses(["notice"])
+
+py_binary(
+    name = "mac_kms_cli",
+    srcs = ["mac_kms_cli.py"],
+    python_version = "PY3",
+    deps = [
+        requirement("absl-py"),
+        requirement("google-auth"),
+        "@tink_py//tink:tink_python",
+        "@tink_py//tink/integration/gcpkms",
+    ],
+)
+
+# In order to run this test, use your own Cloud KMS key and credential:
+sh_test(
+    name = "mac_kms_test",
+    size = "small",
+    srcs = ["mac_kms_cli_test.sh"],
+    args = [
+        "$(rootpath :mac_kms_cli)",
+        # Change this to your CryptoKeyVersion (a MAC key).
+        "projects/tink-test-infrastructure/locations/global/keyRings/unit-and-integration-testing/cryptoKeys/mac-key/cryptoKeyVersions/1",
+        # Change this to your credential.
+        "$(rootpath //testdata/gcp:credential.json)",
+    ],
+    data = [
+        ":mac_kms_cli",
+        "@google_root_pem//file",
+        # Change this to your credential.
+        "//testdata/gcp:credential.json",
+    ],
+    tags = [
+        "manual",
+        "requires-network",
+    ],
+)
+
+# This runs the previous test, assuming the Tink python package has been
+# installed previously with pip3 install.
+sh_test(
+    name = "mac_kms_test_package",
+    size = "small",
+    srcs = ["mac_kms_cli_test.sh"],
+    args = [
+        "'python3 $(rootpath :mac_kms_cli.py)'",
+        # Change this to your CryptoKeyVersion (a MAC key).
+        "projects/tink-test-infrastructure/locations/global/keyRings/unit-and-integration-testing/cryptoKeys/mac-key/cryptoKeyVersions/1",
+        # Change this to your credential.
+        "$(rootpath //testdata/gcp:credential.json)",
+    ],
+    data = [
+        ":mac_kms_cli.py",
+        "@google_root_pem//file",
+        # Change this to your credential.
+        "//testdata/gcp:credential.json",
+    ],
+    tags = [
+        "local",
+        "manual",
+        "requires-network",
+    ],
+)
