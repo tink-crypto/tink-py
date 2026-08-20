@@ -69,7 +69,7 @@ class CryptoFormatTest(absltest.TestCase):
 
   def test_invalid_output_prefix(self):
     key = tink_pb2.Keyset.Key()
-    key.output_prefix_type = 42
+    key.output_prefix_type = 42  # pyrefly: ignore[bad-assignment]
     key.key_id = 0x11223344
     with self.assertRaises(core.TinkError):
       _ = core.crypto_format.output_prefix(key)

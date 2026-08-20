@@ -419,8 +419,8 @@ class RawJwtTest(absltest.TestCase):
 
     # modify inputs and outputs of token
     audiences.append('eve')
-    custom_claims['new_claim'] = 456
-    my_claim['three'] = 4
+    custom_claims['new_claim'] = 456  # pyrefly: ignore[bad-assignment]
+    my_claim['three'] = 4  # pyrefly: ignore[bad-assignment]
     output_claim = cast(Dict[str, str], token.custom_claim('my_claim'))
     output_claim['three'] = 4  # pytype: disable=container-type-mismatch
 

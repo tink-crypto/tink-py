@@ -128,7 +128,7 @@ def main(argv: Sequence[str]) -> int:
     # Create a PublicKeySign primitive backed by Cloud KMS. This fetches the
     # public key once to determine the signing algorithm.
     try:
-      signer = gcpkms.new_gcp_kms_public_key_sign(_KEY_NAME.value, kms_client)
+      signer = gcpkms.new_gcp_kms_public_key_sign(_KEY_NAME.value, kms_client)  # pyrefly: ignore[bad-argument-type]
       # Sign the data. The signature is written out hex-encoded.
       sig = signer.sign(data)
       with open(_SIGNATURE_PATH.value, 'wb') as signature_file:
@@ -147,7 +147,7 @@ def main(argv: Sequence[str]) -> int:
     # locally, with no further Cloud KMS calls.
     try:
       verifier = gcpkms.new_gcp_kms_public_key_verify(
-          _KEY_NAME.value, kms_client
+          _KEY_NAME.value, kms_client  # pyrefly: ignore[bad-argument-type]
       )
     except tink.TinkError as e:
       logging.exception('Error creating primitive: %s', e)
@@ -157,11 +157,11 @@ def main(argv: Sequence[str]) -> int:
     # Create a PublicKeyVerify primitive from a pre-fetched public key without
     # making any calls to Cloud KMS.
     try:
-      with open(_PUBLIC_KEY_PATH.value, 'rb') as public_key_file:
+      with open(_PUBLIC_KEY_PATH.value, 'rb') as public_key_file:  # pyrefly: ignore[no-matching-overload]
         public_key = public_key_file.read()
 
       algorithm = getattr(
-          kms_v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm, _ALGORITHM.value
+          kms_v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm, _ALGORITHM.value  # pyrefly: ignore[bad-argument-type]
       )
 
       verifier = gcpkms.new_gcp_kms_public_key_verify_no_rpc(

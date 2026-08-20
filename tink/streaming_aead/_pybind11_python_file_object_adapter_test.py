@@ -37,7 +37,7 @@ class BytesIOThatThrowsExceptionsOnReadWrite(io.BytesIO):
   def write(self, data):
     raise tink.TinkError('Called write!')
 
-  def read(self, num):
+  def read(self, num):  # pyrefly: ignore[bad-override]
     raise tink.TinkError('Called read!')
 
   def close(self):
@@ -49,7 +49,7 @@ class BytesIOThatThrowsExceptionsOnClose(io.BytesIO):
   def write(self, data):
     return len(data)
 
-  def read(self, _):
+  def read(self, _):  # pyrefly: ignore[bad-override]
     return b''
 
   def close(self):

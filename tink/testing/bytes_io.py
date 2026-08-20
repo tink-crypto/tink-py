@@ -67,7 +67,7 @@ class SlowBytesIO(BytesIOWithValueAfterClose):
       return super().read(min(size, 5))
     return super().read(size)
 
-  def write(self, b: bytes) -> int:
+  def write(self, b: bytes) -> int:  # pyrefly: ignore[bad-override]
     self._state += 1
     if self._state > 10000000:
       raise AssertionError('too many read/write. Is there an infinite loop?')
@@ -100,7 +100,7 @@ class SlowReadableRawBytes(io.RawIOBase):
     self._seekable = seekable
     self._state = -1
 
-  def readinto(self, b: bytearray) -> Optional[int]:
+  def readinto(self, b: bytearray) -> Optional[int]:  # pyrefly: ignore[bad-override]
     try:
       self._state += 1
       if self._state > 10000000:
@@ -129,7 +129,7 @@ class SlowReadableRawBytes(io.RawIOBase):
 class BadWriteBytesIO(BytesIOWithValueAfterClose):
   """An BytesIO that returns an invalid value from write()."""
 
-  def write(self, b: bytes) -> int:
+  def write(self, b: bytes) -> int:  # pyrefly: ignore[bad-override]
     # On every third call: write and return an invalid written length.
     bytes_written = super().write(b)
     return bytes_written + 1

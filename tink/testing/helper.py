@@ -32,7 +32,7 @@ _RELATIVE_TESTDATA_PATH = 'google3/third_party/tink/testdata'
 
 def _get_test_src_dir() -> str:
   # Note: this implementation is rewritten by copybara
-  return os.path.join(
+  return os.path.join(  # pyrefly: ignore[no-matching-overload]
       Runfiles.Create().Rlocation('tink_py/testdata'))
 
 

@@ -101,7 +101,7 @@ class RawDecryptingStream(io.RawIOBase):
     except tink_bindings.PythonTinkStreamFinishedException:
       return b''
 
-  def readinto(self, b: bytearray) -> int:
+  def readinto(self, b: bytearray) -> int:  # pyrefly: ignore[bad-override]
     """Read bytes into a pre-allocated bytes-like object b.
 
     Args:

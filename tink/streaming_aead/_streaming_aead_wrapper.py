@@ -104,7 +104,7 @@ class _DecryptingStreamWrapper(io.RawIOBase):
         # Any value other than None means that decryption was successful.
         # (b'' indicates that the plaintext is an empty string.)
         self._matching_stream = self._attempting_stream
-        self._attempting_stream = None
+        self._attempting_stream = None  # pyrefly: ignore[bad-assignment]
         self._ciphertext_source.disable_rewind()
         return data
       except core.TinkError as exc:
@@ -115,7 +115,7 @@ class _DecryptingStreamWrapper(io.RawIOBase):
         self._ciphertext_source.rewind()
         self._attempting_stream = self._next_decrypting_stream()
 
-  def readinto(self, b: bytearray) -> Optional[int]:
+  def readinto(self, b: bytearray) -> Optional[int]:  # pyrefly: ignore[bad-override]
     """Read bytes into a pre-allocated bytes-like object b."""
     data = self.read(len(b))
     if data is None:
@@ -154,7 +154,7 @@ class _WrappedStreamingAead(_streaming_aead.StreamingAead):
                             associated_data: bytes) -> BinaryIO:
     raw = _DecryptingStreamWrapper(self._primitive_set, ciphertext_source,
                                    associated_data)
-    return cast(BinaryIO, io.BufferedReader(raw))
+    return cast(BinaryIO, io.BufferedReader(raw))  # pyrefly: ignore[bad-specialization]
 
 
 class StreamingAeadWrapper(

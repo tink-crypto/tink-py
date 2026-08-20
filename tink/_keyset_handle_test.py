@@ -76,7 +76,7 @@ class KeysetHandleTest(absltest.TestCase):
 
   def test_instantiation__raises_error(self):
     with self.assertRaises(core.TinkError):
-      tink.KeysetHandle()
+      tink.KeysetHandle()  # pyrefly: ignore[missing-argument]
 
   def test_generate_new(self):
     keyset_info = tink.new_keyset_handle(

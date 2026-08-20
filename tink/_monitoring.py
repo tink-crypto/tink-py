@@ -107,7 +107,7 @@ class KeyUsageMonitor(metaclass=abc.ABCMeta):
 
 _registered_key_usage_monitor_factory: Callable[
     [MonitoringContext], KeyUsageMonitor
-] = None
+] = None  # pyrefly: ignore[bad-assignment]
 
 
 def register_key_usage_monitor_factory(

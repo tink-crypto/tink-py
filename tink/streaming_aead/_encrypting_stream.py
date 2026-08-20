@@ -70,7 +70,7 @@ class RawEncryptingStream(io.RawIOBase):
   def _close_cc_encrypting_stream(self) -> None:
     self._cc_encrypting_stream.close()
 
-  def readinto(self, b: bytearray) -> Optional[int]:
+  def readinto(self, b: bytearray) -> Optional[int]:  # pyrefly: ignore[bad-override]
     raise io.UnsupportedOperation()
 
   # b has type "Buffer", which is not yet supported by pytype.

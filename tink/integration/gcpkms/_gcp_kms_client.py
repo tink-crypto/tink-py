@@ -146,7 +146,7 @@ class GcpKmsClient(tink.KmsClient):
     if hasattr(self._client, '__exit__'):
       self._client.__exit__(exc_type, exc_value, traceback)
     elif hasattr(self._client, 'transport'):
-      self._client.transport.channel.close()
+      self._client.transport.channel.close()  # pyrefly: ignore[missing-attribute]
 
   def does_support(self, key_uri: str) -> bool:
     """Returns true iff this client supports KMS key specified in 'key_uri'.

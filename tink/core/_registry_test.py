@@ -42,7 +42,7 @@ class DummyKeyManager(core.KeyManager[P]):
     return self._primitive_class
 
   def primitive(self, key_data: tink_pb2.KeyData) -> P:
-    return helper.FakeAead()
+    return helper.FakeAead()  # pyrefly: ignore[bad-return]
 
   def key_type(self) -> str:
     return self._type_url
