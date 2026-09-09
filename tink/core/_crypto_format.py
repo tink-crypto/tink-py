@@ -34,7 +34,10 @@ def output_prefix(key: tink_pb2.Keyset.Key) -> bytes:
   elif (key.output_prefix_type == tink_pb2.CRUNCHY or
         key.output_prefix_type == tink_pb2.LEGACY):
     return struct.pack('>cL', LEGACY_START_BYTE, key.key_id)
-  elif key.output_prefix_type == tink_pb2.RAW:
+  elif (
+      key.output_prefix_type == tink_pb2.RAW
+      or key.output_prefix_type == tink_pb2.WITH_ID_REQUIREMENT
+  ):
     return b''
   else:
     raise _tink_error.TinkError(

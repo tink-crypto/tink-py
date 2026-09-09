@@ -67,6 +67,13 @@ class CryptoFormatTest(absltest.TestCase):
     prefix = core.crypto_format.output_prefix(key)
     self.assertLen(prefix, core.crypto_format.RAW_PREFIX_SIZE)
 
+  def test_with_id_requirement_prefix(self):
+    key = tink_pb2.Keyset.Key()
+    key.output_prefix_type = tink_pb2.WITH_ID_REQUIREMENT
+    key.key_id = 0x74EB33
+    prefix = core.crypto_format.output_prefix(key)
+    self.assertEmpty(prefix)
+
   def test_invalid_output_prefix(self):
     key = tink_pb2.Keyset.Key()
     key.output_prefix_type = 42  # pyrefly: ignore[bad-assignment]
