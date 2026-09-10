@@ -28,6 +28,7 @@
 #include "tink/cc/pybind/input_stream_adapter.h"
 #include "tink/cc/pybind/mac.h"
 #include "tink/cc/pybind/output_stream_adapter.h"
+#include "tink/cc/pybind/prehash.h"
 #include "tink/cc/pybind/prf.h"
 #include "tink/cc/pybind/public_key_sign.h"
 #include "tink/cc/pybind/public_key_verify.h"
@@ -61,6 +62,7 @@ PYBIND11_MODULE(tink_bindings, m) {
   PybindRegisterPythonFileObjectAdapter(&m);
   PybindRegisterInputStreamAdapter(&m);
   PybindRegisterPublicKeyVerify(&m);
+  PybindRegisterPrehash(&m);
 }
 
 }  // namespace tink
