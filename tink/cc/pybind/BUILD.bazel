@@ -244,6 +244,22 @@ pybind_library(
     ],
 )
 
+pybind_library(
+    name = "sign_prehash",
+    srcs = ["sign_prehash.cc"],
+    hdrs = ["sign_prehash.h"],
+    deps = [
+        ":tink_exception",
+        "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/strings:string_view",
+        "@tink_cc//tink:insecure_secret_key_access",
+        "@tink_cc//tink:keyset_handle",
+        "@tink_cc//tink:proto_keyset_format",
+        "@tink_cc//tink/signature:config_2026",
+        "@tink_cc//tink/signature:sign_prehash",
+    ],
+)
+
 _PYBIND_EXTENSION_DEPS = [
     ":aead",
     ":cc_hpke_config",
@@ -262,6 +278,7 @@ _PYBIND_EXTENSION_DEPS = [
     ":public_key_sign",
     ":public_key_verify",
     ":python_file_object_adapter",
+    ":sign_prehash",
     ":streaming_aead",
     ":tink_exception",
     "@tink_cc//tink:aead",

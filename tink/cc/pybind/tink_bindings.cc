@@ -33,6 +33,7 @@
 #include "tink/cc/pybind/public_key_sign.h"
 #include "tink/cc/pybind/public_key_verify.h"
 #include "tink/cc/pybind/python_file_object_adapter.h"
+#include "tink/cc/pybind/sign_prehash.h"
 #include "tink/cc/pybind/streaming_aead.h"
 #include "tink/cc/pybind/tink_exception.h"
 
@@ -63,6 +64,7 @@ PYBIND11_MODULE(tink_bindings, m) {
   PybindRegisterInputStreamAdapter(&m);
   PybindRegisterPublicKeyVerify(&m);
   PybindRegisterPrehash(&m);
+  PybindRegisterSignPrehash(&m);
 }
 
 }  // namespace tink
