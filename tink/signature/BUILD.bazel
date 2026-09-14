@@ -19,6 +19,16 @@ py_library(
 )
 
 py_library(
+    name = "_prehash",
+    srcs = ["_prehash.py"],
+    srcs_version = "PY3",
+    deps = [
+        "//tink/cc/pybind:tink_bindings_lib",
+        "//tink/core",
+    ],
+)
+
+py_library(
     name = "_public_key_sign",
     srcs = ["_public_key_sign.py"],
     srcs_version = "PY3",
@@ -100,6 +110,21 @@ py_library(
         "//tink/proto:rsa_ssa_pkcs1_py_pb2",
         "//tink/proto:rsa_ssa_pss_py_pb2",
         "//tink/proto:slh_dsa_py_pb2",
+        "//tink/proto:tink_py_pb2",
+    ],
+)
+
+py_test(
+    name = "_prehash_test",
+    srcs = ["_prehash_test.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_prehash",
+        ":signature",
+        requirement("absl-py"),
+        "//tink:tink_python",
+        "//tink/cc/pybind:tink_bindings_lib",
+        "//tink/proto:ml_dsa_py_pb2",
         "//tink/proto:tink_py_pb2",
     ],
 )
