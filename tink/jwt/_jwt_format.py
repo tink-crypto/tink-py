@@ -29,6 +29,15 @@ _VALID_ALGORITHMS = frozenset({
 })
 
 
+# A lookup table mapping each URL-safe Base64 character to its 6-bit value.
+_URLSAFE_BASE64_INDEX = {
+    c: i
+    for i, c in enumerate(
+        b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+    )
+}
+
+
 def base64_encode(data: bytes) -> bytes:
   """Does a URL-safe base64 encoding without padding."""
   return base64.urlsafe_b64encode(data).rstrip(b'=')
@@ -52,6 +61,13 @@ def base64_decode(encoded_data: bytes) -> bytes:
   for c in encoded_data:
     if not _is_valid_urlsafe_base64_char(c):
       raise _jwt_error.JwtInvalidError('invalid base64 encoding')
+  remainder = len(encoded_data) % 4
+  if remainder == 1:
+    raise _jwt_error.JwtInvalidError('invalid base64 encoding')
+  if remainder == 2 and (_URLSAFE_BASE64_INDEX[encoded_data[-1]] & 0x0F) != 0:
+    raise _jwt_error.JwtInvalidError('non-canonical base64 encoding')
+  if remainder == 3 and (_URLSAFE_BASE64_INDEX[encoded_data[-1]] & 0x03) != 0:
+    raise _jwt_error.JwtInvalidError('non-canonical base64 encoding')
   # base64.urlsafe_b64decode requires padding, but does not mind too much
   # padding. So we simply add the maximum amount of padding needed.
   padded_encoded_data = encoded_data + b'==='

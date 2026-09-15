@@ -69,6 +69,20 @@ class JwtFormatTest(parameterized.TestCase):
     with self.assertRaises(_jwt_error.JwtInvalidError):
       _jwt_format.base64_decode(b'{')
 
+  def test_base64_decode_rejects_non_zero_trailing_pad_bits(self):
+    # 'AA' decodes to a single 0x00 byte with 4 zero pad bits.
+    self.assertEqual(_jwt_format.base64_decode(b'AA'), b'\x00')
+    # 'AB' has non-zero trailing pad bits (000000 000001) but decodes to
+    # the same 0x00 byte in lax decoders.
+    with self.assertRaises(_jwt_error.JwtInvalidError):
+      _jwt_format.base64_decode(b'AB')
+    # 'AAA' decodes to two 0x00 bytes with 2 zero pad bits.
+    self.assertEqual(_jwt_format.base64_decode(b'AAA'), b'\x00\x00')
+    # 'AAB' has non-zero trailing pad bits (000000 000000 000001) but decodes to
+    # the same two 0x00 bytes in lax decoders.
+    with self.assertRaises(_jwt_error.JwtInvalidError):
+      _jwt_format.base64_decode(b'AAB')
+
   def test_decode_encode_header_hs256(self):
     # Example from https://tools.ietf.org/html/rfc7515#appendix-A.1
     encoded_header = b'eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9'
@@ -272,6 +286,28 @@ class JwtFormatTest(parameterized.TestCase):
     encoded = _jwt_format.encode_signature(signature)
     self.assertEqual(encoded, b'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk')
     self.assertEqual(_jwt_format.decode_signature(encoded), signature)
+
+  def test_decode_signature_rejects_non_zero_trailing_pad_bits(self):
+    # 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk' is 43 characters (32 bytes).
+    # The last char 'k' (index 36, binary 100100) has 2 unused pad bits (00).
+    # Changing 'k' to 'l' (index 37, binary 100101) flips an unused pad bit.
+    self.assertNotEmpty(
+        _jwt_format.decode_signature(
+            b'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk'
+        )
+    )
+    with self.assertRaises(_jwt_error.JwtInvalidError):
+      _jwt_format.decode_signature(
+          b'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXl'
+      )
+    with self.assertRaises(_jwt_error.JwtInvalidError):
+      _jwt_format.decode_signature(
+          b'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXm'
+      )
+    with self.assertRaises(_jwt_error.JwtInvalidError):
+      _jwt_format.decode_signature(
+          b'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXn'
+      )
 
   def test_signed_compact_create_split(self):
     raw_jwt = _raw_jwt.raw_jwt_from_json('JWT', '{"iss":"joe"}')
