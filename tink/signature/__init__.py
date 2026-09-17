@@ -14,12 +14,16 @@
 
 """Signature package."""
 
+from tink.signature import _prehash
 from tink.signature import _public_key_sign
 from tink.signature import _public_key_verify
+from tink.signature import _sign_prehash
 from tink.signature import _signature_key_manager
 from tink.signature import _signature_key_templates as signature_key_templates
 
 
+Prehash = _prehash.Prehash
 PublicKeySign = _public_key_sign.PublicKeySign
 PublicKeyVerify = _public_key_verify.PublicKeyVerify
+SignPrehash = _sign_prehash.SignPrehash
 register = _signature_key_manager.register

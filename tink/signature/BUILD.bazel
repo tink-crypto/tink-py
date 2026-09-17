@@ -11,8 +11,10 @@ py_library(
     srcs_version = "PY3",
     visibility = ["//visibility:public"],
     deps = [
+        ":_prehash",
         ":_public_key_sign",
         ":_public_key_verify",
+        ":_sign_prehash",
         ":_signature_key_manager",
         ":_signature_key_templates",
     ],

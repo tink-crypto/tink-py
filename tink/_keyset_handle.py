@@ -14,7 +14,7 @@
 """This module defines KeysetHandle."""
 
 import random
-from typing import Optional, Type, TypeVar
+from typing import Optional, Type, TypeVar, cast
 
 from google.protobuf import message
 from tink.proto import tink_pb2
@@ -24,6 +24,9 @@ from tink import _monitoring
 from tink import _secret_key_access
 from tink import aead
 from tink import core
+from tink.cc.pybind import tink_bindings
+from tink.signature import _prehash
+from tink.signature import _sign_prehash
 
 P = TypeVar('P')
 
@@ -65,6 +68,7 @@ def _validate_output_prefix(
     if output_prefix_type not in [
         tink_pb2.TINK,
         tink_pb2.RAW,
+        tink_pb2.WITH_ID_REQUIREMENT,
     ]:
       raise core.TinkError(
           'invalid output prefix type for ML-DSA: {}'.format(
@@ -282,11 +286,38 @@ class KeysetHandle:
       primitive_class cannot be used with this KeysetHandle.
     """
     _validate_keyset(self._keyset)
+    for key in self._keyset.key:
+      if key.status == tink_pb2.ENABLED:
+        _validate_output_prefix(key.key_data.type_url, key.output_prefix_type)
+
+    # Prehash and SignPrehash cannot be registered in core.Registry because the
+    # Python registry maps each key type URL strictly 1-to-1 to a single
+    # KeyManager for one primitive class (e.g. MlDsaPublicKey to
+    # PublicKeyVerify). In C++, these primitives are supported via the
+    # Configuration architecture rather than the registry. Since there are
+    # currently no plans to add Configurations to Tink Python in the foreseeable
+    # future, KeysetHandle directly delegates creation of Prehash and
+    # SignPrehash primitives to the C++ bindings.
+    if primitive_class == _prehash.Prehash:
+      try:
+        cc_p = tink_bindings.create_prehash(self._keyset.SerializeToString())
+        return cast(P, _prehash.PrehashCcToPyWrapper(cc_p))
+      except tink_bindings.PythonTinkException as e:
+        raise core.TinkError(e) from e
+
+    if primitive_class == _sign_prehash.SignPrehash:
+      try:
+        cc_p = tink_bindings.create_sign_prehash(
+            self._keyset.SerializeToString()
+        )
+        return cast(P, _sign_prehash.SignPrehashCcToPyWrapper(cc_p))
+      except tink_bindings.PythonTinkException as e:
+        raise core.TinkError(e) from e
+
     input_primitive_class = core.Registry.input_primitive_class(primitive_class)
     pset = core.PrimitiveSet(input_primitive_class)
     for key in self._keyset.key:
       if key.status == tink_pb2.ENABLED:
-        _validate_output_prefix(key.key_data.type_url, key.output_prefix_type)
         primitive = core.Registry.primitive(key.key_data, input_primitive_class)
         entry = pset.add_primitive(primitive, key)
         if key.key_id == self._keyset.primary_key_id:

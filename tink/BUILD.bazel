@@ -38,8 +38,11 @@ py_library(
         ":_monitoring",
         ":secret_key_access",
         "//tink/aead",
+        "//tink/cc/pybind:tink_bindings_lib",
         "//tink/core",
         "//tink/proto:tink_py_pb2",
+        "//tink/signature:_prehash",
+        "//tink/signature:_sign_prehash",
         "@protobuf//:protobuf_python",
     ],
 )
@@ -57,6 +60,7 @@ py_test(
         "//tink/hybrid",
         "//tink/mac",
         "//tink/proto:tink_py_pb2",
+        "//tink/signature",
         "//tink/testing:helper",
     ],
 )

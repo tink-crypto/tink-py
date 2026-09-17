@@ -18,6 +18,7 @@ import io
 import pickle  # pylint: disable=pickle-use
 
 from absl.testing import absltest
+from absl.testing import parameterized
 
 from tink.proto import tink_pb2
 import tink
@@ -72,7 +73,7 @@ def _keyset_handle(keyset):
   return tink.KeysetHandle._create(keyset)
 
 
-class KeysetHandleTest(absltest.TestCase):
+class KeysetHandleTest(parameterized.TestCase):
 
   def test_instantiation__raises_error(self):
     with self.assertRaises(core.TinkError):
@@ -381,6 +382,89 @@ class KeysetHandleTest(absltest.TestCase):
     template_slh_dsa.output_prefix_type = tink_pb2.CRUNCHY
     with self.assertRaises(tink.TinkError):
       tink.new_keyset_handle(template_slh_dsa)
+    template_slh_dsa.output_prefix_type = tink_pb2.WITH_ID_REQUIREMENT
+    with self.assertRaises(tink.TinkError):
+      tink.new_keyset_handle(template_slh_dsa)
+
+  def test_ml_dsa_with_id_requirement_output_prefix_type_success(self):
+    template = tink_pb2.KeyTemplate()
+    template.CopyFrom(signature.signature_key_templates.ML_DSA_65)
+    template.output_prefix_type = tink_pb2.WITH_ID_REQUIREMENT
+    handle = tink.new_keyset_handle(template)
+    keyset_info = handle.keyset_info()
+    self.assertEqual(
+        keyset_info.key_info[0].output_prefix_type,
+        tink_pb2.WITH_ID_REQUIREMENT,
+    )
+
+  @parameterized.named_parameters(
+      ('ml_dsa_44', signature.signature_key_templates.ML_DSA_44),
+      ('ml_dsa_65', signature.signature_key_templates.ML_DSA_65),
+      ('ml_dsa_87', signature.signature_key_templates.ML_DSA_87),
+  )
+  def test_prehash_primitive_success(self, template):
+    private_handle = tink.new_keyset_handle(template)
+    public_handle = private_handle.public_keyset_handle()
+
+    prehasher = public_handle.primitive(signature.Prehash)
+    self.assertNotEmpty(prehasher.compute(b'message'))
+
+  @parameterized.named_parameters(
+      ('ml_dsa_44', signature.signature_key_templates.ML_DSA_44),
+      ('ml_dsa_65', signature.signature_key_templates.ML_DSA_65),
+      ('ml_dsa_87', signature.signature_key_templates.ML_DSA_87),
+  )
+  def test_prehash_on_private_keyset_fails(self, template):
+    private_handle = tink.new_keyset_handle(template)
+    with self.assertRaises(core.TinkError):
+      private_handle.primitive(signature.Prehash)
+
+  @parameterized.named_parameters(
+      ('ml_dsa_44', signature.signature_key_templates.ML_DSA_44),
+      ('ml_dsa_65', signature.signature_key_templates.ML_DSA_65),
+      ('ml_dsa_87', signature.signature_key_templates.ML_DSA_87),
+  )
+  def test_sign_prehash_primitive_success(self, template):
+    private_handle = tink.new_keyset_handle(template)
+    public_handle = private_handle.public_keyset_handle()
+
+    prehasher = public_handle.primitive(signature.Prehash)
+    signer = private_handle.primitive(signature.SignPrehash)
+    verifier = public_handle.primitive(signature.PublicKeyVerify)
+
+    data = b'message to be prehashed and signed'
+    prehash = prehasher.compute(data)
+    sig = signer.sign(prehash)
+    verifier.verify(sig, data)
+
+  @parameterized.named_parameters(
+      ('ml_dsa_44', signature.signature_key_templates.ML_DSA_44),
+      ('ml_dsa_65', signature.signature_key_templates.ML_DSA_65),
+      ('ml_dsa_87', signature.signature_key_templates.ML_DSA_87),
+  )
+  def test_sign_prehash_on_public_keyset_fails(self, template):
+    private_handle = tink.new_keyset_handle(template)
+    public_handle = private_handle.public_keyset_handle()
+    with self.assertRaises(core.TinkError):
+      public_handle.primitive(signature.SignPrehash)
+
+  @parameterized.named_parameters(
+      ('hmac', mac.mac_key_templates.HMAC_SHA256_128BITTAG),
+      ('ecdsa_p256', signature.signature_key_templates.ECDSA_P256),
+  )
+  def test_prehash_primitive_unsupported_key_type_fails(self, template):
+    handle = tink.new_keyset_handle(template)
+    with self.assertRaises(core.TinkError):
+      handle.primitive(signature.Prehash)
+
+  @parameterized.named_parameters(
+      ('hmac', mac.mac_key_templates.HMAC_SHA256_128BITTAG),
+      ('ecdsa_p256', signature.signature_key_templates.ECDSA_P256),
+  )
+  def test_sign_prehash_primitive_unsupported_key_type_fails(self, template):
+    handle = tink.new_keyset_handle(template)
+    with self.assertRaises(core.TinkError):
+      handle.primitive(signature.SignPrehash)
 
 
 if __name__ == '__main__':
