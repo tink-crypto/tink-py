@@ -43,8 +43,18 @@ class _PublicKeyVerifyCcToPyWrapper(_public_key_verify.PublicKeyVerify):
     self._public_key_verify.verify(signature, data)
 
 
+# TODO(b/567511428): fix the discrepancy in primitive registrations for
+# `Prehash` and `SignPrehash` once the Configurations are supported in Python.
 def register():
-  """Registers all signature key managers in the Python registry."""
+  """Registers all signature key managers in the Python registry.
+
+  Note that `Prehash` and `SignPrehash` primitives are not registered in the
+  Python registry. Instead, `KeysetHandle.primitive()` delegates their creation
+  directly to the C++ bindings, so calling `signature.register()` is not
+  necessary to obtain `Prehash` or `SignPrehash` primitives from an existing
+  `KeysetHandle` (though it is still required for `PublicKeySign`,
+  `PublicKeyVerify`, and keyset generation).
+  """
   tink_bindings.register()
 
   for key_type_identifier in (
