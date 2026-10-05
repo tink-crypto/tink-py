@@ -422,7 +422,7 @@ class RawJwtTest(absltest.TestCase):
     custom_claims['new_claim'] = 456  # pyrefly: ignore[bad-assignment]
     my_claim['three'] = 4  # pyrefly: ignore[bad-assignment]
     output_claim = cast(Dict[str, str], token.custom_claim('my_claim'))
-    output_claim['three'] = 4  # pytype: disable=container-type-mismatch
+    output_claim['three'] = 4  # pyrefly: ignore[unsupported-operation]
 
     # modifications don't affect token.
     self.assertEqual(token.audiences(), ['alice', 'bob'])

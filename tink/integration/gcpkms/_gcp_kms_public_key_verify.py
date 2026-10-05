@@ -386,7 +386,7 @@ class _GcpKmsPublicKeyVerify(tink_signature.PublicKeyVerify):
     """Initializes the verification instance."""
     self._verifier = verifier
 
-  def verify(self, signature: bytes, data: bytes) -> None:  # pytype: disable=signature-mismatch
+  def verify(self, signature: bytes, data: bytes) -> None:  # pyrefly: ignore[bad-override]
     """See base class."""
     self._verifier.verify(signature, data)
 
