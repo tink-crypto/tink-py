@@ -9,7 +9,6 @@ licenses(["notice"])
 cc_library(
     name = "cc_key_manager",
     hdrs = ["cc_key_manager.h"],
-    include_prefix = "tink/cc",
     deps = [
         "//tink/cc/pybind:tink_exception",
         "@abseil-cpp//absl/memory",
@@ -62,7 +61,6 @@ cc_library(
 cc_library(
     name = "python_file_object_adapter",
     hdrs = ["python_file_object_adapter.h"],
-    include_prefix = "tink/cc",
     deps = [
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:statusor",
@@ -74,7 +72,6 @@ cc_library(
     name = "python_output_stream",
     srcs = ["python_output_stream.cc"],
     hdrs = ["python_output_stream.h"],
-    include_prefix = "tink/cc",
     deps = [
         ":python_file_object_adapter",
         "@abseil-cpp//absl/base:core_headers",
@@ -107,7 +104,6 @@ cc_library(
     name = "output_stream_adapter",
     srcs = ["output_stream_adapter.cc"],
     hdrs = ["output_stream_adapter.h"],
-    include_prefix = "tink/cc",
     deps = [
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/status",
@@ -135,7 +131,6 @@ cc_test(
 cc_library(
     name = "test_util",
     hdrs = ["test_util.h"],
-    include_prefix = "tink/cc",
     deps = [
         ":python_file_object_adapter",
         "@abseil-cpp//absl/base:core_headers",
@@ -149,7 +144,6 @@ cc_library(
     name = "cc_streaming_aead_wrappers",
     srcs = ["cc_streaming_aead_wrappers.cc"],
     hdrs = ["cc_streaming_aead_wrappers.h"],
-    include_prefix = "tink/cc",
     deps = [
         ":input_stream_adapter",
         ":output_stream_adapter",
@@ -180,7 +174,6 @@ cc_library(
     name = "python_input_stream",
     srcs = ["python_input_stream.cc"],
     hdrs = ["python_input_stream.h"],
-    include_prefix = "tink/cc",
     deps = [
         ":python_file_object_adapter",
         "@abseil-cpp//absl/memory",
@@ -210,7 +203,6 @@ cc_library(
     name = "input_stream_adapter",
     srcs = ["input_stream_adapter.cc"],
     hdrs = ["input_stream_adapter.h"],
-    include_prefix = "tink/cc",
     deps = [
         "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
