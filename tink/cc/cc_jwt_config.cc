@@ -21,10 +21,13 @@
 #include "tink/jwt/internal/raw_jwt_ecdsa_sign_key_manager.h"
 #include "tink/jwt/internal/raw_jwt_ecdsa_verify_key_manager.h"
 #include "tink/jwt/internal/raw_jwt_hmac_key_manager.h"
+#include "tink/jwt/internal/raw_jwt_ml_dsa_sign_key_manager.h"
+#include "tink/jwt/internal/raw_jwt_ml_dsa_verify_key_manager.h"
 #include "tink/jwt/internal/raw_jwt_rsa_ssa_pkcs1_sign_key_manager.h"
 #include "tink/jwt/internal/raw_jwt_rsa_ssa_pkcs1_verify_key_manager.h"
 #include "tink/jwt/internal/raw_jwt_rsa_ssa_pss_sign_key_manager.h"
 #include "tink/jwt/internal/raw_jwt_rsa_ssa_pss_verify_key_manager.h"
+#include "tink/jwt/jwt_signature_config_2026.h"
 #include "tink/registry.h"
 
 namespace crypto {
@@ -48,9 +51,26 @@ absl::Status CcJwtConfigRegister() {
   if (!status.ok()) {
     return status;
   }
-  return Registry::RegisterAsymmetricKeyManagers(
+  status = Registry::RegisterAsymmetricKeyManagers(
       std::make_unique<RawJwtRsaSsaPssSignKeyManager>(),
       std::make_unique<RawJwtRsaSsaPssVerifyKeyManager>(), true);
+  if (!status.ok()) {
+    return status;
+  }
+  // TODO(b/508558211): This is a workaround for ML-DSA because
+  // `JwtMlDsaSignatureRegisterForPython` is not publicly
+  // visible in tink-cc 2.9.2. Replace this with a call to
+  // `JwtMlDsaSignatureRegisterForPython` after the next tink-cc release.
+  ConfigJwtSignature2026();
+  status = Registry::RegisterKeyManager(
+      jwt_internal::MakeRawJwtMlDsaSignKeyManager(), true);
+  if (!status.ok()) {
+    return status;
+  }
+  // Creating a new public key doesn't make sense and is therefore not allowed.
+  status = Registry::RegisterKeyManager(
+      jwt_internal::MakeRawJwtMlDsaVerifyKeyManager(), false);
+  return status;
 }
 
 }  // namespace tink

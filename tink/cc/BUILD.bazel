@@ -38,9 +38,12 @@ cc_library(
     deps = [
         "@abseil-cpp//absl/status",
         "@tink_cc//tink:tink_cc",
+        "@tink_cc//tink/jwt:jwt_signature_config_2026",
         "@tink_cc//tink/jwt/internal:raw_jwt_ecdsa_sign_key_manager",
         "@tink_cc//tink/jwt/internal:raw_jwt_ecdsa_verify_key_manager",
         "@tink_cc//tink/jwt/internal:raw_jwt_hmac_key_manager",
+        "@tink_cc//tink/jwt/internal:raw_jwt_ml_dsa_sign_key_manager",
+        "@tink_cc//tink/jwt/internal:raw_jwt_ml_dsa_verify_key_manager",
         "@tink_cc//tink/jwt/internal:raw_jwt_rsa_ssa_pkcs1_sign_key_manager",
         "@tink_cc//tink/jwt/internal:raw_jwt_rsa_ssa_pkcs1_verify_key_manager",
         "@tink_cc//tink/jwt/internal:raw_jwt_rsa_ssa_pss_sign_key_manager",
