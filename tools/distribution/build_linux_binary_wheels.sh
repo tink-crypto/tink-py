@@ -37,15 +37,15 @@ readonly -A PYTHON_VERSIONS
 export TINK_PYTHON_ROOT_PATH="${PWD}"
 export ARCH="$(uname -m)"
 
-# Install Bazelisk 1.27.0.
-readonly BAZELISK_VERSION="1.27.0"
+# Install Bazelisk 1.30.0.
+readonly BAZELISK_VERSION="1.30.0"
 readonly BAZELISK_DOWNLOAD_URL="https://github.com/bazelbuild/bazelisk/releases/download"
 BAZELISK_URL="${BAZELISK_DOWNLOAD_URL}/v${BAZELISK_VERSION}/bazelisk-linux-amd64"
-BAZELISK_SHA256="e1508323f347ad1465a887bc5d2bfb91cffc232d11e8e997b623227c6b32fb76"
+BAZELISK_SHA256="a248ae2b2b62b5baebb748f6fba7203bff1a27e5d01b55399a8406744cb539e8"
 
 if [[ "${ARCH}" == "aarch64" || "${ARCH}" == "arm64" ]]; then
   BAZELISK_URL="${BAZELISK_DOWNLOAD_URL}/v${BAZELISK_VERSION}/bazelisk-linux-arm64"
-  BAZELISK_SHA256="bb608519a440d45d10304eb684a73a2b6bb7699c5b0e5434361661b25f113a5d"
+  BAZELISK_SHA256="b2bcc040c213b44586b121bda6d983c35df121b917c3a7a66fb16f2fa0df1a4f"
 fi
 
 readonly BAZELISK_URL
