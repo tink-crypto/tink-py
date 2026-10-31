@@ -20,6 +20,7 @@ from absl.testing import absltest
 from absl.testing import parameterized
 from google.api_core import exceptions as core_exceptions
 from google.cloud import kms_v1
+import google_crc32c
 
 from tink import core
 from tink.integration import gcpkms
@@ -122,25 +123,101 @@ class GcpKmsClientTest(parameterized.TestCase):
   )
   def test_aead_encryption_works(self, key_uri):
     kms_v1.KeyManagementServiceClient().encrypt.return_value = (
-        kms_v1.types.EncryptResponse(ciphertext=CIPHERTEXT)
+        kms_v1.types.EncryptResponse(
+            ciphertext=CIPHERTEXT,
+            ciphertext_crc32c=google_crc32c.value(CIPHERTEXT),
+            verified_plaintext_crc32c=True,
+            verified_additional_authenticated_data_crc32c=True,
+        )
     )
     gcp_client = gcpkms.GcpKmsClient(key_uri, CREDENTIAL_PATH)
     gcp_aead = gcp_client.get_aead(key_uri)
     ciphertext = gcp_aead.encrypt(PLAINTEXT, ASSOCIATED_DATA)
     self.assertEqual(ciphertext, CIPHERTEXT)
 
+  def test_aead_encryption_sends_checksums(self):
+    kms_client = kms_v1.KeyManagementServiceClient()
+    kms_client.encrypt.return_value = kms_v1.types.EncryptResponse(
+        ciphertext=CIPHERTEXT,
+        ciphertext_crc32c=google_crc32c.value(CIPHERTEXT),
+        verified_plaintext_crc32c=True,
+        verified_additional_authenticated_data_crc32c=True,
+    )
+    gcp_client = gcpkms.GcpKmsClient(KEY_URI1, CREDENTIAL_PATH)
+    gcp_client.get_aead(KEY_URI1).encrypt(PLAINTEXT, ASSOCIATED_DATA)
+
+    request = kms_client.encrypt.call_args.kwargs['request']
+    self.assertEqual(
+        request['plaintext_crc32c'], google_crc32c.value(PLAINTEXT)
+    )
+    self.assertEqual(
+        request['additional_authenticated_data_crc32c'],
+        google_crc32c.value(ASSOCIATED_DATA),
+    )
+
+  def test_aead_encryption_rejects_unverified_request(self):
+    for field in (
+        'verified_plaintext_crc32c',
+        'verified_additional_authenticated_data_crc32c',
+    ):
+      kms_client = kms_v1.KeyManagementServiceClient()
+      response_fields = {
+          'ciphertext': CIPHERTEXT,
+          'ciphertext_crc32c': google_crc32c.value(CIPHERTEXT),
+          'verified_plaintext_crc32c': True,
+          'verified_additional_authenticated_data_crc32c': True,
+      }
+      response_fields[field] = False
+      kms_client.encrypt.return_value = kms_v1.types.EncryptResponse(
+          **response_fields
+      )
+      gcp_client = gcpkms.GcpKmsClient(KEY_URI1, CREDENTIAL_PATH)
+      with self.assertRaises(core.TinkError):
+        gcp_client.get_aead(KEY_URI1).encrypt(PLAINTEXT, ASSOCIATED_DATA)
+
+  def test_aead_encryption_rejects_bad_ciphertext_checksum(self):
+    kms_v1.KeyManagementServiceClient().encrypt.return_value = (
+        kms_v1.types.EncryptResponse(
+            ciphertext=CIPHERTEXT,
+            ciphertext_crc32c=0,
+            verified_plaintext_crc32c=True,
+            verified_additional_authenticated_data_crc32c=True,
+        )
+    )
+    gcp_client = gcpkms.GcpKmsClient(KEY_URI1, CREDENTIAL_PATH)
+    with self.assertRaises(core.TinkError):
+      gcp_client.get_aead(KEY_URI1).encrypt(PLAINTEXT, ASSOCIATED_DATA)
+
   @parameterized.parameters(
       KEY_URI1,
       KEY_URI2,
   )
   def test_aead_decryption_works(self, key_uri):
-    kms_v1.KeyManagementServiceClient().decrypt.return_value = (
-        kms_v1.types.DecryptResponse(plaintext=PLAINTEXT)
+    kms_client = kms_v1.KeyManagementServiceClient()
+    kms_client.decrypt.return_value = kms_v1.types.DecryptResponse(
+        plaintext=PLAINTEXT,
+        plaintext_crc32c=google_crc32c.value(PLAINTEXT),
     )
     gcp_client = gcpkms.GcpKmsClient(key_uri, CREDENTIAL_PATH)
     gcp_aead = gcp_client.get_aead(key_uri)
     plaintext = gcp_aead.decrypt(CIPHERTEXT, ASSOCIATED_DATA)
     self.assertEqual(plaintext, PLAINTEXT)
+    request = kms_client.decrypt.call_args.kwargs['request']
+    self.assertEqual(
+        request['ciphertext_crc32c'], google_crc32c.value(CIPHERTEXT)
+    )
+    self.assertEqual(
+        request['additional_authenticated_data_crc32c'],
+        google_crc32c.value(ASSOCIATED_DATA),
+    )
+
+  def test_aead_decryption_rejects_bad_plaintext_checksum(self):
+    kms_v1.KeyManagementServiceClient().decrypt.return_value = (
+        kms_v1.types.DecryptResponse(plaintext=PLAINTEXT, plaintext_crc32c=0)
+    )
+    gcp_client = gcpkms.GcpKmsClient(KEY_URI1, CREDENTIAL_PATH)
+    with self.assertRaises(core.TinkError):
+      gcp_client.get_aead(KEY_URI1).decrypt(CIPHERTEXT, ASSOCIATED_DATA)
 
   def test_aead_decryption_with_key_version_fails(self):
     gcp_client = gcpkms.GcpKmsClient(KEY_URI3, CREDENTIAL_PATH)
@@ -190,7 +267,12 @@ class GcpKmsClientTest(parameterized.TestCase):
 
   def test_new_client_aead_encryption_works(self):
     kms_v1.KeyManagementServiceClient().encrypt.return_value = (
-        kms_v1.types.EncryptResponse(ciphertext=CIPHERTEXT)
+        kms_v1.types.EncryptResponse(
+            ciphertext=CIPHERTEXT,
+            ciphertext_crc32c=google_crc32c.value(CIPHERTEXT),
+            verified_plaintext_crc32c=True,
+            verified_additional_authenticated_data_crc32c=True,
+        )
     )
     kms_client = kms_v1.KeyManagementServiceClient()
     gcp_client = gcpkms.new_client(kms_v1_client=kms_client, key_uri=KEY_URI1)
@@ -200,7 +282,10 @@ class GcpKmsClientTest(parameterized.TestCase):
 
   def test_new_client_aead_decryption_works(self):
     kms_v1.KeyManagementServiceClient().decrypt.return_value = (
-        kms_v1.types.DecryptResponse(plaintext=PLAINTEXT)
+        kms_v1.types.DecryptResponse(
+            plaintext=PLAINTEXT,
+            plaintext_crc32c=google_crc32c.value(PLAINTEXT),
+        )
     )
     kms_client = kms_v1.KeyManagementServiceClient()
     gcp_client = gcpkms.new_client(kms_v1_client=kms_client, key_uri=KEY_URI1)
