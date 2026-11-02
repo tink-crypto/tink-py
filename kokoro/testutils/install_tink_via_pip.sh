@@ -88,7 +88,8 @@ main() {
     readonly requirements_file
     readonly pip_flags
 
-    python3 -m pip install "${pip_flags[@]}" --upgrade pip setuptools
+    python3 -m pip install "${pip_flags[@]}" --require-hashes \
+        -r tools/distribution/requirements.txt
     # Install Tink Python requirements.
     python3 -m pip install "${pip_flags[@]}" --require-hashes \
         -r "${requirements_file}"
