@@ -26,6 +26,11 @@
 #   ./kokoro/testutils/copy_credentials.sh <testdata dir> <all|aws|gcp>
 #
 
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: 4f6d97a2c243fa30e676 (to quickly find the script from logs)"
+echo "================================================================================"
+
 TESTDATA_DIR=
 KMS_SERVICE=
 

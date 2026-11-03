@@ -18,6 +18,11 @@
 #
 # This script is assumed to be run from the root of the tink-py repository.
 
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: 2670523f09f09edf4c93 (to quickly find the script from logs)"
+echo "================================================================================"
+
 set -euo pipefail
 
 readonly GCS_URL="https://storage.googleapis.com"

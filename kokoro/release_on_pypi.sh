@@ -29,6 +29,11 @@
 #
 # NOTE: Release on PyPi and Test PyPi are possible only when running on Kokoro.
 
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: ae17ae0205d4fb218bb2 (to quickly find the script from logs)"
+echo "================================================================================"
+
 # Fail if RELEASE_VERSION is not set.
 if [[ -z "${RELEASE_VERSION:-}" ]]; then
   echo "InvalidArgumentError: RELEASE_VERSION must be set" >&2

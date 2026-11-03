@@ -18,6 +18,11 @@
 # should be run inside a manylinux2014 Docker container to have the correct
 # environment setup.
 
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: 2d80aa11569820b902d0 (to quickly find the script from logs)"
+echo "================================================================================"
+
 set -euo pipefail
 
 # The following assoicative array contains:

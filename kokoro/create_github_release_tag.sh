@@ -14,6 +14,11 @@
 # limitations under the License.
 ################################################################################
 
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: 9d8e55771005555321d1 (to quickly find the script from logs)"
+echo "================================================================================"
+
 set -euo pipefail
 
 # Fail if RELEASE_VERSION is not set.

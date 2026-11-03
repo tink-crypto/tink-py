@@ -25,6 +25,12 @@
 #
 #   CONTAINER_IMAGE="us-docker.pkg.dev/tink-test-infrastructure/tink-ci-images/linux-tink-py-base:latest" \
 #     sh ./kokoro/gcp_ubuntu/release/sdist/test/run.sh
+
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: ccbc0957a3eca02b12aa (to quickly find the script from logs)"
+echo "================================================================================"
+
 set -euo pipefail
 
 IS_KOKORO="false"

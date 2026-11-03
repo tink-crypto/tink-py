@@ -20,6 +20,11 @@
 #
 # NOTE: If not running on Kokoro, this script will do nothing.
 
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: dde0325ae190e090280c (to quickly find the script from logs)"
+echo "================================================================================"
+
 set -eo pipefail
 
 usage() {

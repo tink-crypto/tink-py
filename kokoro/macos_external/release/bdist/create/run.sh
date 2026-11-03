@@ -15,6 +15,12 @@
 ################################################################################
 
 # Creates and tests a binary wheel distribution.
+
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: d329ed3b9a74649b63f1 (to quickly find the script from logs)"
+echo "================================================================================"
+
 set -eEuo pipefail
 
 IS_KOKORO="false"

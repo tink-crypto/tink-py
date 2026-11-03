@@ -16,6 +16,11 @@
 
 # Tests all the source and binary distributions in a given folder.
 
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: 8159caa490bc1fdb066a (to quickly find the script from logs)"
+echo "================================================================================"
+
 set -euox pipefail
 
 readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"

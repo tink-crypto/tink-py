@@ -18,6 +18,11 @@
 #
 # https://packaging.python.org/en/latest/glossary/#term-Source-Distribution-or-sdist
 
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: 97a8fcd3485efd909ebd (to quickly find the script from logs)"
+echo "================================================================================"
+
 set -eEuox pipefail
 
 readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"

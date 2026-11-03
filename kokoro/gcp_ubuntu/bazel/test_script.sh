@@ -18,6 +18,11 @@
 #
 # This script is assumed to be run from the root of the tink-py repository.
 
+# Unique hex string of length 20
+echo "================================================================================"
+echo "Tink Script ID: 24003bcccce1740f9c63 (to quickly find the script from logs)"
+echo "================================================================================"
+
 set -euo pipefail
 
 BAZEL_CMD="bazel"
