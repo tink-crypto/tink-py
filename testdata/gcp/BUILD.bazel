@@ -5,6 +5,7 @@ licenses(["notice"])
 exports_files(srcs = [
     "credential.json",
     "signature_key_public.pem",
+    "xwing_key_public.bin",
 ])
 
 filegroup(
