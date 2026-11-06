@@ -719,6 +719,13 @@ _SLH_DSA_SIG = base64.b64decode(
     'h/ZT9ktaAEtsgTO1JNDuWrxYmQakV5zQqg0='
 )
 
+_SECP256K1_PEM = textwrap.dedent("""\
+    -----BEGIN PUBLIC KEY-----
+    MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEuDj/ROW8F3vyEYnQdmCC/J2EMiaIf8l2
+    A3EQC37iCm/wyddb+6ezGmvKGXRJbutW3jVwcZVdg8Sxutqgshgy6Q==
+    -----END PUBLIC KEY-----
+    """).encode('utf-8')
+
 
 def _ml_dsa_pem(algorithm: _Algorithm, raw_public_key: bytes) -> bytes:
   """Wraps a raw ML-DSA public key in the PEM that Cloud KMS would return."""
@@ -998,6 +1005,50 @@ class GcpKmsPublicKeyVerifyTest(parameterized.TestCase):
     with self.assertRaises(core.TinkError):
       _gcp_kms_public_key_verify.new_gcp_kms_public_key_verify_no_rpc(
           _SLH_DSA_RAW_PUBLIC_KEY[:-1], _Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S
+      )
+
+  @parameterized.named_parameters(
+      (
+          'rsa_pem_under_ecdsa',
+          _Algorithm.EC_SIGN_P256_SHA256,
+          _RSA_2048_PEM,
+          r'Unexpected public key OID',
+      ),
+      (
+          'ecdsa_pem_under_rsa',
+          _Algorithm.RSA_SIGN_PKCS1_2048_SHA256,
+          _ECDSA_P256_PEM,
+          r'Unexpected public key OID',
+      ),
+      (
+          'p384_pem_under_p256',
+          _Algorithm.EC_SIGN_P256_SHA256,
+          _ECDSA_P384_PEM,
+          r'Unexpected curve OID',
+      ),
+      (
+          'secp256k1_pem_under_p256',
+          _Algorithm.EC_SIGN_P256_SHA256,
+          _SECP256K1_PEM,
+          r'Unexpected curve OID',
+      ),
+      (
+          'rsa_2048_pem_under_pss_3072',
+          _Algorithm.RSA_SIGN_PSS_3072_SHA256,
+          _RSA_2048_PEM,
+          r'Incorrect modulus size',
+      ),
+      (
+          'rsa_4096_pem_under_pkcs1_2048',
+          _Algorithm.RSA_SIGN_PKCS1_2048_SHA256,
+          _RSA_4096_PEM,
+          r'Incorrect modulus size',
+      ),
+  )
+  def test_no_rpc_mismatched_pem_fails(self, algorithm, pem, regex):
+    with self.assertRaisesRegex(core.TinkError, regex):
+      _gcp_kms_public_key_verify.new_gcp_kms_public_key_verify_no_rpc(
+          pem, algorithm
       )
 
 

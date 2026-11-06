@@ -19,7 +19,9 @@ from typing import TypeAlias
 from google.cloud import kms_v1
 from pyasn1.codec.der import decoder as der_decoder
 from pyasn1.error import PyAsn1Error
+from pyasn1.type import univ
 from pyasn1_modules import rfc3447
+from pyasn1_modules import rfc5280
 
 from tink.proto import common_pb2
 from tink.proto import ecdsa_pb2
@@ -46,39 +48,47 @@ _RSA_SSA_PSS_TYPE_URL = (
 _ML_DSA_TYPE_URL = 'type.googleapis.com/google.crypto.tink.MlDsaPublicKey'
 _SLH_DSA_TYPE_URL = 'type.googleapis.com/google.crypto.tink.SlhDsaPublicKey'
 
-# ECDSA algorithms mapped to (curve, hash, coordinate length in bytes). KMS
-# emits DER-encoded ECDSA signatures.
+_EC_PUBLIC_KEY_OID = '1.2.840.10045.2.1'
+_RSA_ENCRYPTION_OID = '1.2.840.113549.1.1.1'
+
+# ECDSA algorithms mapped to (curve, hash, coordinate length in bytes, named
+# curve OID). KMS emits DER-encoded ECDSA signatures.
 _ECDSA_PARAMS: dict[
     _Algorithm | int,
-    tuple[common_pb2.EllipticCurveType, common_pb2.HashType, int],
+    tuple[common_pb2.EllipticCurveType, common_pb2.HashType, int, str],
 ] = {
     _Algorithm.EC_SIGN_P256_SHA256: (
         common_pb2.NIST_P256,
         common_pb2.SHA256,
         32,
+        '1.2.840.10045.3.1.7',
     ),
     _Algorithm.EC_SIGN_P384_SHA384: (
         common_pb2.NIST_P384,
         common_pb2.SHA384,
         48,
+        '1.3.132.0.34',
     ),
 }
 
-# RSA SSA PKCS1 algorithms mapped to the signature hash.
-_RSA_PKCS1_PARAMS: dict[_Algorithm | int, common_pb2.HashType] = {
-    _Algorithm.RSA_SIGN_PKCS1_2048_SHA256: common_pb2.SHA256,
-    _Algorithm.RSA_SIGN_PKCS1_3072_SHA256: common_pb2.SHA256,
-    _Algorithm.RSA_SIGN_PKCS1_4096_SHA256: common_pb2.SHA256,
-    _Algorithm.RSA_SIGN_PKCS1_4096_SHA512: common_pb2.SHA512,
+# RSA SSA PKCS1 algorithms mapped to (hash, modulus size in bits).
+_RSA_PKCS1_PARAMS: dict[_Algorithm | int, tuple[common_pb2.HashType, int]] = {
+    _Algorithm.RSA_SIGN_PKCS1_2048_SHA256: (common_pb2.SHA256, 2048),
+    _Algorithm.RSA_SIGN_PKCS1_3072_SHA256: (common_pb2.SHA256, 3072),
+    _Algorithm.RSA_SIGN_PKCS1_4096_SHA256: (common_pb2.SHA256, 4096),
+    _Algorithm.RSA_SIGN_PKCS1_4096_SHA512: (common_pb2.SHA512, 4096),
 }
 
-# RSA SSA PSS algorithms mapped to (hash, salt length in bytes). KMS uses the
-# signature hash for MGF1 and a salt length equal to the hash length.
-_RSA_PSS_PARAMS: dict[_Algorithm | int, tuple[common_pb2.HashType, int]] = {
-    _Algorithm.RSA_SIGN_PSS_2048_SHA256: (common_pb2.SHA256, 32),
-    _Algorithm.RSA_SIGN_PSS_3072_SHA256: (common_pb2.SHA256, 32),
-    _Algorithm.RSA_SIGN_PSS_4096_SHA256: (common_pb2.SHA256, 32),
-    _Algorithm.RSA_SIGN_PSS_4096_SHA512: (common_pb2.SHA512, 64),
+# RSA SSA PSS algorithms mapped to (hash, salt length in bytes, modulus size in
+# bits). KMS uses the signature hash for MGF1 and a salt length equal to the
+# hash length.
+_RSA_PSS_PARAMS: dict[
+    _Algorithm | int, tuple[common_pb2.HashType, int, int]
+] = {
+    _Algorithm.RSA_SIGN_PSS_2048_SHA256: (common_pb2.SHA256, 32, 2048),
+    _Algorithm.RSA_SIGN_PSS_3072_SHA256: (common_pb2.SHA256, 32, 3072),
+    _Algorithm.RSA_SIGN_PSS_4096_SHA256: (common_pb2.SHA256, 32, 4096),
+    _Algorithm.RSA_SIGN_PSS_4096_SHA512: (common_pb2.SHA512, 64, 4096),
 }
 
 # ML-DSA algorithms mapped to (Tink instance, public key OID, raw key size in
@@ -129,6 +139,16 @@ _SLH_DSA_PRIVATE_KEY_SIZE = 64
 _KEY_ID = 1
 
 
+def _check_algorithm_oid(
+    spki: rfc5280.SubjectPublicKeyInfo, expected_oid: str, algorithm: _Algorithm
+) -> None:
+  oid = str(spki['algorithm']['algorithm'])
+  if oid != expected_oid:
+    raise tink.TinkError(
+        f'Unexpected public key OID {oid} for {algorithm.name}.'
+    )
+
+
 def _ecdsa_public_key(public_key_pem: bytes, algorithm: _Algorithm) -> bytes:
   """Builds a serialized EcdsaPublicKey proto from a PEM public key.
 
@@ -142,8 +162,22 @@ def _ecdsa_public_key(public_key_pem: bytes, algorithm: _Algorithm) -> bytes:
   Raises:
     tink.TinkError: If the PEM cannot be parsed or has an invalid format.
   """
-  curve, hash_type, coordinate_size = _ECDSA_PARAMS[algorithm]
+  curve, hash_type, coordinate_size, curve_oid = _ECDSA_PARAMS[algorithm]
   spki = _gcp_kms_util.parse_spki_pem(public_key_pem)
+  _check_algorithm_oid(spki, _EC_PUBLIC_KEY_OID, algorithm)
+  parameters = spki['algorithm']['parameters']
+  try:
+    if not parameters.isValue:
+      raise ValueError('Missing EC parameters.')
+    named_curve, _ = der_decoder.decode(
+        parameters.asOctets(), asn1Spec=univ.ObjectIdentifier()
+    )
+  except (PyAsn1Error, ValueError) as e:
+    raise tink.TinkError('Failed to parse the ECDSA public key.') from e
+  if str(named_curve) != curve_oid:
+    raise tink.TinkError(
+        f'Unexpected curve OID {named_curve} for {algorithm.name}.'
+    )
   # The subjectPublicKey is the uncompressed point 0x04 || x || y.
   point = spki['subjectPublicKey'].asOctets()
   if len(point) != 2 * coordinate_size + 1 or point[0] != 0x04:
@@ -161,11 +195,15 @@ def _ecdsa_public_key(public_key_pem: bytes, algorithm: _Algorithm) -> bytes:
   return public_key.SerializeToString()
 
 
-def _rsa_modulus_and_exponent(public_key_pem: bytes) -> tuple[bytes, bytes]:
+def _rsa_modulus_and_exponent(
+    public_key_pem: bytes, algorithm: _Algorithm, modulus_size: int
+) -> tuple[bytes, bytes]:
   """Extracts the modulus and public exponent from an RSA PEM public key.
 
   Args:
     public_key_pem: The PEM-encoded RSA public key returned by Cloud KMS.
+    algorithm: The CryptoKeyVersion algorithm of the public key.
+    modulus_size: The modulus size in bits required by the algorithm.
 
   Returns:
     A tuple of (modulus, exponent) encoded as big-endian bytes.
@@ -174,6 +212,7 @@ def _rsa_modulus_and_exponent(public_key_pem: bytes) -> tuple[bytes, bytes]:
     tink.TinkError: If the PEM cannot be parsed or is not a valid RSA key.
   """
   spki = _gcp_kms_util.parse_spki_pem(public_key_pem)
+  _check_algorithm_oid(spki, _RSA_ENCRYPTION_OID, algorithm)
   try:
     # The subjectPublicKey is a DER RSAPublicKey (RFC 3447):
     # SEQUENCE { modulus INTEGER, publicExponent INTEGER }.
@@ -187,6 +226,11 @@ def _rsa_modulus_and_exponent(public_key_pem: bytes) -> tuple[bytes, bytes]:
     exponent = int(rsa_public_key['publicExponent'])
   except (PyAsn1Error, ValueError) as e:
     raise tink.TinkError('Failed to parse the RSA public key.') from e
+  if modulus.bit_length() != modulus_size:
+    raise tink.TinkError(
+        f'Incorrect modulus size for {algorithm.name}: got'
+        f' {modulus.bit_length()} bits, want {modulus_size}.'
+    )
   return (
       big_integer_util.num_to_bytes(modulus),
       big_integer_util.num_to_bytes(exponent),
@@ -208,8 +252,10 @@ def _rsa_ssa_pkcs1_public_key(
   Raises:
     tink.TinkError: If the PEM cannot be parsed or is not a valid RSA key.
   """
-  hash_type = _RSA_PKCS1_PARAMS[algorithm]
-  modulus, exponent = _rsa_modulus_and_exponent(public_key_pem)
+  hash_type, modulus_size = _RSA_PKCS1_PARAMS[algorithm]
+  modulus, exponent = _rsa_modulus_and_exponent(
+      public_key_pem, algorithm, modulus_size
+  )
   public_key = rsa_ssa_pkcs1_pb2.RsaSsaPkcs1PublicKey(
       version=0,
       params=rsa_ssa_pkcs1_pb2.RsaSsaPkcs1Params(hash_type=hash_type),
@@ -234,8 +280,10 @@ def _rsa_ssa_pss_public_key(
   Raises:
     tink.TinkError: If the PEM cannot be parsed or is not a valid RSA key.
   """
-  hash_type, salt_length = _RSA_PSS_PARAMS[algorithm]
-  modulus, exponent = _rsa_modulus_and_exponent(public_key_pem)
+  hash_type, salt_length, modulus_size = _RSA_PSS_PARAMS[algorithm]
+  modulus, exponent = _rsa_modulus_and_exponent(
+      public_key_pem, algorithm, modulus_size
+  )
   public_key = rsa_ssa_pss_pb2.RsaSsaPssPublicKey(
       version=0,
       params=rsa_ssa_pss_pb2.RsaSsaPssParams(
