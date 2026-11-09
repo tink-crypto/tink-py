@@ -14,6 +14,9 @@
 
 """A PublicKeyVerify primitive backed by Google Cloud KMS."""
 
+from collections.abc import Sequence
+import dataclasses
+import random
 from typing import TypeAlias
 
 from google.cloud import kms_v1
@@ -25,6 +28,7 @@ from pyasn1_modules import rfc5280
 
 from tink.proto import common_pb2
 from tink.proto import ecdsa_pb2
+from tink.proto import ed25519_pb2
 from tink.proto import ml_dsa_pb2
 from tink.proto import rsa_ssa_pkcs1_pb2
 from tink.proto import rsa_ssa_pss_pb2
@@ -39,6 +43,7 @@ _Algorithm: TypeAlias = kms_v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm
 
 # Type URLs of the Tink public key protos used to build the local verifier.
 _ECDSA_TYPE_URL = 'type.googleapis.com/google.crypto.tink.EcdsaPublicKey'
+_ED25519_TYPE_URL = 'type.googleapis.com/google.crypto.tink.Ed25519PublicKey'
 _RSA_SSA_PKCS1_TYPE_URL = (
     'type.googleapis.com/google.crypto.tink.RsaSsaPkcs1PublicKey'
 )
@@ -49,7 +54,11 @@ _ML_DSA_TYPE_URL = 'type.googleapis.com/google.crypto.tink.MlDsaPublicKey'
 _SLH_DSA_TYPE_URL = 'type.googleapis.com/google.crypto.tink.SlhDsaPublicKey'
 
 _EC_PUBLIC_KEY_OID = '1.2.840.10045.2.1'
+_ED25519_OID = '1.3.101.112'
 _RSA_ENCRYPTION_OID = '1.2.840.113549.1.1.1'
+
+_ED25519_PUBLIC_KEY_SIZE = 32
+_MAX_KEY_ID = 2**32 - 1
 
 # ECDSA algorithms mapped to (curve, hash, coordinate length in bytes, named
 # curve OID). KMS emits DER-encoded ECDSA signatures.
@@ -494,3 +503,110 @@ def new_gcp_kms_public_key_verify_no_rpc(
   if not public_key:
     raise tink.TinkError('public_key cannot be empty.')
   return _GcpKmsPublicKeyVerify(_internal_verifier(algorithm, public_key))
+
+
+def _ed25519_public_key(public_key_pem: bytes, algorithm: _Algorithm) -> bytes:
+  """Builds a serialized Ed25519PublicKey proto from a PEM public key."""
+  spki = _gcp_kms_util.parse_spki_pem(public_key_pem)
+  _check_algorithm_oid(spki, _ED25519_OID, algorithm)
+  if spki['algorithm']['parameters'].isValue:
+    raise tink.TinkError(
+        f'Unexpected algorithm parameters for {algorithm.name}.'
+    )
+  key_value = spki['subjectPublicKey'].asOctets()
+  if len(key_value) != _ED25519_PUBLIC_KEY_SIZE:
+    raise tink.TinkError(
+        f'Incorrect public key size for {algorithm.name}: got'
+        f' {len(key_value)} bytes, want {_ED25519_PUBLIC_KEY_SIZE}.'
+    )
+  return ed25519_pb2.Ed25519PublicKey(
+      version=0, key_value=key_value
+  ).SerializeToString()
+
+
+def _pem_key_data(
+    public_key_pem: bytes, algorithm: _Algorithm
+) -> tuple[str, bytes]:
+  """Returns the (type_url, serialized_proto) for a PEM public key."""
+  if algorithm in _ECDSA_PARAMS:
+    return _ECDSA_TYPE_URL, _ecdsa_public_key(public_key_pem, algorithm)
+  if algorithm == _Algorithm.EC_SIGN_ED25519:
+    return _ED25519_TYPE_URL, _ed25519_public_key(public_key_pem, algorithm)
+  if algorithm in _RSA_PKCS1_PARAMS:
+    return (
+        _RSA_SSA_PKCS1_TYPE_URL,
+        _rsa_ssa_pkcs1_public_key(public_key_pem, algorithm),
+    )
+  if algorithm in _RSA_PSS_PARAMS:
+    return (
+        _RSA_SSA_PSS_TYPE_URL,
+        _rsa_ssa_pss_public_key(public_key_pem, algorithm),
+    )
+  if algorithm in _ML_DSA_PARAMS:
+    return _ML_DSA_TYPE_URL, _ml_dsa_public_key(public_key_pem, algorithm)
+  raise tink.TinkError(f'The algorithm {algorithm.name} is not supported.')
+
+
+@dataclasses.dataclass(frozen=True)
+class VerificationKey:
+  """A public key returned by Cloud KMS FetchVerificationKeys."""
+
+  public_key_pem: bytes
+  algorithm: _Algorithm
+
+
+def new_public_keyset_handle(
+    keys: Sequence[VerificationKey],
+) -> tink.KeysetHandle:
+  """Creates a public KeysetHandle from Cloud KMS FetchVerificationKeys keys.
+
+  Imports the (PEM, algorithm) pairs without calling KMS. Keys are imported with
+  no output prefix and DER signature encoding for ECDSA; the first key is the
+  primary. Callers unpacking FetchVerificationKeysResponse should paginate
+  next_page_token, verify each key's crc32c_checksum, and order `keys`
+  newest-first so the newest version is primary.
+
+  Accepts the algorithms of `new_gcp_kms_public_key_verify_no_rpc` (plus
+  EC_SIGN_ED25519) except SLH-DSA. Any unsupported or invalid key fails the
+  call, so callers migrating off an unsupported algorithm must filter those
+  versions out first.
+
+  Warning: This API is in preview and may change in the future.
+
+  Args:
+    keys: The verification keys to import.
+
+  Returns:
+    A new public KeysetHandle.
+
+  Raises:
+    tink.TinkError: If `keys` is empty or any key is unsupported or invalid.
+  """
+  if not keys:
+    raise tink.TinkError('keys cannot be empty.')
+  tink_signature.register()
+  keyset = tink_pb2.Keyset()
+  key_ids = set()
+  for index, key in enumerate(keys):
+    try:
+      type_url, value = _pem_key_data(key.public_key_pem, key.algorithm)
+    except tink.TinkError as e:
+      raise tink.TinkError(f'Invalid verification key {index}: {e}') from e
+    key_id = random.randint(0, _MAX_KEY_ID)
+    while key_id in key_ids:
+      key_id = random.randint(0, _MAX_KEY_ID)
+    key_ids.add(key_id)
+    keyset.key.add(
+        key_data=tink_pb2.KeyData(
+            type_url=type_url,
+            value=value,
+            key_material_type=tink_pb2.KeyData.ASYMMETRIC_PUBLIC,
+        ),
+        status=tink_pb2.ENABLED,
+        key_id=key_id,
+        output_prefix_type=tink_pb2.RAW,
+    )
+  keyset.primary_key_id = keyset.key[0].key_id
+  return tink.proto_keyset_format.parse_without_secret(
+      keyset.SerializeToString()
+  )

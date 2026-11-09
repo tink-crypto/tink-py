@@ -23,7 +23,9 @@ from google.api_core import exceptions as core_exceptions
 from google.cloud import kms_v1
 import google_crc32c
 
+from tink.proto import tink_pb2
 from tink import core
+from tink import signature
 from tink.integration.gcpkms import _gcp_kms_public_key_verify
 from tink.integration.gcpkms import _gcp_kms_util
 
@@ -719,6 +721,16 @@ _SLH_DSA_SIG = base64.b64decode(
     'h/ZT9ktaAEtsgTO1JNDuWrxYmQakV5zQqg0='
 )
 
+_ED25519_PEM = textwrap.dedent("""\
+    -----BEGIN PUBLIC KEY-----
+    MCowBQYDK2VwAyEA3XaQHpiPZrQIYxDu3lpzU1SED8jho1/UD0/HkeKYXV0=
+    -----END PUBLIC KEY-----
+    """).encode('utf-8')
+_ED25519_SIG = base64.b64decode(
+    'rLxQPAail7WmSyU8aDWvCwyZm/uDtj6DDrtNuyMPVADU7hzyFHv9NOT9tsMrtVITUEEuMCx9'
+    'RUGYp55VRNApAQ=='
+)
+
 _SECP256K1_PEM = textwrap.dedent("""\
     -----BEGIN PUBLIC KEY-----
     MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEuDj/ROW8F3vyEYnQdmCC/J2EMiaIf8l2
@@ -1050,6 +1062,193 @@ class GcpKmsPublicKeyVerifyTest(parameterized.TestCase):
       _gcp_kms_public_key_verify.new_gcp_kms_public_key_verify_no_rpc(
           pem, algorithm
       )
+
+
+_VERIFICATION_KEY_VECTORS = {
+    **_PEM_TEST_VECTORS,
+    _Algorithm.EC_SIGN_ED25519: (_ED25519_PEM, _ED25519_SIG),
+}
+
+
+def _verification_key(
+    algorithm: _Algorithm, public_key_pem: bytes | None = None
+) -> _gcp_kms_public_key_verify.VerificationKey:
+  if public_key_pem is None:
+    public_key_pem, _ = _VERIFICATION_KEY_VECTORS[algorithm]
+  return _gcp_kms_public_key_verify.VerificationKey(
+      public_key_pem=public_key_pem, algorithm=algorithm
+  )
+
+
+class NewPublicKeysetHandleTest(parameterized.TestCase):
+
+  @parameterized.parameters(*_VERIFICATION_KEY_VECTORS.items())
+  def test_single_key_verifies(self, algorithm, vector):
+    pem, sig = vector
+    handle = _gcp_kms_public_key_verify.new_public_keyset_handle(
+        [_verification_key(algorithm, pem)]
+    )
+    verifier = handle.primitive(signature.PublicKeyVerify)
+    self.assertIsNone(verifier.verify(sig, _MESSAGE))
+    wrong_signature = sig[:-1] + bytes([sig[-1] ^ 0x01])
+    with self.assertRaises(core.TinkError):
+      verifier.verify(wrong_signature, _MESSAGE)
+    with self.assertRaises(core.TinkError):
+      verifier.verify(sig, b'wrong data')
+
+  def test_all_keys_verify_every_signature(self):
+    algorithms = list(_VERIFICATION_KEY_VECTORS)
+    handle = _gcp_kms_public_key_verify.new_public_keyset_handle(
+        [_verification_key(algorithm) for algorithm in algorithms]
+    )
+    verifier = handle.primitive(signature.PublicKeyVerify)
+    for algorithm in algorithms:
+      _, sig = _VERIFICATION_KEY_VECTORS[algorithm]
+      self.assertIsNone(verifier.verify(sig, _MESSAGE))
+      with self.assertRaises(core.TinkError):
+        verifier.verify(sig, b'wrong data')
+
+  def test_keyset_structure(self):
+    algorithms = list(_VERIFICATION_KEY_VECTORS)
+    handle = _gcp_kms_public_key_verify.new_public_keyset_handle(
+        [_verification_key(algorithm) for algorithm in algorithms]
+    )
+    keyset_info = handle.keyset_info()
+    self.assertLen(keyset_info.key_info, len(algorithms))
+    key_ids = [key_info.key_id for key_info in keyset_info.key_info]
+    self.assertLen(set(key_ids), len(key_ids))
+    self.assertEqual(keyset_info.primary_key_id, key_ids[0])
+    for key_info in keyset_info.key_info:
+      self.assertEqual(key_info.status, tink_pb2.ENABLED)
+      self.assertEqual(key_info.output_prefix_type, tink_pb2.RAW)
+
+  def test_empty_fails(self):
+    with self.assertRaisesRegex(core.TinkError, r'keys cannot be empty'):
+      _gcp_kms_public_key_verify.new_public_keyset_handle([])
+
+  @parameterized.parameters(
+      _Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S,
+      _Algorithm.PQ_SIGN_HASH_SLH_DSA_SHA2_128S_SHA256,
+  )
+  def test_slh_dsa_fails_whole_call(self, algorithm):
+    with self.assertRaisesRegex(
+        core.TinkError, rf'{algorithm.name} is not supported'
+    ):
+      _gcp_kms_public_key_verify.new_public_keyset_handle([
+          _verification_key(_Algorithm.EC_SIGN_P256_SHA256),
+          _verification_key(algorithm, _SLH_DSA_RAW_PUBLIC_KEY),
+      ])
+
+  @parameterized.parameters(
+      (_Algorithm.RSA_SIGN_RAW_PKCS1_2048, _RSA_2048_PEM),
+      (_Algorithm.EC_SIGN_SECP256K1_SHA256, _SECP256K1_PEM),
+      (_Algorithm.CRYPTO_KEY_VERSION_ALGORITHM_UNSPECIFIED, _ECDSA_P256_PEM),
+      (_Algorithm.GOOGLE_SYMMETRIC_ENCRYPTION, _ECDSA_P256_PEM),
+  )
+  def test_unsupported_algorithm_fails(self, algorithm, pem):
+    with self.assertRaisesRegex(
+        core.TinkError, rf'{algorithm.name} is not supported'
+    ):
+      _gcp_kms_public_key_verify.new_public_keyset_handle(
+          [_verification_key(algorithm, pem)]
+      )
+
+  @parameterized.named_parameters(
+      (
+          'rsa_pem_under_ecdsa',
+          _Algorithm.EC_SIGN_P256_SHA256,
+          _RSA_2048_PEM,
+          r'Unexpected public key OID',
+      ),
+      (
+          'ecdsa_pem_under_rsa',
+          _Algorithm.RSA_SIGN_PKCS1_2048_SHA256,
+          _ECDSA_P256_PEM,
+          r'Unexpected public key OID',
+      ),
+      (
+          'p384_pem_under_p256',
+          _Algorithm.EC_SIGN_P256_SHA256,
+          _ECDSA_P384_PEM,
+          r'Unexpected curve OID',
+      ),
+      (
+          'secp256k1_pem_under_p256',
+          _Algorithm.EC_SIGN_P256_SHA256,
+          _SECP256K1_PEM,
+          r'Unexpected curve OID',
+      ),
+      (
+          'rsa_2048_pem_under_pss_3072',
+          _Algorithm.RSA_SIGN_PSS_3072_SHA256,
+          _RSA_2048_PEM,
+          r'Incorrect modulus size',
+      ),
+      (
+          'rsa_4096_pem_under_pkcs1_2048',
+          _Algorithm.RSA_SIGN_PKCS1_2048_SHA256,
+          _RSA_4096_PEM,
+          r'Incorrect modulus size',
+      ),
+      (
+          'ml_dsa_65_pem_under_ml_dsa_44',
+          _Algorithm.PQ_SIGN_ML_DSA_44,
+          _PEM_TEST_VECTORS[_Algorithm.PQ_SIGN_ML_DSA_65][0],
+          r'Unexpected public key OID',
+      ),
+      (
+          'ecdsa_pem_under_ed25519',
+          _Algorithm.EC_SIGN_ED25519,
+          _ECDSA_P256_PEM,
+          r'Unexpected public key OID',
+      ),
+      (
+          'ed25519_pem_under_p256',
+          _Algorithm.EC_SIGN_P256_SHA256,
+          _ED25519_PEM,
+          r'Unexpected public key OID',
+      ),
+      (
+          'ed25519_wrong_size',
+          _Algorithm.EC_SIGN_ED25519,
+          _gcp_kms_util.raw_ml_dsa_public_key_to_pem('1.3.101.112', bytes(31)),
+          r'Incorrect public key size',
+      ),
+      (
+          'corrupted_pem_body',
+          _Algorithm.EC_SIGN_P256_SHA256,
+          b'-----BEGIN PUBLIC KEY-----\n'
+          + base64.b64encode(b'not a valid spki')
+          + b'\n-----END PUBLIC KEY-----',
+          r'Failed to parse',
+      ),
+      (
+          'not_a_pem',
+          _Algorithm.EC_SIGN_P256_SHA256,
+          b'garbage',
+          r'Failed to parse',
+      ),
+      (
+          'empty_pem',
+          _Algorithm.EC_SIGN_P256_SHA256,
+          b'',
+          r'Failed to parse',
+      ),
+  )
+  def test_mismatched_key_fails_whole_call(self, algorithm, pem, regex):
+    with self.assertRaisesRegex(core.TinkError, regex):
+      _gcp_kms_public_key_verify.new_public_keyset_handle([
+          _verification_key(_Algorithm.RSA_SIGN_PSS_2048_SHA256),
+          _verification_key(algorithm, pem),
+          _verification_key(_Algorithm.PQ_SIGN_ML_DSA_44),
+      ])
+
+  def test_error_names_failing_key_index(self):
+    with self.assertRaisesRegex(core.TinkError, r'Invalid verification key 1'):
+      _gcp_kms_public_key_verify.new_public_keyset_handle([
+          _verification_key(_Algorithm.EC_SIGN_P256_SHA256),
+          _verification_key(_Algorithm.EC_SIGN_P256_SHA256, b'garbage'),
+      ])
 
 
 if __name__ == '__main__':

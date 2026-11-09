@@ -38,3 +38,5 @@ new_gcp_kms_public_key_verify = (
 new_gcp_kms_public_key_verify_no_rpc = (
     _gcp_kms_public_key_verify.new_gcp_kms_public_key_verify_no_rpc
 )
+VerificationKey = _gcp_kms_public_key_verify.VerificationKey
+new_public_keyset_handle = _gcp_kms_public_key_verify.new_public_keyset_handle
