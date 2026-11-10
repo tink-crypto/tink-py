@@ -31,28 +31,22 @@ IF %errorlevel% neq 0 EXIT /B 1
 IF "%TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET%"=="" (
   SET CACHE_FLAGS=
 ) ELSE (
-  SET CACHE_FLAGS=--remote_cache=https://storage.googleapis.com/%TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET%/bazel/windows --google_credentials=%TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY%
+  SET CACHE_FLAGS=--remote_cache=https://storage.googleapis.com/%TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET%/bazel/windows --google_credentials=%TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY% --remote_download_minimal
 )
 
-ECHO Build started at %TIME%
+ECHO Build and test started at %TIME%
 : We have to set PYTHON_BIN_PATH because pybind11_bazel tries `which python3`
 : [1], but there is no python3.exe in our test config (the bin is python.exe).
 : [1] https://github.com/pybind/pybind11_bazel/blob/8889d39b2b925b2a47519ae09402a96f00ccf2b4/python_configure.bzl#L169C62-L169C62
 : TODO(b/217559572): Investigate if this is intended (and fix our config) or a
 : bug.
-bazel --output_base=C:\O build %CACHE_FLAGS% ^
-  --action_env PYTHON_BIN_PATH=C:/Python313/python.exe ^
-  --action_env PYTHON_LIB_PATH=C:/Python313/libs -- ...
-IF %errorlevel% neq 0 EXIT /B 1
-ECHO Build completed at %TIME%
-
-ECHO Test started at %TIME%
-bazel --output_base=C:\O test %CACHE_FLAGS% ^
+: --nobuild_tests_only ensures all non-test targets in '...' are built too.
+bazel --output_base=C:\O test --nobuild_tests_only %CACHE_FLAGS% ^
   --strategy=TestRunner=standalone ^
   --test_output=errors ^
   --action_env PYTHON_BIN_PATH=C:/Python313/python.exe ^
   --action_env PYTHON_LIB_PATH=C:/Python313/libs -- ...
 IF %errorlevel% neq 0 EXIT /B 1
-ECHO Test completed at %TIME%
+ECHO Build and test completed at %TIME%
 
 EXIT /B 0

@@ -35,26 +35,24 @@ if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
   cp "${TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY}" ./cache_key
   CACHE_FLAGS+=("--remote_cache=https://storage.googleapis.com/${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET}")
   CACHE_FLAGS+=("--google_credentials=$(realpath ./cache_key)")
+  # Avoid downloading cached intermediate/top-level build outputs unless needed
+  # by a local action.
+  CACHE_FLAGS+=("--remote_download_minimal")
 fi
 readonly CACHE_FLAGS
 
-echo "---------- BUILDING MAIN ($(date))"
-bazelisk build "${CACHE_FLAGS[@]}" -- ...
-echo "---------- TESTING MAIN ($(date))"
-bazelisk test "${CACHE_FLAGS[@]}" -- ...
+# --nobuild_tests_only ensures all non-test targets in '...' are built too.
+echo "---------- BUILDING AND TESTING MAIN ($(date))"
+bazelisk test --nobuild_tests_only ${CACHE_FLAGS[@]:+"${CACHE_FLAGS[@]}"} -- ...
 
 cd examples
-echo "---------- BUILDING EXAMPLES ($(date))"
-bazelisk build "${CACHE_FLAGS[@]}" -- ...
-echo "---------- TESTING EXAMPLES ($(date))"
-bazelisk test "${CACHE_FLAGS[@]}" -- ...
+echo "---------- BUILDING AND TESTING EXAMPLES ($(date))"
+bazelisk test --nobuild_tests_only ${CACHE_FLAGS[@]:+"${CACHE_FLAGS[@]}"} -- ...
 
 
 echo "---------- KMS Specific tests"
 TARGETS=$(bazel query 'attr(tags, requires_kms, ...) except attr(tags, tests_pip_install_tink, ...)')
 echo "${TARGETS}"
 
-echo "---------- BUILDING KMS Specific tests ($(date))"
-bazelisk build "${CACHE_FLAGS[@]}" -- $TARGETS
-echo "---------- TESTING KMS Specific tests ($(date))"
-bazelisk test "${CACHE_FLAGS[@]}" -- $TARGETS
+echo "---------- BUILDING AND TESTING KMS Specific tests ($(date))"
+bazelisk test --nobuild_tests_only ${CACHE_FLAGS[@]:+"${CACHE_FLAGS[@]}"} -- $TARGETS
