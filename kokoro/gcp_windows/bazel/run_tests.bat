@@ -41,7 +41,7 @@ ECHO Build and test started at %TIME%
 : TODO(b/217559572): Investigate if this is intended (and fix our config) or a
 : bug.
 : --nobuild_tests_only ensures all non-test targets in '...' are built too.
-bazel --output_base=C:\O test --nobuild_tests_only %CACHE_FLAGS% ^
+bazel --output_base=C:\O test --nobuild_tests_only --nobuild_runfile_links %CACHE_FLAGS% ^
   --strategy=TestRunner=standalone ^
   --test_output=errors ^
   --action_env PYTHON_BIN_PATH=C:/Python313/python.exe ^
