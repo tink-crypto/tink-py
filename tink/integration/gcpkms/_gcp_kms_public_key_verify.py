@@ -333,9 +333,9 @@ def _ml_dsa_public_key(public_key_pem: bytes, algorithm: _Algorithm) -> bytes:
 def _slh_dsa_public_key(raw_public_key: bytes) -> bytes:
   """Builds a serialized SlhDsaPublicKey proto from a raw public key.
 
-  Unlike the other algorithms, Cloud KMS serves SLH-DSA only in NIST_PQC format,
-  so the input is the raw public key rather than a PEM. Its length is validated
-  by the key manager when the verifier is built.
+  Unlike the other algorithms, SLH-DSA public keys are fetched in NIST_PQC
+  format, so the input is the raw public key rather than a PEM. Its length is
+  validated by the key manager when the verifier is built.
 
   Args:
     raw_public_key: The raw SLH-DSA public key bytes from Cloud KMS.

@@ -51,6 +51,12 @@ ML_DSA_EXTERNAL_MU_PARAMS: dict[_Algorithm | int, tuple[str, int]] = {
     _Algorithm.PQ_SIGN_ML_DSA_87_EXTERNAL_MU: ('2.16.840.1.101.3.4.3.19', 2592),
 }
 
+# SLH-DSA algorithms whose public keys must be fetched in NIST_PQC (raw) format.
+_SLH_DSA_ALGORITHMS = frozenset({
+    _Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S,
+    _Algorithm.PQ_SIGN_HASH_SLH_DSA_SHA2_128S_SHA256,
+})
+
 
 def validate_kms_key_name(key_name: str) -> None:
   """Validates that key_name is a valid Cloud KMS CryptoKeyVersion name.
@@ -81,8 +87,9 @@ def fetch_public_key(
 ) -> kms_v1.PublicKey:
   """Fetches the public key for key_name from Cloud KMS and verifies integrity.
 
-  The key is requested in PEM format, except for keys that do not support PEM
-  (e.g. SLH-DSA), which are served only in NIST_PQC format.
+  The key is initially requested in PEM format. For SLH-DSA keys (or if Cloud
+  KMS reports that PEM is unsupported), the key is re-fetched in NIST_PQC
+  format so callers receive the raw key bytes.
 
   Args:
     client: The KMS client used to fetch the key.
@@ -94,6 +101,7 @@ def fetch_public_key(
   Raises:
     tink.TinkError: If the RPC fails or the key name or checksum do not match.
   """
+  response = None
   try:
     response = client.get_public_key(
         request=kms_v1.GetPublicKeyRequest(
@@ -102,10 +110,11 @@ def fetch_public_key(
         )
     )
   except core_exceptions.GoogleAPIError as e:
-    # Keys that do not support PEM (e.g. SLH-DSA) report this; the raw key is
-    # served in NIST_PQC format instead.
+    # Keys that do not support PEM report this; the raw key is served in
+    # NIST_PQC format instead.
     if 'Only NIST_PQC format is supported' not in str(e):
       raise tink.TinkError(e) from e
+  if response is None or response.algorithm in _SLH_DSA_ALGORITHMS:
     try:
       response = client.get_public_key(
           request=kms_v1.GetPublicKeyRequest(

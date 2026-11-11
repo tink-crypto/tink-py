@@ -202,6 +202,32 @@ class FetchPublicKeyTest(parameterized.TestCase):
         request.public_key_format, kms_v1.PublicKey.PublicKeyFormat.NIST_PQC
     )
 
+  @parameterized.parameters(
+      _Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S,
+      _Algorithm.PQ_SIGN_HASH_SLH_DSA_SHA2_128S_SHA256,
+  )
+  def test_slh_dsa_pem_response_refetches_nist_pqc(self, algorithm):
+    raw_key = bytes(32)
+    client = mock.Mock()
+    client.get_public_key.side_effect = [
+        _public_key_response(algorithm=algorithm, data=_PUBLIC_KEY_DATA),
+        _public_key_response(algorithm=algorithm, data=raw_key),
+    ]
+
+    response = _gcp_kms_util.fetch_public_key(client, _KEY_VERSION)
+
+    self.assertEqual(response.public_key.data, raw_key)
+    self.assertEqual(client.get_public_key.call_count, 2)
+    first_request = client.get_public_key.call_args_list[0].kwargs['request']
+    second_request = client.get_public_key.call_args_list[1].kwargs['request']
+    self.assertEqual(
+        first_request.public_key_format, kms_v1.PublicKey.PublicKeyFormat.PEM
+    )
+    self.assertEqual(
+        second_request.public_key_format,
+        kms_v1.PublicKey.PublicKeyFormat.NIST_PQC,
+    )
+
   def test_non_pem_error_not_retried_fails(self):
     client = mock.Mock()
     client.get_public_key.side_effect = CustomException('some other error')

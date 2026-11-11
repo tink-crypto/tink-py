@@ -870,8 +870,28 @@ class GcpKmsPublicKeyVerifyTest(parameterized.TestCase):
     self.assertIsNone(verifier.verify(sig, _MESSAGE))
 
   def test_verify_slh_dsa_succeeds(self):
-    # Cloud KMS does not serve SLH-DSA in PEM format, so GetPublicKey is called
-    # twice: the PEM request fails and the raw key is fetched with NIST_PQC.
+    # SLH-DSA requires the raw key in NIST_PQC format, so when the initial PEM
+    # request returns an SLH-DSA algorithm, GetPublicKey is called a second time
+    # with NIST_PQC.
+    self.mock_client.get_public_key.side_effect = [
+        _public_key_response(
+            algorithm=_Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S,
+            data=_ECDSA_P256_PEM,
+        ),
+        _public_key_response(
+            algorithm=_Algorithm.PQ_SIGN_SLH_DSA_SHA2_128S,
+            data=_SLH_DSA_RAW_PUBLIC_KEY,
+        ),
+    ]
+    verifier = _gcp_kms_public_key_verify.new_gcp_kms_public_key_verify(
+        _KEY_VERSION_NAME, self.mock_client
+    )
+    self.assertIsNone(verifier.verify(_SLH_DSA_SIG, _MESSAGE))
+    self.assertEqual(self.mock_client.get_public_key.call_count, 2)
+
+  def test_verify_slh_dsa_pem_unsupported_fallback_succeeds(self):
+    # If the PEM request fails with "Only NIST_PQC format is supported", the raw
+    # key is still fetched with NIST_PQC.
     self.mock_client.get_public_key.side_effect = [
         _MockGoogleApiError('Only NIST_PQC format is supported'),
         _public_key_response(
