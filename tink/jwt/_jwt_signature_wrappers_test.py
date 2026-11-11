@@ -313,6 +313,28 @@ class JwtSignatureWrapperTest(parameterized.TestCase):
     with self.assertRaises(tink.TinkError):
       builder.keyset_handle()
 
+  def test_wrap_keyset_with_annotations(self):
+    # The JWT signature wrappers don't support monitoring yet, so they ignore
+    # the annotations instead of failing.
+    # TODO: b/582727286 - Test key usage monitoring instead once the JWT
+    # signature wrappers support it.
+    private_handle = tink.KeysetHandle._generate_new_with_annotations(  # pylint: disable=protected-access
+        jwt.jwt_es256_template(), {'annotation_key': 'annotation_value'}
+    )
+    sign = private_handle.primitive(jwt.JwtPublicKeySign)
+    # The public keyset handle has the same annotations.
+    verify = private_handle.public_keyset_handle().primitive(
+        jwt.JwtPublicKeyVerify
+    )
+    raw_jwt = jwt.new_raw_jwt(issuer='a', without_expiration=True)
+    validator = jwt.new_validator(
+        expected_issuer='a', allow_missing_expiration=True
+    )
+
+    compact = sign.sign_and_encode(raw_jwt)
+
+    self.assertEqual(verify.verify_and_decode(compact, validator).issuer(), 'a')
+
 
 if __name__ == '__main__':
   absltest.main()

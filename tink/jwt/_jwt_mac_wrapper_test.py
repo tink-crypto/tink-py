@@ -251,6 +251,26 @@ class JwtMacWrapperTest(parameterized.TestCase):
     with self.assertRaises(tink.TinkError):
       builder.keyset_handle()
 
+  def test_wrap_keyset_with_annotations(self):
+    # The JWT MAC wrapper doesn't support monitoring yet, so it ignores the
+    # annotations instead of failing.
+    # TODO: b/582727286 - Test key usage monitoring instead once the JWT MAC
+    # wrapper supports it.
+    keyset_handle = tink.KeysetHandle._generate_new_with_annotations(  # pylint: disable=protected-access
+        jwt.jwt_hs256_template(), {'annotation_key': 'annotation_value'}
+    )
+    jwt_mac = keyset_handle.primitive(jwt.JwtMac)
+    raw_jwt = jwt.new_raw_jwt(issuer='a', without_expiration=True)
+    validator = jwt.new_validator(
+        expected_issuer='a', allow_missing_expiration=True
+    )
+
+    compact = jwt_mac.compute_mac_and_encode(raw_jwt)
+
+    self.assertEqual(
+        jwt_mac.verify_mac_and_decode(compact, validator).issuer(), 'a'
+    )
+
 
 if __name__ == '__main__':
   absltest.main()

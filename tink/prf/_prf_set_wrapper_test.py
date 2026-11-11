@@ -72,6 +72,18 @@ class PrfSetWrapperTest(absltest.TestCase):
     self.assertEqual(prfs[id2].compute(b'input', output_length=31),
                      output2)
 
+  def test_wrap_keyset_with_annotations(self):
+    # The PRF set wrapper doesn't support monitoring yet, so it ignores the
+    # annotations instead of failing.
+    # TODO: b/582727286 - Test key usage monitoring instead once the PRF set
+    # wrapper supports it.
+    keyset_handle = tink.KeysetHandle._generate_new_with_annotations(  # pylint: disable=protected-access
+        TEMPLATE, {'annotation_key': 'annotation_value'}
+    )
+    primitive = keyset_handle.primitive(prf.PrfSet)
+    output = primitive.primary().compute(b'input', output_length=31)
+    self.assertLen(output, 31)
+
 
 if __name__ == '__main__':
   absltest.main()

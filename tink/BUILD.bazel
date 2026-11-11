@@ -240,17 +240,19 @@ py_library(
     ],
 )
 
-py_library(
+py_test(
     name = "_insecure_keyset_handle_test",
     srcs = ["_insecure_keyset_handle_test.py"],
     deps = [
         ":_insecure_keyset_handle",
+        ":_monitoring",
         ":secret_key_access",
         ":tink_config",
         ":tink_python",
         requirement("absl-py"),
         "//tink/aead",
         "//tink/core",
+        "//tink/testing:fake_key_usage_monitor",
     ],
 )
 

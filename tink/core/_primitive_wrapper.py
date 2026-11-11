@@ -71,11 +71,8 @@ class PrimitiveWrapper(Generic[B, P], metaclass=abc.ABCMeta):
     Returns:
       The wrapped primitive.
     """
-    if monitoring_keyset_info.get_annotations():
-      raise NotImplementedError(
-          'Support for monitoring is not implemented for this'
-          ' primitive'
-      )
-    # Monitoring is optional and thus ignored by default.
+    # Monitoring is optional and thus ignored by default, also when the keyset
+    # has annotations. This matches Tink C++, where wrappers without monitoring
+    # support (e.g. the streaming AEAD wrapper) ignore annotations.
     del monitoring_keyset_info
     return self.wrap(pset)

@@ -13,6 +13,8 @@
 # limitations under the License.
 """Internal-only module that gives access to the proto keyset."""
 
+from collections.abc import Mapping
+
 from tink.proto import tink_pb2
 from tink import _keyset_handle
 from tink import _secret_key_access
@@ -20,11 +22,27 @@ from tink import core
 
 
 def from_proto_keyset(
-    keyset: tink_pb2.Keyset, token: core.KeyAccess
+    keyset: tink_pb2.Keyset,
+    token: core.KeyAccess,
+    annotations: Mapping[str, str] | None = None,
 ) -> _keyset_handle.KeysetHandle:
+  """Creates a KeysetHandle from a proto keyset.
+
+  Args:
+    keyset: The proto keyset.
+    token: Secret key access token.
+    annotations: Monitoring annotations for the keyset, which primitives created
+      from the returned handle pass to the registered key usage monitor. If
+      None, the handle has no annotations.
+
+  Returns:
+    A KeysetHandle for `keyset`.
+  """
   if not isinstance(token, _secret_key_access.SecretKeyAccess):
     raise core.TinkError('no secret access.')
-  return _keyset_handle.KeysetHandle._create(keyset)  # pylint: disable=protected-access
+  return _keyset_handle.KeysetHandle._create(  # pylint: disable=protected-access
+      keyset, None if annotations is None else dict(annotations)
+  )
 
 
 def to_proto_keyset(
