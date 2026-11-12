@@ -72,6 +72,12 @@ class JwtKeyTemplatesTest(parameterized.TestCase):
       ('JWT_PS384_3072_F4_RAW', jwt.raw_jwt_ps384_3072_f4_template()),
       ('JWT_PS512_4096_F4', jwt.jwt_ps512_4096_f4_template()),
       ('JWT_PS512_4096_F4_RAW', jwt.raw_jwt_ps512_4096_f4_template()),
+      ('JWT_ML_DSA44', jwt.jwt_ml_dsa44_template()),
+      ('JWT_ML_DSA44_RAW', jwt.raw_jwt_ml_dsa44_template()),
+      ('JWT_ML_DSA65', jwt.jwt_ml_dsa65_template()),
+      ('JWT_ML_DSA65_RAW', jwt.raw_jwt_ml_dsa65_template()),
+      ('JWT_ML_DSA87', jwt.jwt_ml_dsa87_template()),
+      ('JWT_ML_DSA87_RAW', jwt.raw_jwt_ml_dsa87_template()),
   ])
   def test_new_keydata_primitive_success(self, template):
     private_handle = tink.new_keyset_handle(template)

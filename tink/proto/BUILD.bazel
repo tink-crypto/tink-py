@@ -139,6 +139,17 @@ py_proto_library(
 )
 
 proto_library(
+    name = "jwt_ml_dsa_proto",
+    srcs = ["jwt_ml_dsa.proto"],
+)
+
+py_proto_library(
+    name = "jwt_ml_dsa_py_pb2",
+    visibility = ["//visibility:public"],
+    deps = [":jwt_ml_dsa_proto"],
+)
+
+proto_library(
     name = "ed25519_proto",
     srcs = [
         "ed25519.proto",

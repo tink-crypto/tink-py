@@ -50,8 +50,38 @@ def gen_compact(json_header: str, json_payload: str, raw_sign) -> str:
 
 class JwtSignatureKeyManagerTest(parameterized.TestCase):
 
-  def test_create_sign_verify(self):
-    handle = tink.new_keyset_handle(jwt.jwt_es256_template())
+  @parameterized.named_parameters([
+      ('JWT_ES256', jwt.jwt_es256_template()),
+      ('JWT_ES256_RAW', jwt.raw_jwt_es256_template()),
+      ('JWT_ES384', jwt.jwt_es384_template()),
+      ('JWT_ES384_RAW', jwt.raw_jwt_es384_template()),
+      ('JWT_ES512', jwt.jwt_es512_template()),
+      ('JWT_ES512_RAW', jwt.raw_jwt_es512_template()),
+      ('JWT_RS256_2048_F4', jwt.jwt_rs256_2048_f4_template()),
+      ('JWT_RS256_2048_F4_RAW', jwt.raw_jwt_rs256_2048_f4_template()),
+      ('JWT_RS256_3072_F4', jwt.jwt_rs256_3072_f4_template()),
+      ('JWT_RS256_3072_F4_RAW', jwt.raw_jwt_rs256_3072_f4_template()),
+      ('JWT_RS384_3072_F4', jwt.jwt_rs384_3072_f4_template()),
+      ('JWT_RS384_3072_F4_RAW', jwt.raw_jwt_rs384_3072_f4_template()),
+      ('JWT_RS512_4096_F4', jwt.jwt_rs512_4096_f4_template()),
+      ('JWT_RS512_4096_F4_RAW', jwt.raw_jwt_rs512_4096_f4_template()),
+      ('JWT_PS256_2048_F4', jwt.jwt_ps256_2048_f4_template()),
+      ('JWT_PS256_2048_F4_RAW', jwt.raw_jwt_ps256_2048_f4_template()),
+      ('JWT_PS256_3072_F4', jwt.jwt_ps256_3072_f4_template()),
+      ('JWT_PS256_3072_F4_RAW', jwt.raw_jwt_ps256_3072_f4_template()),
+      ('JWT_PS384_3072_F4', jwt.jwt_ps384_3072_f4_template()),
+      ('JWT_PS384_3072_F4_RAW', jwt.raw_jwt_ps384_3072_f4_template()),
+      ('JWT_PS512_4096_F4', jwt.jwt_ps512_4096_f4_template()),
+      ('JWT_PS512_4096_F4_RAW', jwt.raw_jwt_ps512_4096_f4_template()),
+      ('JWT_ML_DSA44', jwt.jwt_ml_dsa44_template()),
+      ('JWT_ML_DSA44_RAW', jwt.raw_jwt_ml_dsa44_template()),
+      ('JWT_ML_DSA65', jwt.jwt_ml_dsa65_template()),
+      ('JWT_ML_DSA65_RAW', jwt.raw_jwt_ml_dsa65_template()),
+      ('JWT_ML_DSA87', jwt.jwt_ml_dsa87_template()),
+      ('JWT_ML_DSA87_RAW', jwt.raw_jwt_ml_dsa87_template()),
+  ])
+  def test_create_sign_verify(self, template):
+    handle = tink.new_keyset_handle(template)
     sign = handle.primitive(jwt.JwtPublicKeySign)
     verify = handle.public_keyset_handle().primitive(jwt.JwtPublicKeyVerify)
     raw_jwt = jwt.new_raw_jwt(
@@ -97,8 +127,38 @@ class JwtSignatureKeyManagerTest(parameterized.TestCase):
     with self.assertRaises(tink.TinkError):
       verify.verify_and_decode('a' + signed_compact, validator)
 
-  def test_create_sign_verify_with_type_header(self):
-    handle = tink.new_keyset_handle(jwt.jwt_es256_template())
+  @parameterized.named_parameters([
+      ('JWT_ES256', jwt.jwt_es256_template()),
+      ('JWT_ES256_RAW', jwt.raw_jwt_es256_template()),
+      ('JWT_ES384', jwt.jwt_es384_template()),
+      ('JWT_ES384_RAW', jwt.raw_jwt_es384_template()),
+      ('JWT_ES512', jwt.jwt_es512_template()),
+      ('JWT_ES512_RAW', jwt.raw_jwt_es512_template()),
+      ('JWT_RS256_2048_F4', jwt.jwt_rs256_2048_f4_template()),
+      ('JWT_RS256_2048_F4_RAW', jwt.raw_jwt_rs256_2048_f4_template()),
+      ('JWT_RS256_3072_F4', jwt.jwt_rs256_3072_f4_template()),
+      ('JWT_RS256_3072_F4_RAW', jwt.raw_jwt_rs256_3072_f4_template()),
+      ('JWT_RS384_3072_F4', jwt.jwt_rs384_3072_f4_template()),
+      ('JWT_RS384_3072_F4_RAW', jwt.raw_jwt_rs384_3072_f4_template()),
+      ('JWT_RS512_4096_F4', jwt.jwt_rs512_4096_f4_template()),
+      ('JWT_RS512_4096_F4_RAW', jwt.raw_jwt_rs512_4096_f4_template()),
+      ('JWT_PS256_2048_F4', jwt.jwt_ps256_2048_f4_template()),
+      ('JWT_PS256_2048_F4_RAW', jwt.raw_jwt_ps256_2048_f4_template()),
+      ('JWT_PS256_3072_F4', jwt.jwt_ps256_3072_f4_template()),
+      ('JWT_PS256_3072_F4_RAW', jwt.raw_jwt_ps256_3072_f4_template()),
+      ('JWT_PS384_3072_F4', jwt.jwt_ps384_3072_f4_template()),
+      ('JWT_PS384_3072_F4_RAW', jwt.raw_jwt_ps384_3072_f4_template()),
+      ('JWT_PS512_4096_F4', jwt.jwt_ps512_4096_f4_template()),
+      ('JWT_PS512_4096_F4_RAW', jwt.raw_jwt_ps512_4096_f4_template()),
+      ('JWT_ML_DSA44', jwt.jwt_ml_dsa44_template()),
+      ('JWT_ML_DSA44_RAW', jwt.raw_jwt_ml_dsa44_template()),
+      ('JWT_ML_DSA65', jwt.jwt_ml_dsa65_template()),
+      ('JWT_ML_DSA65_RAW', jwt.raw_jwt_ml_dsa65_template()),
+      ('JWT_ML_DSA87', jwt.jwt_ml_dsa87_template()),
+      ('JWT_ML_DSA87_RAW', jwt.raw_jwt_ml_dsa87_template()),
+  ])
+  def test_create_sign_verify_with_type_header(self, template):
+    handle = tink.new_keyset_handle(template)
     sign = handle.primitive(jwt.JwtPublicKeySign)
     verify = handle.public_keyset_handle().primitive(jwt.JwtPublicKeyVerify)
     raw_jwt = jwt.new_raw_jwt(
@@ -112,13 +172,43 @@ class JwtSignatureKeyManagerTest(parameterized.TestCase):
     verified_jwt = verify.verify_and_decode(signed_compact, validator)
     self.assertEqual(verified_jwt.type_header(), 'typeHeader')
 
-  def test_verify_with_other_key_fails(self):
-    handle = tink.new_keyset_handle(jwt.jwt_es256_template())
+  @parameterized.named_parameters([
+      ('JWT_ES256', jwt.jwt_es256_template()),
+      ('JWT_ES256_RAW', jwt.raw_jwt_es256_template()),
+      ('JWT_ES384', jwt.jwt_es384_template()),
+      ('JWT_ES384_RAW', jwt.raw_jwt_es384_template()),
+      ('JWT_ES512', jwt.jwt_es512_template()),
+      ('JWT_ES512_RAW', jwt.raw_jwt_es512_template()),
+      ('JWT_RS256_2048_F4', jwt.jwt_rs256_2048_f4_template()),
+      ('JWT_RS256_2048_F4_RAW', jwt.raw_jwt_rs256_2048_f4_template()),
+      ('JWT_RS256_3072_F4', jwt.jwt_rs256_3072_f4_template()),
+      ('JWT_RS256_3072_F4_RAW', jwt.raw_jwt_rs256_3072_f4_template()),
+      ('JWT_RS384_3072_F4', jwt.jwt_rs384_3072_f4_template()),
+      ('JWT_RS384_3072_F4_RAW', jwt.raw_jwt_rs384_3072_f4_template()),
+      ('JWT_RS512_4096_F4', jwt.jwt_rs512_4096_f4_template()),
+      ('JWT_RS512_4096_F4_RAW', jwt.raw_jwt_rs512_4096_f4_template()),
+      ('JWT_PS256_2048_F4', jwt.jwt_ps256_2048_f4_template()),
+      ('JWT_PS256_2048_F4_RAW', jwt.raw_jwt_ps256_2048_f4_template()),
+      ('JWT_PS256_3072_F4', jwt.jwt_ps256_3072_f4_template()),
+      ('JWT_PS256_3072_F4_RAW', jwt.raw_jwt_ps256_3072_f4_template()),
+      ('JWT_PS384_3072_F4', jwt.jwt_ps384_3072_f4_template()),
+      ('JWT_PS384_3072_F4_RAW', jwt.raw_jwt_ps384_3072_f4_template()),
+      ('JWT_PS512_4096_F4', jwt.jwt_ps512_4096_f4_template()),
+      ('JWT_PS512_4096_F4_RAW', jwt.raw_jwt_ps512_4096_f4_template()),
+      ('JWT_ML_DSA44', jwt.jwt_ml_dsa44_template()),
+      ('JWT_ML_DSA44_RAW', jwt.raw_jwt_ml_dsa44_template()),
+      ('JWT_ML_DSA65', jwt.jwt_ml_dsa65_template()),
+      ('JWT_ML_DSA65_RAW', jwt.raw_jwt_ml_dsa65_template()),
+      ('JWT_ML_DSA87', jwt.jwt_ml_dsa87_template()),
+      ('JWT_ML_DSA87_RAW', jwt.raw_jwt_ml_dsa87_template()),
+  ])
+  def test_verify_with_other_key_fails(self, template):
+    handle = tink.new_keyset_handle(template)
     sign = handle.primitive(jwt.JwtPublicKeySign)
     raw_jwt = jwt.new_raw_jwt(issuer='issuer', without_expiration=True)
     compact = sign.sign_and_encode(raw_jwt)
 
-    other_handle = tink.new_keyset_handle(jwt.jwt_es256_template())
+    other_handle = tink.new_keyset_handle(template)
     other_verify = other_handle.public_keyset_handle().primitive(
         jwt.JwtPublicKeyVerify)
     with self.assertRaises(tink.TinkError):

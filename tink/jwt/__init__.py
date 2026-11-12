@@ -73,6 +73,12 @@ jwt_ps384_3072_f4_template = _jwt_key_templates.jwt_ps384_3072_f4_template
 raw_jwt_ps384_3072_f4_template = _jwt_key_templates.raw_jwt_ps384_3072_f4_template
 jwt_ps512_4096_f4_template = _jwt_key_templates.jwt_ps512_4096_f4_template
 raw_jwt_ps512_4096_f4_template = _jwt_key_templates.raw_jwt_ps512_4096_f4_template
+jwt_ml_dsa44_template = _jwt_key_templates.jwt_ml_dsa44_template
+raw_jwt_ml_dsa44_template = _jwt_key_templates.raw_jwt_ml_dsa44_template
+jwt_ml_dsa65_template = _jwt_key_templates.jwt_ml_dsa65_template
+raw_jwt_ml_dsa65_template = _jwt_key_templates.raw_jwt_ml_dsa65_template
+jwt_ml_dsa87_template = _jwt_key_templates.jwt_ml_dsa87_template
+raw_jwt_ml_dsa87_template = _jwt_key_templates.raw_jwt_ml_dsa87_template
 
 
 def register_jwt_mac() -> None:

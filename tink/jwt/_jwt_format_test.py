@@ -125,7 +125,8 @@ class JwtFormatTest(parameterized.TestCase):
 
   @parameterized.parameters([
       'HS256', 'HS384', 'HS512', 'ES256', 'ES384', 'ES512', 'RS256', 'RS384',
-      'RS384', 'RS512', 'PS256', 'PS384', 'PS512'
+      'RS384', 'RS512', 'PS256', 'PS384', 'PS512', 'ML-DSA-44', 'ML-DSA-65',
+      'ML-DSA-87',
   ])
   def test_create_validate_header(self, algorithm):
     encoded_header = _jwt_format.create_header(algorithm, None, None)

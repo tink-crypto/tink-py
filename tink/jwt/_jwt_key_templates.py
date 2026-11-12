@@ -14,6 +14,8 @@
 
 from tink.proto import jwt_ecdsa_pb2
 from tink.proto import jwt_hmac_pb2
+from tink.proto import jwt_ml_dsa_pb2
+
 from tink.proto import jwt_rsa_ssa_pkcs1_pb2
 from tink.proto import jwt_rsa_ssa_pss_pb2
 from tink.proto import tink_pb2
@@ -69,6 +71,17 @@ def _create_jwt_rsa_ssa_pss_template(
       type_url='type.googleapis.com/google.crypto.tink.JwtRsaSsaPssPrivateKey',
       value=key_format.SerializeToString(),
       output_prefix_type=output_prefix_type)
+
+
+def _create_jwt_ml_dsa_template(
+    algorithm: jwt_ml_dsa_pb2.JwtMlDsaAlgorithm,
+    output_prefix_type: tink_pb2.OutputPrefixType) -> tink_pb2.KeyTemplate:
+  key_format = jwt_ml_dsa_pb2.JwtMlDsaKeyFormat(algorithm=algorithm)
+  return tink_pb2.KeyTemplate(
+      type_url='type.googleapis.com/google.crypto.tink.JwtMlDsaPrivateKey',
+      value=key_format.SerializeToString(),
+      output_prefix_type=output_prefix_type
+  )
 
 
 # Hmac Templates
@@ -201,3 +214,46 @@ def jwt_ps512_4096_f4_template() -> tink_pb2.KeyTemplate:
 def raw_jwt_ps512_4096_f4_template() -> tink_pb2.KeyTemplate:
   return _create_jwt_rsa_ssa_pss_template(jwt_rsa_ssa_pss_pb2.PS512, 4096,
                                           tink_pb2.RAW)
+
+
+# ML-DSA Templates
+def jwt_ml_dsa44_template() -> tink_pb2.KeyTemplate:
+  return _create_jwt_ml_dsa_template(
+      jwt_ml_dsa_pb2.ML_DSA44,
+      tink_pb2.TINK,
+  )
+
+
+def raw_jwt_ml_dsa44_template() -> tink_pb2.KeyTemplate:
+  return _create_jwt_ml_dsa_template(
+      jwt_ml_dsa_pb2.ML_DSA44,
+      tink_pb2.RAW,
+  )
+
+
+def jwt_ml_dsa65_template() -> tink_pb2.KeyTemplate:
+  return _create_jwt_ml_dsa_template(
+      jwt_ml_dsa_pb2.ML_DSA65,
+      tink_pb2.TINK,
+  )
+
+
+def raw_jwt_ml_dsa65_template() -> tink_pb2.KeyTemplate:
+  return _create_jwt_ml_dsa_template(
+      jwt_ml_dsa_pb2.ML_DSA65,
+      tink_pb2.RAW,
+  )
+
+
+def jwt_ml_dsa87_template() -> tink_pb2.KeyTemplate:
+  return _create_jwt_ml_dsa_template(
+      jwt_ml_dsa_pb2.ML_DSA87,
+      tink_pb2.TINK,
+  )
+
+
+def raw_jwt_ml_dsa87_template() -> tink_pb2.KeyTemplate:
+  return _create_jwt_ml_dsa_template(
+      jwt_ml_dsa_pb2.ML_DSA87,
+      tink_pb2.RAW,
+  )

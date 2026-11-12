@@ -13,9 +13,10 @@
 # limitations under the License.
 """JWT Signature key managers."""
 
-from typing import Any, Optional, Type, Tuple, Callable
+from typing import Any, Callable, Optional, Tuple, Type
 
 from tink.proto import jwt_ecdsa_pb2
+from tink.proto import jwt_ml_dsa_pb2
 from tink.proto import jwt_rsa_ssa_pkcs1_pb2
 from tink.proto import jwt_rsa_ssa_pss_pb2
 from tink.proto import tink_pb2
@@ -39,6 +40,9 @@ _JWT_RSA_SSA_PKCS1_PUBLIC_KEY_TYPE = 'type.googleapis.com/google.crypto.tink.Jwt
 _JWT_RSA_SSA_PSS_PRIVATE_KEY_TYPE = 'type.googleapis.com/google.crypto.tink.JwtRsaSsaPssPrivateKey'
 _JWT_RSA_SSA_PSS_PUBLIC_KEY_TYPE = 'type.googleapis.com/google.crypto.tink.JwtRsaSsaPssPublicKey'
 
+_JWT_ML_DSA_PRIVATE_KEY_TYPE = 'type.googleapis.com/google.crypto.tink.JwtMlDsaPrivateKey'
+_JWT_ML_DSA_PUBLIC_KEY_TYPE = 'type.googleapis.com/google.crypto.tink.JwtMlDsaPublicKey'
+
 _ECDSA_ALGORITHM_TEXTS = {
     jwt_ecdsa_pb2.ES256: 'ES256',
     jwt_ecdsa_pb2.ES384: 'ES384',
@@ -55,6 +59,12 @@ _RSA_SSA_PSS_ALGORITHM_TEXTS = {
     jwt_rsa_ssa_pss_pb2.PS256: 'PS256',
     jwt_rsa_ssa_pss_pb2.PS384: 'PS384',
     jwt_rsa_ssa_pss_pb2.PS512: 'PS512'
+}
+
+_ML_DSA_ALGORITHM_TEXTS = {
+    jwt_ml_dsa_pb2.ML_DSA44: 'ML-DSA-44',
+    jwt_ml_dsa_pb2.ML_DSA65: 'ML-DSA-65',
+    jwt_ml_dsa_pb2.ML_DSA87: 'ML-DSA-87',
 }
 
 
@@ -202,6 +212,14 @@ def _ecdsa_algorithm_text(algorithm: jwt_ecdsa_pb2.JwtEcdsaAlgorithm) -> str:
   return _ECDSA_ALGORITHM_TEXTS[algorithm]
 
 
+def _ml_dsa_algorithm_text(
+    algorithm: jwt_ml_dsa_pb2.JwtMlDsaAlgorithm,
+) -> str:
+  if algorithm not in _ML_DSA_ALGORITHM_TEXTS:
+    raise _jwt_error.JwtInvalidError('Invalid algorithm')
+  return _ML_DSA_ALGORITHM_TEXTS[algorithm]
+
+
 def _get_custom_kid(public_key_proto: Any) -> Optional[str]:
   if public_key_proto.HasField('custom_kid'):
     return public_key_proto.custom_kid.value
@@ -275,6 +293,27 @@ def _rsa_ssa_pss_alg_kid_from_public_key_data(
   return (_rsa_ssa_pss_algorithm_text(key.algorithm), _get_custom_kid(key))
 
 
+def _ml_dsa_alg_kid_from_private_key_data(
+    key_data: tink_pb2.KeyData,
+) -> Tuple[str, Optional[str]]:
+  if key_data.type_url != _JWT_ML_DSA_PRIVATE_KEY_TYPE:
+    raise _jwt_error.JwtInvalidError('Invalid key data key type')
+  key = jwt_ml_dsa_pb2.JwtMlDsaPrivateKey.FromString(key_data.value)
+  return (
+      _ml_dsa_algorithm_text(key.public_key.algorithm),
+      _get_custom_kid(key.public_key),
+  )
+
+
+def _ml_dsa_alg_kid_from_public_key_data(
+    key_data: tink_pb2.KeyData,
+) -> Tuple[str, Optional[str]]:
+  if key_data.type_url != _JWT_ML_DSA_PUBLIC_KEY_TYPE:
+    raise _jwt_error.JwtInvalidError('Invalid key data key type')
+  key = jwt_ml_dsa_pb2.JwtMlDsaPublicKey.FromString(key_data.value)
+  return (_ml_dsa_algorithm_text(key.algorithm), _get_custom_kid(key))
+
+
 def register():
   """Registers all JWT signature primitives."""
   tink_bindings.register_jwt()
@@ -312,3 +351,19 @@ def register():
           _JWT_RSA_SSA_PSS_PUBLIC_KEY_TYPE),
       _rsa_ssa_pss_alg_kid_from_public_key_data)
   core.Registry.register_key_manager(public_key_manager, new_key_allowed=True)
+
+  private_key_manager = _JwtPublicKeySignKeyManagerCcToPyWrapper(
+      tink_bindings.PublicKeySignKeyManager.from_cc_registry(
+          _JWT_ML_DSA_PRIVATE_KEY_TYPE
+      ),
+      _ml_dsa_alg_kid_from_private_key_data,
+  )
+  core.Registry.register_key_manager(private_key_manager, new_key_allowed=True)
+
+  public_key_manager = _JwtPublicKeyVerifyKeyManagerCcToPyWrapper(
+      tink_bindings.PublicKeyVerifyKeyManager.from_cc_registry(
+          _JWT_ML_DSA_PUBLIC_KEY_TYPE
+      ),
+      _ml_dsa_alg_kid_from_public_key_data,
+  )
+  core.Registry.register_key_manager(public_key_manager, new_key_allowed=False)
