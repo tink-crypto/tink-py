@@ -28,7 +28,8 @@ set -euo pipefail
 # The following assoicative array contains:
 #   ["<Python version>"]="<python tag>-<abi tag>"
 # where:
-#   <Python version> = language version, e.g "3.10"
+#   <Python version> = language version, e.g "3.10", with a "t" suffix for a
+#       free-threaded build, e.g. "3.15t"
 #   <python tag>, <abi tag> = as defined at
 #       https://packaging.python.org/en/latest/specifications/, e.g. "cp310-cp310"
 declare -A PYTHON_VERSIONS
@@ -38,6 +39,7 @@ PYTHON_VERSIONS["3.12"]="cp312-cp312"
 PYTHON_VERSIONS["3.13"]="cp313-cp313"
 PYTHON_VERSIONS["3.14"]="cp314-cp314"
 PYTHON_VERSIONS["3.15"]="cp315-cp315"
+PYTHON_VERSIONS["3.15t"]="cp315-cp315t"
 readonly -A PYTHON_VERSIONS
 
 export TINK_PYTHON_ROOT_PATH="${PWD}"

@@ -25,7 +25,7 @@ set -eEuox pipefail
 
 readonly GCS_URL="https://storage.googleapis.com"
 
-readonly PYTHON_VERSIONS=( "3.10" "3.11" "3.12" "3.13" "3.14" "3.15" )
+readonly PYTHON_VERSIONS=( "3.10" "3.11" "3.12" "3.13" "3.14" "3.15" "3.15t" )
 
 readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 
