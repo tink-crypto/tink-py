@@ -30,7 +30,8 @@ readonly GCS_URL="https://storage.googleapis.com"
 # The following assoicative array contains:
 #   ["<Python version>"]="<python tag>-<abi tag>"
 # where:
-#   <Python version> = language version "<major>.<minor>"
+#   <Python version> = language version "<major>.<minor>", with a "t" suffix
+#       for a free-threaded build, e.g. "3.15t"
 #   <python tag>, <abi tag> = as defined at
 #       https://packaging.python.org/en/latest/specifications/, e.g.
 #       "cp<major><minor>-cp<major><minor>"
@@ -40,6 +41,7 @@ PYTHON_VERSIONS["3.12"]="cp312-cp312"
 PYTHON_VERSIONS["3.13"]="cp313-cp313"
 PYTHON_VERSIONS["3.14"]="cp314-cp314"
 PYTHON_VERSIONS["3.15"]="cp315-cp315"
+PYTHON_VERSIONS["3.15t"]="cp315-cp315t"
 readonly -A PYTHON_VERSIONS
 
 export TINK_PYTHON_ROOT_PATH="${PWD}"
