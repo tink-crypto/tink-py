@@ -31,6 +31,7 @@ import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 from typing import Any, List, Mapping
 
 import setuptools
@@ -168,6 +169,14 @@ class BuildBazelExtension(build_ext.build_ext):
     major = sys.version_info.major
     minor = sys.version_info.minor
     bazel_build_args += [f'--{python_version_rule}={major}.{minor}']
+    # A free-threaded interpreter (e.g. 3.15t) has a different ABI. Without
+    # this flag Bazel uses the headers of the default (GIL) build of the same
+    # version, and the resulting extension crashes when it is imported.
+    free_threaded = sysconfig.get_config_var('Py_GIL_DISABLED')
+    if free_threaded:
+      bazel_build_args += [
+          '--@rules_python//python/config_settings:py_freethreaded=yes'
+      ]
     lib_extension = '.so'
     if platform.system() == 'Windows':
       # Required to build protobuf. See
@@ -177,6 +186,11 @@ class BuildBazelExtension(build_ext.build_ext):
       os.environ['PYTHON_BIN_PATH'] = sys.executable
       os.environ['PYTHON_LIB_PATH'] = os.path.join(sys.exec_prefix, 'lib')
       lib_extension = '.pyd'
+      if free_threaded:
+        # The Windows pyconfig.h is shared by both builds, so it does not define
+        # Py_GIL_DISABLED; setuptools defines it for its extensions too (see
+        # https://github.com/pypa/setuptools/issues/4662).
+        bazel_build_args += ['--copt=/DPy_GIL_DISABLED=1']
 
     if 'TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL' in os.environ:
       if 'TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH' not in os.environ:
@@ -264,6 +278,7 @@ def main() -> None:
           'Programming Language :: Python :: 3.12',
           'Programming Language :: Python :: 3.13',
           'Programming Language :: Python :: 3.14',
+          'Programming Language :: Python :: 3.15',
           'Topic :: Software Development :: Libraries',
       ],
       options=options(),

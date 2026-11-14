@@ -57,7 +57,7 @@ GOTO :Exit
     ECHO %%x | FINDSTR "integration pybind" 1>nul
     IF errorlevel 1 (
       python %%x
-      IF errorlevel 1 SET RET_VALUE=1
+      IF !errorlevel! NEQ 0 SET RET_VALUE=1
     ) ELSE (
       ECHO "Skip test file %%x"
     )

@@ -30,6 +30,7 @@ python.toolchain(python_version = "3.11")
 python.toolchain(python_version = "3.12")
 python.toolchain(python_version = "3.13")
 python.toolchain(python_version = "3.14")
+python.toolchain(python_version = "3.15")
 
 _HUB_NAME = "p"  # short to keep paths short which is needed on Windows.
 
@@ -57,6 +58,11 @@ pip.parse(
 pip.parse(
     hub_name = _HUB_NAME,
     python_version = "3.14",
+    requirements_lock = "@tink_py//:requirements_all.txt",
+)
+pip.parse(
+    hub_name = _HUB_NAME,
+    python_version = "3.15",
     requirements_lock = "@tink_py//:requirements_all.txt",
 )
 use_repo(pip, tink_py_pip_deps = _HUB_NAME)

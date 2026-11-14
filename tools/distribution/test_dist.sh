@@ -69,26 +69,45 @@ install_dist_and_run_tests() {
     echo "InvalidArgumentError: Invalid dist path '${dist}'" >&2
     exit 1
   fi
-  python3 -m pip install "${dist}[all]"
-  find tink/ -not -path "*cc/pybind*" -type f -name "*_test.py" -print0 \
+  local extras="all"
+  local test_filters=( -not -path "*cc/pybind*" )
+  local -r gil_disabled="$(python3 -c \
+    'import sysconfig; print(sysconfig.get_config_var("Py_GIL_DISABLED") or 0)')"
+  if [[ "${gil_disabled}" == "1" ]]; then
+    # grpcio, which the gcpkms extra needs, has no free-threaded wheels yet.
+    extras="awskms,hcvault"
+    test_filters+=( -not -path "*integration/gcpkms*" )
+  fi
+  python3 -m pip install "${dist}[${extras}]"
+  find tink/ "${test_filters[@]}" -type f -name "*_test.py" -print0 \
     | xargs -0 -n1 python3
 }
 
 enable_py_version() {
-  # A partial version number (e.g. "3.10").
+  # A partial version number (e.g. "3.10"), with a "t" suffix for a
+  # free-threaded build (e.g. "3.15t").
   local -r partial_version="$1"
   if [[ -z "${partial_version}" ]]; then
     echo "InvalidArgumentError: Partial version must be specified" >&2
     exit 1
   fi
+  local minor_version="${partial_version}"
+  local flavor=""
+  if [[ "${partial_version}" == *t ]]; then
+    minor_version="${partial_version%t}"
+    flavor="t"
+  fi
+  # Matches "3.10.x" for "3.10", and "3.15.xt" (but not "3.15.x") for "3.15t".
+  local -r version_regex="^${minor_version//./\\.}\.[0-9]+${flavor}\$"
 
   # The latest installed Python version that matches the partial version number
   # (e.g. "3.10.x").
-  local version="$(pyenv versions --bare | grep "${partial_version}\." | tail -1)"
+  local version="$(pyenv versions --bare | grep -E "${version_regex}" \
+    | tail -1)"
   if [[ -z "${version}" ]]; then
     # Install the latest available non-dev version.
-    version="$(pyenv install --list | grep "  ${partial_version}\." | tail -1 \
-      | xargs)"
+    version="$(pyenv install --list | xargs -n1 | grep -E "${version_regex}" \
+      | tail -1)"
     pyenv install "${version}"
   fi
   readonly version
@@ -117,9 +136,9 @@ main() {
   for dist in "${RELEASE_ARTIFACTS_DIR}/tink-"*; do
     if ! is_sdist "${dist}"; then
       # This is a binary wheel; extract and enable the corresponding Python
-      # version.
-      local python_version="$(echo "${dist}" | grep -oEi 'cp3[0-9]+' | head -1 \
-        | sed 's/cp3/3./')"
+      # version from its ABI tag (e.g. "3.15" for cp315, "3.15t" for cp315t).
+      local python_version="$(basename "${dist}" \
+        | sed -E 's/^tink-[^-]+-cp3[0-9]+-cp3([0-9]+t?)-.*$/3.\1/')"
       enable_py_version "${python_version}"
     fi
     # Update environment.
