@@ -182,5 +182,15 @@ class BadWriteBytesIOTest(absltest.TestCase):
       self.assertEqual(len2, 1)  # 0 + 1
 
 
+class FailingCloseBytesIOTest(absltest.TestCase):
+
+  def test_close(self):
+    f = bytes_io.FailingCloseBytesIO(b'data')
+    self.assertEqual(f.read(), b'data')
+    with self.assertRaises(OSError):
+      f.close()
+    self.assertTrue(f.closed)
+
+
 if __name__ == '__main__':
   absltest.main()

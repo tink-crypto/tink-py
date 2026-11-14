@@ -87,5 +87,12 @@ class RewindableInputStream(io.RawIOBase):
     """Close the stream and the wrapped input_stream."""
     if self.closed:  # pylint:disable=using-constant-test
       return
-    self._input_stream.close()
-    super().close()
+    try:
+      # io.IOBase.__del__ calls close() also when __init__ raised, before
+      # _input_stream was set.
+      if hasattr(self, '_input_stream'):
+        self._input_stream.close()
+    finally:
+      # Mark the stream closed even if closing input_stream failed, so that
+      # io.IOBase.__del__ does not try again.
+      super().close()

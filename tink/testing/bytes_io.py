@@ -133,3 +133,11 @@ class BadWriteBytesIO(BytesIOWithValueAfterClose):
     # On every third call: write and return an invalid written length.
     bytes_written = super().write(b)
     return bytes_written + 1
+
+
+class FailingCloseBytesIO(io.BytesIO):
+  """A BytesIO whose close() closes it, and then raises OSError."""
+
+  def close(self) -> None:
+    super().close()
+    raise OSError('close failed')

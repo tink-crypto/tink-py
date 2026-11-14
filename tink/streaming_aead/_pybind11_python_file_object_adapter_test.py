@@ -13,9 +13,12 @@
 # limitations under the License.
 """Tests for exception (non-)propagation in Pybind11PythonFileObjectAdapter."""
 
+import gc
 import io
+import sys
 
 from absl.testing import absltest
+from absl.testing.absltest import mock
 
 import tink
 from tink import streaming_aead
@@ -53,28 +56,31 @@ class BytesIOThatThrowsExceptionsOnClose(io.BytesIO):
     return b''
 
   def close(self):
+    super().close()
     raise tink.TinkError('Called close!')
 
 
 class Pybind11PythonFileObjectAdaterTest(absltest.TestCase):
 
-  # This and the following tests do not use the `with` statement. This is done
-  # for two reasons:
-  # 1. consistency with the `test_close_throws()`: there, exit from the
-  #    context created by the `with` statement causes the `close()` function
-  #    to be called after `assertRaises()` verified that it throws -- thus
-  #    one more exception is raised, and the test fails.
-  # 2. avoiding similar unexpected sideffects in the other tests
+  # These tests call close() directly instead of using the `with` statement,
+  # to check the exception that close() raises.
   def test_write_throws(self):
     streaming_aead_primitive = get_primitive()
 
-    ciphertext_destination = BytesIOThatThrowsExceptionsOnReadWrite()
-    enc_stream = streaming_aead_primitive.new_encrypting_stream(
-        ciphertext_destination, b'associated_data')
-    # The exception is thrown but swallowed on the way.
-    _ = enc_stream.write(b'plaintext')
-    # The exception is thrown and is not swallowed.
-    self.assertRaises(tink.TinkError, enc_stream.close)
+    with mock.patch.object(sys, 'unraisablehook') as unraisablehook:
+      ciphertext_destination = BytesIOThatThrowsExceptionsOnReadWrite()
+      enc_stream = streaming_aead_primitive.new_encrypting_stream(
+          ciphertext_destination, b'associated_data')
+      # The exception is thrown but swallowed on the way.
+      _ = enc_stream.write(b'plaintext')
+      # The exception is thrown and is not swallowed.
+      self.assertRaises(tink.TinkError, enc_stream.close)
+      # The failed close() still closes the stream, so that its finalizer does
+      # not try again.
+      self.assertTrue(enc_stream.closed)
+      del enc_stream, ciphertext_destination
+      gc.collect()
+    unraisablehook.assert_not_called()
 
   def test_read_throws(self):
     streaming_aead_primitive = get_primitive()
@@ -88,10 +94,17 @@ class Pybind11PythonFileObjectAdaterTest(absltest.TestCase):
   def test_close_throws(self):
     streaming_aead_primitive = get_primitive()
 
-    ciphertext_destination = BytesIOThatThrowsExceptionsOnClose()
-    enc_stream = streaming_aead_primitive.new_encrypting_stream(
-        ciphertext_destination, b'associated_data')
-    self.assertRaises(tink.TinkError, enc_stream.close)
+    with mock.patch.object(sys, 'unraisablehook') as unraisablehook:
+      ciphertext_destination = BytesIOThatThrowsExceptionsOnClose()
+      enc_stream = streaming_aead_primitive.new_encrypting_stream(
+          ciphertext_destination, b'associated_data')
+      self.assertRaises(tink.TinkError, enc_stream.close)
+      # The failed close() still closes the stream, so that its finalizer does
+      # not try again.
+      self.assertTrue(enc_stream.closed)
+      del enc_stream, ciphertext_destination
+      gc.collect()
+    unraisablehook.assert_not_called()
 
 
 if __name__ == '__main__':
