@@ -54,6 +54,11 @@ readonly CREATE_DIST_OPTIONS
 # why we need 5.29.5.
 source ./kokoro/testutils/install_protoc.sh "29.5"
 
+# The pre-installed pyenv on Kokoro macOS 15 images is too old for the Python
+# versions that create_bdist.sh and test_dist.sh install, see
+# install_pyenv.sh. Sourcing required to update callers environment.
+source ./kokoro/testutils/install_pyenv.sh
+
 ./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
 
 source ./kokoro/testutils/install_vault.sh
