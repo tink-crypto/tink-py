@@ -13,11 +13,14 @@
 # limitations under the License.
 """Tests for tink.python.tink.util.bytes_io."""
 
+import gc
 import io
+import sys
 import tempfile
 from typing import BinaryIO, cast
 from absl.testing import absltest
 from absl.testing import parameterized
+from absl.testing.absltest import mock
 
 from tink.streaming_aead import _rewindable_input_stream
 from tink.testing import bytes_io
@@ -114,9 +117,21 @@ class RewindableInputStreamTest(parameterized.TestCase):
       self.assertEqual(b'The quick brown fox', f.read())
 
   def test_nonreadable_input_fail(self):
-    with tempfile.TemporaryFile('wb') as f:
-      with self.assertRaises(ValueError):
-        _ = _rewindable_input_stream.RewindableInputStream(cast(BinaryIO, f))
+    with mock.patch.object(sys, 'unraisablehook') as unraisablehook:
+      with tempfile.TemporaryFile('wb') as f:
+        with self.assertRaises(ValueError):
+          _ = _rewindable_input_stream.RewindableInputStream(cast(BinaryIO, f))
+      gc.collect()
+    # Finalizing the partially initialized stream must not raise (Python 3.13+
+    # prints such exceptions as "Exception ignored in ...").
+    unraisablehook.assert_not_called()
+
+  def test_close_closes_stream_if_closing_input_stream_fails(self):
+    f = _rewindable_input_stream.RewindableInputStream(
+        cast(BinaryIO, bytes_io.FailingCloseBytesIO(b'The quick brown fox')))
+    with self.assertRaises(OSError):
+      f.close()
+    self.assertTrue(f.closed)
 
 
 class RewindableInputStreamSlowTest(parameterized.TestCase):

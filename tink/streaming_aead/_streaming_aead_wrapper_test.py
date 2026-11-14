@@ -13,11 +13,14 @@
 # limitations under the License.
 """Tests for tink.python.tink.streaming_aead._streaming_aead_wrapper."""
 
+import gc
 import io
+import sys
 from typing import BinaryIO, cast
 
 from absl.testing import absltest
 from absl.testing import parameterized
+from absl.testing.absltest import mock
 from tink.proto import aes_gcm_hkdf_streaming_pb2
 from tink.proto import common_pb2
 from tink.proto import tink_pb2
@@ -108,11 +111,18 @@ class StreamingAeadWrapperTest(parameterized.TestCase):
     plaintext = b'plaintext'
     aad = b'associated_data'
 
-    ciphertext_dest = bytes_io.BadWriteBytesIO()
-    with self.assertRaises(tink.TinkError):
+    with mock.patch.object(sys, 'unraisablehook') as unraisablehook:
+      ciphertext_dest = bytes_io.BadWriteBytesIO()
       es = primitive.new_encrypting_stream(ciphertext_dest, aad)
-      es.write(plaintext)
-      es.close()
+      with self.assertRaises(tink.TinkError):
+        es.write(plaintext)
+        es.close()
+      # The failed close() still closes the stream, so that its finalizer does
+      # not try again.
+      self.assertTrue(es.closed)
+      del es, ciphertext_dest
+      gc.collect()
+    unraisablehook.assert_not_called()
 
   def test_encrypt_decrypt_with_slow_readable_raw_bytes_success(self):
     keyset_handle = tink.new_keyset_handle(TEMPLATE)

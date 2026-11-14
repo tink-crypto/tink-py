@@ -13,14 +13,18 @@
 # limitations under the License.
 """Tests for tink.python.tink.streaming_aead.streaming_aead."""
 
+import gc
 import io
 import os
+import sys
 import tempfile
 
 from absl.testing import absltest
+from absl.testing.absltest import mock
 
 import tink
 from tink import streaming_aead
+from tink.testing import bytes_io
 
 
 def setUpModule():
@@ -102,17 +106,39 @@ class StreamingAeadTest(absltest.TestCase):
       filename = os.path.join(tmpdirname, 'file')
       with open(filename, 'wb') as f:
         f.write(b'data')
-      with open(filename, 'rb') as dest:  # dest is not writable
-        with self.assertRaises(ValueError):
-          primitive.new_encrypting_stream(dest, b'aad')
+      with mock.patch.object(sys, 'unraisablehook') as unraisablehook:
+        with open(filename, 'rb') as dest:  # dest is not writable
+          with self.assertRaises(ValueError):
+            primitive.new_encrypting_stream(dest, b'aad')
+        gc.collect()
+    # Finalizing the partially initialized stream must not raise (Python 3.13+
+    # prints such exceptions as "Exception ignored in ...").
+    unraisablehook.assert_not_called()
 
   def test_decrypt_fails_on_nonreadable_stream(self):
     primitive = get_primitive()
     with tempfile.TemporaryDirectory() as tmpdirname:
-      # src not readable
-      with open(os.path.join(tmpdirname, 'file2'), 'wb') as src:
-        with self.assertRaises(ValueError):
-          primitive.new_decrypting_stream(src, b'aad')
+      with mock.patch.object(sys, 'unraisablehook') as unraisablehook:
+        # src not readable
+        with open(os.path.join(tmpdirname, 'file2'), 'wb') as src:
+          with self.assertRaises(ValueError):
+            primitive.new_decrypting_stream(src, b'aad')
+        gc.collect()
+    # Finalizing the partially initialized stream must not raise (Python 3.13+
+    # prints such exceptions as "Exception ignored in ...").
+    unraisablehook.assert_not_called()
+
+  def test_decrypt_close_closes_stream_if_closing_source_fails(self):
+    primitive = get_primitive()
+    ct_destination = bytes_io.BytesIOWithValueAfterClose()
+    with primitive.new_encrypting_stream(ct_destination, b'aad') as es:
+      es.write(b'data')
+    src = bytes_io.FailingCloseBytesIO(ct_destination.value_after_close())
+    ds = primitive.new_decrypting_stream(src, b'aad')
+    self.assertEqual(ds.read(), b'data')
+    with self.assertRaises(OSError):
+      ds.close()
+    self.assertTrue(ds.closed)
 
 if __name__ == '__main__':
   absltest.main()
