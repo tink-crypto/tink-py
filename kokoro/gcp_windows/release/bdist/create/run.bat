@@ -73,34 +73,43 @@ CALL :RunTests "3.15" || GOTO :Error
 GOTO :End
 
 @REM Builds repairs and installs the binary wheel, and places it in release/.
+@REM Uses a virtual environment per Python version: the default and the
+@REM free-threaded build of a version (e.g. 3.15 and 3.15t) installed together
+@REM share site-packages, so packages installed for one are seen by the other.
 :BuildAndInstallWheel
   py -%~1 --version
   IF %errorlevel% neq 0 EXIT /B %errorlevel%
 
-  py -%~1 -m pip install --no-deps --require-hashes -r tools\distribution\requirements.txt
+  py -%~1 -m venv "%TEMP%\tink_py_venv_%~1"
+  IF %errorlevel% neq 0 EXIT /B %errorlevel%
+  SET PYTHON="%TEMP%\tink_py_venv_%~1\Scripts\python.exe"
+
+  %PYTHON% -m pip install --no-deps --require-hashes -r tools\distribution\requirements.txt
   IF %errorlevel% neq 0 EXIT /B %errorlevel%
 
-  py -%~1 -m pip install --no-deps --require-hashes -r requirements.txt
+  %PYTHON% -m pip install --no-deps --require-hashes -r requirements.txt
   IF %errorlevel% neq 0 EXIT /B %errorlevel%
 
-  py -%~1 -m pip install delvewheel
+  %PYTHON% -m pip install delvewheel
   IF %errorlevel% neq 0 EXIT /B %errorlevel%
 
-  py -%~1 -m pip wheel .
+  %PYTHON% -m pip wheel .
   IF %errorlevel% neq 0 EXIT /B %errorlevel%
 
-  py -%~1 -m delvewheel repair %OUT_WHEEL% -w release
+  %PYTHON% -m delvewheel repair %OUT_WHEEL% -w release
   IF %errorlevel% neq 0 EXIT /B %errorlevel%
 
-  py -%~1 -m pip install --no-deps release/%OUT_WHEEL%
+  %PYTHON% -m pip install --no-deps release/%OUT_WHEEL%
   EXIT /B %errorlevel%
 
+@REM Runs the tests with the virtual environment of BuildAndInstallWheel.
 :RunTests
+  SET PYTHON="%TEMP%\tink_py_venv_%~1\Scripts\python.exe"
   SET RET_VALUE=0
   FOR /F %%x in ('DIR /s/b tink\*_test.py') DO (
     ECHO %%x | FINDSTR "integration pybind" 1>nul
       IF errorlevel 1 (
-        py -%~1 %%x
+        %PYTHON% %%x
         IF !errorlevel! NEQ 0 SET RET_VALUE=1
       ) ELSE (
         ECHO "Skip test file %%x"
