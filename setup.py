@@ -58,10 +58,13 @@ def _get_tink_version() -> str:
 
 def _get_bazel_command() -> str:
   """Finds the bazel command."""
-  if shutil.which('bazelisk'):
-    return 'bazelisk'
-  elif shutil.which('bazel'):
-    return 'bazel'
+  for command in ('bazelisk', 'bazel'):
+    path = shutil.which(command)
+    if path:
+      # On Windows, the command can be a batch file, e.g. bazelisk.cmd when
+      # bazelisk is installed with npm. shutil.which finds it through PATHEXT,
+      # but subprocess only starts it given its path.
+      return path if platform.system() == 'Windows' else command
   raise FileNotFoundError(
       'Could not find bazel executable. Please install '
       'bazel to compile the Tink Python package.'
