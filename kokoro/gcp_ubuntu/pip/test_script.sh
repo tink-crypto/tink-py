@@ -82,7 +82,7 @@ else
   TEST_EXCLUDE+=( -not -path "*integration/*" )
 fi
 readonly TEST_EXCLUDE
-find tink/ "${TEST_EXCLUDE}" -type f -name "*_test.py" -print0 \
+find tink/ "${TEST_EXCLUDE[@]}" -type f -name "*_test.py" -print0 \
   | xargs -0 -n1 python3
 
 # Install requirements for examples.
