@@ -21,6 +21,7 @@ from absl.testing import absltest
 from tink import core
 from tink import streaming_aead
 from tink.streaming_aead import _raw_streaming_aead
+from tink.testing import bytes_io
 
 # Using malformed UTF-8 sequences to ensure there is no accidental decoding.
 B_X80 = b'\x80'
@@ -86,6 +87,14 @@ class DecryptingStreamTest(absltest.TestCase):
     self.assertFalse(ds.writable())
     self.assertFalse(ds.seekable())
     self.assertFalse(ds.isatty())
+
+  def test_close_closes_stream_if_closing_source_fails(self):
+    ds = get_raw_decrypting_stream(
+        bytes_io.FailingCloseBytesIO(B_SOMETHING_), B_AAD_,
+        close_ciphertext_source=True)
+    with self.assertRaises(OSError):
+      ds.close()
+    self.assertTrue(ds.closed)
 
 
 if __name__ == '__main__':
