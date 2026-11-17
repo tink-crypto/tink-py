@@ -1,4 +1,4 @@
-build
+build>=1.6.1
 delocate
 pip
 setuptools
