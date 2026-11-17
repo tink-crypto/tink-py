@@ -71,6 +71,10 @@ if [[ -n "${BAZEL_CACHE_NAME}" ]]; then
   export TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH="./cache_key"
 fi
 
+# TODO(b/586788219): Remove once 3.15 support is added to Tink Python.
+eval "$(pyenv init -)"
+pyenv shell 3.14
+
 TEST_EXCLUDE=( -not -path "*cc/pybind*" )
 if [[ "${RUN_KMS_TESTS}" == "true" ]]; then
   ./kokoro/testutils/install_tink_via_pip.sh -a "$(pwd)"
@@ -108,5 +112,6 @@ if [[ -n "${BAZEL_CACHE_NAME:-}" ]]; then
 fi
 readonly CACHE_FLAGS
 
-./kokoro/testutils/run_bazel_tests.sh -m "${CACHE_FLAGS[@]}" -t "--test_env=PATH" "examples" \
+./kokoro/testutils/run_bazel_tests.sh -m "${CACHE_FLAGS[@]}" \
+  -t "--test_env=PATH,--test_env=PYENV_VERSION" "examples" \
   "${EXAMPLE_TARGETS_ARRAY[@]}"

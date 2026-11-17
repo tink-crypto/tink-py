@@ -113,7 +113,7 @@ main() {
   fi
 
   eval "$(pyenv init -)"
-
+  enable_py_version 3.14 # Default to 3.14.
   for dist in "${RELEASE_ARTIFACTS_DIR}/tink-"*; do
     if ! is_sdist "${dist}"; then
       # This is a binary wheel; extract and enable the corresponding Python
