@@ -29,31 +29,27 @@ readonly PLATFORM="$(uname | tr '[:upper:]' '[:lower:]')"
 
 usage() {
   cat <<EOF
-Usage:  $0 [-v <Python version to use>] [-t <release type (dev|release)>]
+Usage:  $0 [-t <release type (dev|release)>]
   -t: [Optional] Type of release; if "dev", the genereted sdist archive is named
      tink-<version from TINK_VERSION.txt>-dev0.tar.gz; if "release",
      tink-<version from TINK_VERSION.txt>.tar.gz (default=dev).
-  -v: [Optional] Python version to use (default=3.10).
   -h: Help. Print this usage information.
 EOF
   exit 1
 }
 
-PYTHON_VERSION="3.10"
 RELEASE_TYPE="dev"
 TINK_VERSION=
 
 parse_args() {
   # Parse options.
-  while getopts "hv:t:" opt; do
+  while getopts "ht:" opt; do
     case "${opt}" in
-      v) PYTHON_VERSION="${OPTARG}" ;;
       t) RELEASE_TYPE="${OPTARG}" ;;
       *) usage ;;
     esac
   done
   shift $((OPTIND - 1))
-  readonly PYTHON_VERSION
   readonly RELEASE_TYPE
 
   TINK_VERSION="$(cat TINK_VERSION.txt)"
@@ -80,17 +76,13 @@ main() {
 
   export TINK_PYTHON_ROOT_PATH="${PWD}"
 
-  eval "$(pyenv init -)"
   mkdir -p release
 
-  # TODO(b/281635529): Use a container for a more hermetic testing environment.
-  # The latest installed Python version that matches the partial version number
-  # (e.g. "3.10.X"). This is needed because PYTHON_VERSION may be only
-  # MAJOR.MINOR.
-  local -r version="$(pyenv versions --bare | grep "${PYTHON_VERSION}" \
-    | tail -1)"
-  pyenv shell "${version}"
+  readonly PYTHON_VERSION="3.11"
+  eval "$(pyenv init -)"
+  pyenv shell "${PYTHON_VERSION}"
   python3 --version
+
   # Update environment.
   python3 -m pip install --require-hashes -r \
     ./tools/distribution/requirements.txt
