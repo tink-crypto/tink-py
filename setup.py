@@ -268,7 +268,7 @@ def main() -> None:
       options=options(),
       license='Apache 2.0',
       keywords='tink cryptography',
-      python_requires='>=3.10',
+      python_requires='>=3.11',
   )
 
 

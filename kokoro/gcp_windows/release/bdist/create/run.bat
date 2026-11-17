@@ -46,10 +46,6 @@ IF NOT "%TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET%"=="" (
 SET TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION=%TINK_VERSION%
 SET TINK_PYTHON_ROOT_PATH=%cd%
 
-SET OUT_WHEEL=tink-%TINK_VERSION%-cp310-cp310-win_amd64.whl
-CALL :BuildAndInstallWheel "3.10" || GOTO :Error
-CALL :RunTests "3.10" || GOTO :Error
-
 SET OUT_WHEEL=tink-%TINK_VERSION%-cp311-cp311-win_amd64.whl
 CALL :BuildAndInstallWheel "3.11" || GOTO :Error
 CALL :RunTests "3.11" || GOTO :Error
