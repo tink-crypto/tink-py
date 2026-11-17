@@ -35,6 +35,9 @@ IF NOT "%TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET%"=="" (
   SET TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH=%TINK_REMOTE_BAZEL_CACHE_SERVICE_KEY%
 )
 
+:: The default `python` on the Kokoro image is Python 3.15, which Tink Python
+:: does not support yet, so use Python 3.14 through the launcher (`py -3.14`).
+:: TODO(b/586788219): Remove once 3.15 support is added to Tink Python.
 CALL :InstallTink || GOTO :Error
 CALL :RunTests || GOTO :Error
 GOTO :Exit
@@ -42,11 +45,11 @@ GOTO :Exit
 :InstallTink
   ECHO Install started at %TIME%
   choco install -y --no-progress protoc --version=30.2.0 || EXIT /B %errorlevel%
-  python -m pip install --upgrade pip
-  python -m pip install --upgrade setuptools
-  python -m pip install --require-hashes --no-deps ^
+  py -3.14 -m pip install --upgrade pip
+  py -3.14 -m pip install --upgrade setuptools
+  py -3.14 -m pip install --require-hashes --no-deps ^
     -r requirements.txt || EXIT /B %errorlevel%
-  python -m pip install --no-deps . || EXIT /B %errorlevel%
+  py -3.14 -m pip install --no-deps . || EXIT /B %errorlevel%
   ECHO Install completed at %TIME%
   EXIT /B 0
 
@@ -56,7 +59,7 @@ GOTO :Exit
   FOR /F %%x in ('DIR /s/b tink\*_test.py') DO (
     ECHO %%x | FINDSTR "integration pybind" 1>nul
     IF errorlevel 1 (
-      python %%x
+      py -3.14 %%x
       IF errorlevel 1 SET RET_VALUE=1
     ) ELSE (
       ECHO "Skip test file %%x"
