@@ -95,6 +95,8 @@ parse_args() {
 #######################################
 create_bdist_for_linux() {
   echo "### Building and testing Linux binary wheels ###"
+  eval "$(pyenv init -)"
+
   # Use signatures for getting images from registry (see
   # https://docs.docker.com/engine/security/trust/content_trust/).
   export DOCKER_CONTENT_TRUST=1
@@ -169,6 +171,8 @@ _create_universal2_macos_wheel() {
 create_bdist_for_macos() {
   echo "### Building macOS binary wheels ###"
 
+  source ./kokoro/testutils/install_pyenv.sh
+
   export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
   if [[ -n "${BAZEL_CACHE_NAME:-}" ]]; then
     export TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL="${GCS_URL}/${BAZEL_CACHE_NAME}"
@@ -237,7 +241,6 @@ enable_py_version() {
 main() {
   parse_args "$@"
 
-  eval "$(pyenv init -)"
   mkdir -p release
 
   if [[ "${PLATFORM}" == 'linux' ]]; then

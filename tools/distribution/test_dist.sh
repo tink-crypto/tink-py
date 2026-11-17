@@ -112,7 +112,11 @@ main() {
     export TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH="$(realpath cache_key)"
   fi
 
-  eval "$(pyenv init -)"
+  if [[ "${PLATFORM}" == 'darwin' ]]; then
+    source ./kokoro/testutils/install_pyenv.sh
+  else
+    eval "$(pyenv init -)"
+  fi
   enable_py_version 3.14 # Default to 3.14.
   for dist in "${RELEASE_ARTIFACTS_DIR}/tink-"*; do
     if ! is_sdist "${dist}"; then
