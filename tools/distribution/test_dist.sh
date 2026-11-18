@@ -117,7 +117,10 @@ main() {
   else
     eval "$(pyenv init -)"
   fi
-  enable_py_version 3.14 # Default to 3.14.
+
+  # Use the latest available Python version.
+  enable_py_version "3.15"
+
   for dist in "${RELEASE_ARTIFACTS_DIR}/tink-"*; do
     if ! is_sdist "${dist}"; then
       # This is a binary wheel; extract and enable the corresponding Python

@@ -71,9 +71,8 @@ if [[ -n "${BAZEL_CACHE_NAME}" ]]; then
   export TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH="./cache_key"
 fi
 
-# TODO(b/586788219): Remove once 3.15 support is added to Tink Python.
 eval "$(pyenv init -)"
-pyenv shell 3.14
+pyenv shell 3.15
 
 TEST_EXCLUDE=( -not -path "*cc/pybind*" )
 if [[ "${RUN_KMS_TESTS}" == "true" ]]; then

@@ -33,9 +33,11 @@ source ./kokoro/testutils/install_protoc.sh "30.2"
 
 # Make sure we use the latest supported Python version.
 
+readonly PYTHON_VERSION_TO_USE=3.15
+
 source ./kokoro/testutils/install_pyenv.sh
-pyenv install -s 3.14
-pyenv shell 3.14
+pyenv install -s "${PYTHON_VERSION_TO_USE}"
+pyenv shell "${PYTHON_VERSION_TO_USE}"
 
 ./kokoro/testutils/install_tink_via_pip.sh -a "$(pwd)"
 source ./kokoro/testutils/install_vault.sh
