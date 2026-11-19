@@ -16,24 +16,33 @@
 
 # Generated with openssl rand -hex 10
 echo "================================================================================"
-echo "Tink Script ID: 87b6b958a7ce24607cca (to quickly find the script from logs)"
+echo "Tink Script ID: c7786ee77f797a059671 (to quickly find the script from logs)"
 echo "================================================================================"
 
 set -eEuox pipefail
 
-# This script creates binary wheels for Tink Python for Linux and macOS.
+# This script creates binary wheels for Tink Python for Linux. It must be run
+# from the Tink Python root folder, inside the Tink manylinux image
+# (manylinux_2_28), which has the tools required to build Tink Python.
 
 readonly GCS_URL="https://storage.googleapis.com"
 
+# The following assoicative array contains:
+#   ["<Python version>"]="<python tag>-<abi tag>"
+# where:
+#   <Python version> = language version "<major>.<minor>"
+#   <python tag>, <abi tag> = as defined at
+#       https://packaging.python.org/en/latest/specifications/, e.g.
+#       "cp<major><minor>-cp<major><minor>"
+declare -A PYTHON_VERSIONS
+PYTHON_VERSIONS["3.11"]="cp311-cp311"
+PYTHON_VERSIONS["3.12"]="cp312-cp312"
+PYTHON_VERSIONS["3.13"]="cp313-cp313"
+PYTHON_VERSIONS["3.14"]="cp314-cp314"
+PYTHON_VERSIONS["3.15"]="cp315-cp315"
+readonly -A PYTHON_VERSIONS
+
 export TINK_PYTHON_ROOT_PATH="${PWD}"
-
-readonly MANYLINUX_X86_64_IMAGE_NAME="quay.io/pypa/manylinux_2_28_x86_64"
-readonly MANYLINUX_X86_64_IMAGE_SHA256="sha256:e0adf18521ad35192df733a6c62d35df7801957d24e0470238aacecfab2188a3"
-readonly MANYLINUX_X86_64_IMAGE="${MANYLINUX_X86_64_IMAGE_NAME}@${MANYLINUX_X86_64_IMAGE_SHA256}"
-
-readonly MANYLINUX_AARCH64_IMAGE_NAME="quay.io/pypa/manylinux_2_28_aarch64"
-readonly MANYLINUX_AARCH64_IMAGE_SHA256="sha256:a3e02308c822fb6ce0d12248b0c941817ba5e1a1bc9e7bb5929f29c50eaa40a9"
-readonly MANYLINUX_AARCH64_IMAGE="${MANYLINUX_AARCH64_IMAGE_NAME}@${MANYLINUX_AARCH64_IMAGE_SHA256}"
 
 usage() {
   cat <<EOF
@@ -77,6 +86,40 @@ parse_args() {
 }
 
 #######################################
+# Builds a binary wheel for each Python version in PYTHON_VERSIONS and repairs
+# the wheels into manylinux wheels, which are stored in the "release" folder.
+#
+# This function must be called from within the Tink Python's root folder.
+#
+# Globals:
+#   PYTHON_VERSIONS
+# Arguments:
+#   None
+#######################################
+build_linux_binary_wheels() {
+  local v
+  for v in "${!PYTHON_VERSIONS[@]}"; do
+    (
+      # Executing in a subshell to make the PATH modification temporary.
+      # This makes shure that `which python3 ==
+      # /opt/python/${PYTHON_VERSIONS[$v]}/bin/python3`, which is a symlink of
+      # `/opt/python/${PYTHON_VERSIONS[$v]}/bin/python${v}`. This should allow
+      # pybind11_bazel to pick up the correct Python binary [1].
+      #
+      # [1] https://github.com/pybind/pybind11_bazel/blob/fc56ce8a8b51e3dd941139d329b63ccfea1d304b/python_configure.bzl#L434
+      export PATH="/opt/python/${PYTHON_VERSIONS[$v]}/bin:${PATH}"
+      python3 -m pip wheel .
+    )
+  done
+
+  # Repair wheels to convert them from linux to manylinux.
+  local wheel
+  for wheel in ./tink*.whl; do
+    auditwheel repair "${wheel}" -w release
+  done
+}
+
+#######################################
 # Builds Tink Python built distribution (Wheel) [1].
 #
 # This function must be called from within the Tink Python's root folder.
@@ -86,61 +129,30 @@ parse_args() {
 #   TINK_VERSION
 #   BAZEL_CACHE_NAME
 #   GCS_URL
-#   TINK_PYTHON_ROOT_PATH
+#   PYTHON_VERSIONS
 # Arguments:
 #   None
 #######################################
 create_bdist_for_linux() {
-  echo "### Building and testing Linux binary wheels ###"
-  eval "$(pyenv init -)"
+  echo "### Building Linux binary wheels ###"
+
+  export TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
+  if [[ -n "${BAZEL_CACHE_NAME:-}" ]]; then
+    export TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL="${GCS_URL}/${BAZEL_CACHE_NAME}"
+    export TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH="/tmp/cache_key"
+  fi
 
   rm -rf release && mkdir -p release
 
-  # Use signatures for getting images from registry (see
-  # https://docs.docker.com/engine/security/trust/content_trust/).
-  export DOCKER_CONTENT_TRUST=1
-
-  local env_variables=(
-    -e TINK_PYTHON_SETUPTOOLS_OVERRIDE_VERSION="${TINK_VERSION}"
-  )
-  if [[ -n "${BAZEL_CACHE_NAME:-}" ]]; then
-    env_variables+=(
-      -e TINK_PYTHON_BAZEL_REMOTE_CACHE_GCS_BUCKET_URL="${GCS_URL}/${BAZEL_CACHE_NAME}"
-      -e TINK_PYTHON_BAZEL_REMOTE_CACHE_SERVICE_KEY_PATH="/tmp/cache_key"
-    )
-  fi
-  readonly env_variables
-
-  readonly arch="$(uname -m)"
-  local manylinux_image=""
-  case "${arch}" in
-    x86_64)
-      manylinux_image="${MANYLINUX_X86_64_IMAGE}"
-      ;;
-    aarch64|arm64)
-      manylinux_image="${MANYLINUX_AARCH64_IMAGE}"
-      ;;
-    *)
-      echo "InvalidArgumentError: Unsupported architecture ${arch}" >&2
-      exit 1
-      ;;
-  esac
-  readonly manylinux_image
-
-  # Build binary wheels. Mount the tink python root folder and the tmp folder.
-  docker run \
-    --volume "${TINK_PYTHON_ROOT_PATH}:/tink" --volume "/tmp:/tmp" \
-    --workdir "/tink" "${env_variables[@]}" "${manylinux_image}" \
-    "tools/distribution/build_linux_binary_wheels.sh"
-
-  # Docker runs as root so we transfer ownership to the non-root user.
-  sudo chown -R "$(id -un):$(id -gn)" "${TINK_PYTHON_ROOT_PATH}"
+  build_linux_binary_wheels
 }
 
 main() {
   parse_args "$@"
 
-  readonly platform="$(uname | tr '[:upper:]' '[:lower:]')"
+  local platform
+  platform="$(uname | tr '[:upper:]' '[:lower:]')"
+  readonly platform
   case "${platform}" in
     linux)
       create_bdist_for_linux
