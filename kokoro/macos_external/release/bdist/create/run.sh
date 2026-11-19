@@ -54,7 +54,7 @@ readonly CREATE_DIST_OPTIONS
 # why we need 5.29.5.
 source ./kokoro/testutils/install_protoc.sh "29.5"
 
-./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
+./tools/distribution/create_bdist_macos.sh "${CREATE_DIST_OPTIONS[@]}"
 
 source ./kokoro/testutils/install_vault.sh
 source ./kokoro/testutils/run_hcvault_test_server.sh

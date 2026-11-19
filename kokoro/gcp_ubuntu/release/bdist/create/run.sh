@@ -67,7 +67,7 @@ if [[ -n "${TINK_REMOTE_BAZEL_CACHE_GCS_BUCKET:-}" ]]; then
 fi
 readonly CREATE_DIST_OPTIONS
 
-./tools/distribution/create_bdist.sh "${CREATE_DIST_OPTIONS[@]}"
+./tools/distribution/create_bdist_linux.sh "${CREATE_DIST_OPTIONS[@]}"
 
 cat <<'EOF' > _do_test_dist.sh
 set -euo pipefail
