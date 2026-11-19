@@ -18,7 +18,8 @@ Defines entities related to monitoring of key usage.
 """
 
 import abc
-from typing import Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Dict, Optional
 
 from tink.proto import tink_pb2
 
@@ -105,25 +106,33 @@ class KeyUsageMonitor(metaclass=abc.ABCMeta):
     pass
 
 
-_registered_key_usage_monitor_factory: Callable[
-    [MonitoringContext], KeyUsageMonitor
-] = None  # pyrefly: ignore[bad-assignment]
+_registered_key_usage_monitor_factory: (
+    Callable[[MonitoringContext], KeyUsageMonitor | None] | None
+) = None
 
 
 def register_key_usage_monitor_factory(
-    f: Callable[[MonitoringContext], KeyUsageMonitor],
-):
+    f: Callable[[MonitoringContext], KeyUsageMonitor | None],
+) -> None:
   """Registers a factory for creating KeyUsageMonitor objects.
 
   The factory will be called in the `wrap` method of the primitive wrappers
   and passed to the respective primitives to be used when using the keys.
 
   Args:
-    f: A factory function that returns a KeyUsageMonitor object. Called every
-      time the monitor is requested with `get_monitor_or_none`.
+    f: A factory function that returns a KeyUsageMonitor object, or None if the
+      primitive shouldn't be monitored. Called every time the monitor is
+      requested with `get_key_usage_monitor_or_none`.
   """
   global _registered_key_usage_monitor_factory
   _registered_key_usage_monitor_factory = f
+
+
+def get_key_usage_monitor_factory() -> (
+    Callable[[MonitoringContext], KeyUsageMonitor | None] | None
+):
+  """Returns the registered key usage monitor factory, or None."""
+  return _registered_key_usage_monitor_factory
 
 
 def get_key_usage_monitor_or_none(

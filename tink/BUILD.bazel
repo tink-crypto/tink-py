@@ -119,6 +119,17 @@ py_library(
     ],
 )
 
+py_test(
+    name = "_monitoring_test",
+    srcs = ["_monitoring_test.py"],
+    deps = [
+        ":_monitoring",
+        requirement("absl-py"),
+        "//tink/proto:tink_py_pb2",
+        "//tink/testing:fake_key_usage_monitor",
+    ],
+)
+
 py_library(
     name = "tink_config",
     srcs = ["tink_config.py"],
