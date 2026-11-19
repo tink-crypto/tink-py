@@ -101,9 +101,16 @@ class RawEncryptingStream(io.RawIOBase):
     """Flush and close the stream. Has no effect on a closed stream."""
     if self.closed:  # pylint:disable=using-constant-test
       return
-    self.flush()
-    self._close_cc_encrypting_stream()
-    super().close()
+    try:
+      self.flush()
+      # io.IOBase.__del__ calls close() also when __init__ raised, before
+      # _cc_encrypting_stream was set.
+      if hasattr(self, '_cc_encrypting_stream'):
+        self._close_cc_encrypting_stream()
+    finally:
+      # Mark the stream closed even if closing failed: the C++ stream cannot
+      # be closed again, and io.IOBase.__del__ would otherwise try.
+      super().close()
 
   def writable(self) -> bool:
     """Return True if the stream supports writing."""

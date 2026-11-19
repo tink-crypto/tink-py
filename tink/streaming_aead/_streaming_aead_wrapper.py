@@ -127,12 +127,19 @@ class _DecryptingStreamWrapper(io.RawIOBase):
   def close(self) -> None:
     if self.closed:  # pylint:disable=using-constant-test
       return
-    if self._matching_stream:
-      self._matching_stream.close()
-    if self._attempting_stream:
-      self._attempting_stream.close()
-    self._ciphertext_source.close()
-    super().close()
+    try:
+      # io.IOBase.__del__ calls close() also when __init__ raised. Then
+      # _attempting_stream, which __init__ sets last, is not set.
+      if hasattr(self, '_attempting_stream'):
+        if self._matching_stream:
+          self._matching_stream.close()
+        if self._attempting_stream:
+          self._attempting_stream.close()
+        self._ciphertext_source.close()
+    finally:
+      # Mark the stream closed even if closing ciphertext_source failed, so
+      # that io.IOBase.__del__ does not try again.
+      super().close()
 
   def readable(self) -> bool:
     return True

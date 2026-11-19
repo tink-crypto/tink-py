@@ -61,6 +61,7 @@ py_test(
         ":streaming_aead",
         requirement("absl-py"),
         "//tink/core",
+        "//tink/testing:bytes_io",
     ],
 )
 
