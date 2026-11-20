@@ -25,7 +25,7 @@ set -eEuox pipefail
 
 readonly GCS_URL="https://storage.googleapis.com"
 
-readonly PYTHON_VERSIONS=( "3.11" "3.12" "3.13" "3.14" "3.15" )
+readonly PYTHON_VERSIONS=( "3.11" "3.12" "3.13" "3.14" "3.15" "3.15t" )
 
 export TINK_PYTHON_ROOT_PATH="${PWD}"
 
