@@ -239,6 +239,9 @@ def main() -> None:
       long_description_content_type='text/markdown',
       # Contained modules and scripts.
       packages=setuptools.find_packages(),
+      # PEP 561: ship the py.typed marker so type checkers pick up the
+      # inline annotations in the installed package.
+      package_data={'tink': ['py.typed']},
       install_requires=_parse_requirements('requirements.in'),
       extras_require={
           'gcpkms': gcpkms_extra_requirements,
