@@ -41,7 +41,11 @@
 namespace crypto {
 namespace tink {
 
-PYBIND11_MODULE(tink_bindings, m) {
+// The module can run without the GIL on free-threaded Python: the C++
+// primitives are thread-safe, and the public streaming API only uses the
+// stream adapters through io.BufferedReader/io.BufferedWriter, which
+// serialize calls.
+PYBIND11_MODULE(tink_bindings, m, pybind11::mod_gil_not_used()) {
   namespace py = pybind11;
 
   py::register_exception<pybind11::google_tink::TinkException>(
