@@ -123,9 +123,13 @@ class RawDecryptingStream(io.RawIOBase):
     """Close the stream. Has no effect on a closed stream."""
     if self.closed:  # pylint:disable=using-constant-test
       return
-    if self._close_ciphertext_source:
-      self._ciphertext_source.close()
-    super().close()
+    try:
+      if self._close_ciphertext_source:
+        self._ciphertext_source.close()
+    finally:
+      # Mark the stream closed even if closing ciphertext_source failed, so
+      # that io.IOBase.__del__ does not try again.
+      super().close()
 
   def readable(self) -> bool:
     """Return True if the stream can be read from."""
